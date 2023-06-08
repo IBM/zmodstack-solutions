@@ -14,4 +14,4 @@ Below are the internal task used by SEAA framework.
 - set_the_project_name.yml
 
 ---
-## [back to framework guide](/zmodstack-solutions/docs/guide/README.md)
+## [back to framework guide](/docs/guide/README.md)

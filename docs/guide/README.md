@@ -1,18 +1,18 @@
 # Solutions Enablement Ansible Automation (SEAA) framework for IBM Z and Cloud Modernization Stack
 
 ## Overview
- In this topic, we outline the [capabilities](/zmodstack-solutions/docs/guide/feature-list.md) and components of the SEAA framework. The framework provides a prescriptive model based on tags and configuration variables provided. These values determine how automation interacts with the underlying systems and a user. The framework offers the following components as outlined in the table below.
+ In this topic, we outline the [capabilities](/docs/guide/feature-list.md) and components of the SEAA framework. The framework provides a prescriptive model based on tags and configuration variables provided. These values determine how automation interacts with the underlying systems and a user. The framework offers the following components as outlined in the table below.
 
 <!-- In this topic, we are providing an automation framework and some samples to help you enhance modernization journey by using the stack. The framework provides a prescriptive model based on tags and configuration variables provided. These values determine how automation interacts with the underlying systems and a user. The framework offers you the ansible components as outlined in the table below. -->
 
 |**Components**|**Description**|
 |----------------------|---------------|
-|Ansible [variables](/zmodstack-solutions/ibm/seaa/ansible/variables/README.md)|Default and variable data used to define Red Hat® OpenShift® and z/OS system resources|
-|Ansible [inventory](/zmodstack-solutions/ibm/seaa/ansible/playbooks/inventory/README.md)|To define multiple host and host variables used to deploy resources on OpenShift and z/OS endpoints.
-|Ansible [playbooks](/zmodstack-solutions/ibm/seaa/ansible/playbooks/README.md), [tasks](/zmodstack-solutions/ibm/seaa/ansible/tasks/README.md), [roles](/zmodstack-solutions/ibm/seaa/ansible/roles/README.md), [run_playbook scripts](/zmodstack-solutions/ibm/seaa/scripts/run_playbooks/README.md)|To deploy stack components
-|Admin shell [scripts](/zmodstack-solutions/ibm/seaa/scripts/admin/README.md) |To run administer stack resources on OpenShift cluster and z/OS endpoints. 
+|Ansible [variables](/ibm/seaa/ansible/variables/README.md)|Default and variable data used to define Red Hat® OpenShift® and z/OS system resources|
+|Ansible [inventory](/ibm/seaa/ansible/playbooks/inventory/README.md)|To define multiple host and host variables used to deploy resources on OpenShift and z/OS endpoints.
+|Ansible [playbooks](/ibm/seaa/ansible/playbooks/README.md), [tasks](/ibm/seaa/ansible/tasks/README.md), [roles](/ibm/seaa/ansible/roles/README.md), [run_playbook scripts](/ibm/seaa/scripts/run_playbooks/README.md)|To deploy stack components
+|Admin shell [scripts](/ibm/seaa/scripts/admin/README.md) |To run administer stack resources on OpenShift cluster and z/OS endpoints. 
 
-See the [configuration](/zmodstack-solutions/ibm/seaa/ansible/variables/config/seaa_config.yaml) variables used to determine how automation behaves along with [tags](/zmodstack-solutions/docs/guide/seaa-tags.md) from the specific [playbook](/zmodstack-solutions/ibm/seaa/ansible/playbooks/README.md) from the list of playbooks.
+See the [configuration](/ibm/seaa/ansible/variables/config/seaa_config.yaml) variables used to determine how automation behaves along with [tags](/docs/guide/seaa-tags.md) from the specific [playbook](/ibm/seaa/ansible/playbooks/README.md) from the list of playbooks.
 
 ## Framework Architectural Diagram
 ![Architectural Diagram](../images/seaa-architectural-diagram.png)
@@ -93,9 +93,8 @@ Listed below are the minimum requirements for OpenShift and z/OS endpoints.
 - [ZOAU 1.1.0](https://www.ibm.com/docs/en/wdfrhcw/1.4.0?topic=components-z-open-automation-utilities) or later -  for scripts that require ZOAU commands <br>
 
 
-<!-- # Next Steps [setup workstation to run local](/zmodstack-solutions/docs/setup/get-started-local.md) -->
 ---
-## Next steps [getting started workstation](/zmodstack-solutions/docs/setup/get-started-workstation.md) -or- [getting started CI/CD](/zmodstack-solutions/docs/setup/get-started-cicd.md) 
+## Next steps [getting started workstation](/docs/setup/get-started-workstation.md) -or- [getting started CI/CD](/docs/setup/get-started-cicd.md) 
 <!-- ## Running automation locally -->
 <!-- ### 1. Configure Workstation
 a. Export the following environment variables on local machine.

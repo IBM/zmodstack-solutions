@@ -8,5 +8,5 @@ Below are the roles currently defined in the SEAA framework
 - [zos_dev_envs](zos_dev_envs) - role to deploy/undeploy/verify zos development environments on USS
 
 ---
-## [back to framework guide](/zmodstack-solutions/docs/guide/README.md)
+## [back to framework guide](/docs/guide/README.md)
 
