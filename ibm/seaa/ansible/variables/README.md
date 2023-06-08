@@ -47,7 +47,7 @@ The following table provides details about variable files used with the Solution
 <!-- - defaults/
 	- [ocp](defaults/ocp.yaml) - Default variables for Openshift cluster
 
-	- [zoscb](defaults/zoscb.yaml) - Default variables for z cloud broker
+	- [zoscb](defaults/zoscb.yaml) - Default variables for z/OS Cloud Broker
 
 	- [zpm](defaults/zpm.yaml) - Default variables for zos package manager
 

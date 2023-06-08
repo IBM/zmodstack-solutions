@@ -16,13 +16,13 @@
 # bytes
 # bits
 ---
-# namespace_names:
+# project_names:
 #     data_type: list,
 #     inventory_group:
 #       - name: all
 #         required: true
 #         domain: all  
-namespace_names: 
+project_names: 
  - list
  - str
 _is_active: bool

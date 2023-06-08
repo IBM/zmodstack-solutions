@@ -24,8 +24,8 @@ A description of the settable variables for this role should go here, including 
 <tbody>
   <tr>
     <td rowspan="2">defaults/main.yml</td>
-    <td>namespace_names</td>
-    <td>Array of namespaces</td>
+    <td>project_names</td>
+    <td>Array of projects</td>
   </tr>
   <tr><td>zpm_install_dir_prefix</td>
     <td>Writable prefix on USS directory z/OS Endpoint for z/OS Package Manager to install z/OS products</td></tr>
@@ -55,7 +55,7 @@ A description of the settable variables for this role should go here, including 
 
 <!--   
 defaults/main.yml
-  - namespace_names - Array of namespaces
+  - project_names - Array of namespaces
   - zpm_install_dir_prefix - Writable prefix on USS directory z/OS Endpoint for ZPM to install zproducts
   
 vars/main.yml

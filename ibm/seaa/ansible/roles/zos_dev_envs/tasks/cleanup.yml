@@ -9,7 +9,7 @@
         - seaa_deploy_strategy == "undeploy" or seaa_deploy_strategy == "testing"
         - (seaa_purge_namespace is defined and seaa_purge_namespace | bool)
       with_items:
-        - "{{ hostvars[current_ocphost].namespace_names }}"
+        - "{{ hostvars[current_ocphost].project_names }}"
       loop_control:
         loop_var: current_namespace
 
