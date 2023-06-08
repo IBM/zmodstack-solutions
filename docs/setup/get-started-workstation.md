@@ -1,6 +1,6 @@
 # Getting Started Workstation
 
-**Clone the ['zmodstack-solutions'](https://github.com/IBM/zmodstack-solutions) repo and follow the steps below to setup workstation.**
+**Clone the ['zmodstack-solutions'](https://github.com/IBM/zmodstack-solutions) repo and follow the steps below to setup your workstation.**
 
 ---
 
