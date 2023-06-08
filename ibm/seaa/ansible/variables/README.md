@@ -20,7 +20,7 @@ The following table provides details about variable files used with the Solution
   </tr>
   <tr><td><a href="https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/config/seaa_config.yaml">seaa_config</a></td>
     <td>Control automation for SEAA framework</td></tr>
-	<tr><td><a href=" https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/config/seaa_config.yaml">seaa_trouble</a></td>
+	<tr><td><a href="https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/config/seaa_config.yaml">seaa_trouble</a></td>
     <td>Troubleshooting SEAA framework</td></tr>
 <tr>
     <td rowspan="4">defaults/</td>
