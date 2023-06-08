@@ -1,14 +1,14 @@
 # Configure workstation
-Complete the following steps to configure the framework on your workstation.
+Complete the following steps to configure the framework to run on your workstation.
 
 ---
-## Export the following environment variables on local machine.
+## Export the following environment variables on your workstation.
   
   - **SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS** - the path to your cloned solutions-enablement repo **[ansible](/ibm/seaa/ansible)** directory.
   - **ANSIBLE_FILTER_PLUGINS** - the path to the filter plugins directory appended to the ansible defaults.
   - **ANSIBLE_LIBRARY** - the path to the library plugins directory appended to the ansible defaults. 
 
-  - (Optional) **SEAA_CONFIG_PATH_TO_SE_VARIABLES** - the path to ansible variables to use in seaa automation, if different from default location **[ansible/variables](/ibm/seaa/ansible/variables)** directory.<br>
+  - (Optional) **SEAA_CONFIG_PATH_TO_SE_VARIABLES** - the path to ansible variables directory to use with the framework, if different from default location **[ansible/variables](/ibm/seaa/ansible/variables)** directory.<br>
 
 - **Example for unix-like OS terminal:**<br>
     ```
