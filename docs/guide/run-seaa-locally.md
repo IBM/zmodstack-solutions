@@ -44,9 +44,9 @@ Review [sample-inventory.yaml](/ibm/seaa/ansible/playbooks/inventory/sample-inve
     ./run-deploy-oel-dev-env.sh --tags=python --extra_vars="seaa_automation_strategy=generate_yaml"   
     ```
  
- - #### Undeploy **All IBM Open Enterprise Lanquqges**.<br>
+ - #### Undeploy **All IBM Open Enterprise Languages** except OELCPP.<br>
     ```
-    ./run-undeploy-oel-dev-env.sh --tags=oel-dev
+    ./run-undeploy-oel-dev-env.sh --tags=oel-dev --skiptags=oelcpp
     ```
 
 **[View available tags for run script and playbook.](/docs/guide/seaa-tags.md)**    
