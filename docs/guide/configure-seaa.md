@@ -43,4 +43,4 @@ Complete the following steps to configure the framework to run on your workstati
     pipelining = True
     
 ---    
-## Next steps - [run locally](/docs/guide/run-seaa-locally.md) -or- [back to framework guide](/docs/guide/README.md)
+## Next steps [run locally](/docs/guide/run-seaa-locally.md) -or- [back to framework guide](/docs/guide/README.md)
