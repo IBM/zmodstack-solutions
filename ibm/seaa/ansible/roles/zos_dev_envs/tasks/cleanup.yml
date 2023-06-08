@@ -1,0 +1,51 @@
+---
+- name: Clean up resources on Openshift
+  tags: always
+  block:
+
+    - name: Undeploy broker and/or zpm from namespaces
+      ansible.builtin.include_tasks: "undeploy/clean_zoscb_zpm.yml"
+      when:
+        - seaa_deploy_strategy == "undeploy" or seaa_deploy_strategy == "testing"
+        - (seaa_purge_namespace is defined and seaa_purge_namespace | bool)
+      with_items:
+        - "{{ hostvars[current_ocphost].namespace_names }}"
+      loop_control:
+        loop_var: current_namespace
+
+  always:
+    - name: Set JMES cache queries
+      ansible.builtin.set_fact:
+        jmesq_authenticated: "cached[? ocp_host=='{{ current_ocphost }}'] | [].authenticated"
+      no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+    - name: Check if authentication was performed for this ocphost '{{ current_ocphost }}'
+      ansible.builtin.set_fact:
+        query_authenticated: >-
+          {{ ocp_cluster_cache
+            | json_query(jmespath)
+          }}
+      when: ocp_cluster_cache is defined
+      vars:
+        jmespath: "{{ jmesq_authenticated }}"
+
+    - name: Set flag for authenticated host to revoke authentication if necessary
+      ansible.builtin.set_fact:
+        host_authenticated: "{{ query_authenticated[0] | bool }}"
+      when: query_authenticated is defined and query_authenticated | length >= 0
+
+    - name: Revoke tokens for authenticated hosts
+      when:
+        - host_authenticated is defined and host_authenticated
+        - ocp_cluster_cache is defined and ocp_cluster_cache != None
+      ansible.builtin.include_role:
+        name: openshift_cluster
+        tasks_from: revoke
+      vars:
+        openshift_token: "{{ cached_host.token }}"
+        openshift_host: "{{ cached_host.host }}"
+        validate_openshift_certs: "{{ cached_host.validate_certs }}"
+        openshift_cert: "{{ cached_host.ca_cert }}"
+      with_items: "{{ ocp_cluster_cache.cached }}"
+      loop_control:
+        loop_var: cached_host

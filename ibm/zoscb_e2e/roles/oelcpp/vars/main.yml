@@ -1,0 +1,74 @@
+---
+# Variables file for OelCPP Operator
+
+# OPERATOR COLLECTION
+oc_product:
+  short_name: "{{ lookup('vars', 'oelcpp_short_name') }}"
+  code_name: "{{ lookup('vars', 'oelcpp_code_name', default='') }}"
+  name: "{{ lookup('vars', 'oelcpp_name') }}"
+  oc_version: "{{ lookup('vars', 'zpm_oc_version') if zpm_consolidated_operator | bool == true else lookup('vars', 'oelcpp_oc_version') }}"
+  oci_version: "{{ lookup('vars', 'oelcpp_oci_version') }}"
+  apiVersion: "{{ lookup('vars', 'oc_product_api_version') }}"
+  finalizers:
+    - "{{ lookup('vars', 'oc_product_finalizer') }}"
+  import_mode: "{{ lookup('vars', 'oelcpp_import_mode') | default('galaxy') }}"
+  import_url: "{{ lookup('vars', 'oelcpp_import_url') | default('https://galaxy.ansible.com') }}"
+  git_token: "{{ lookup('vars', 'oelcpp_git_token') | default('') }}"
+  delete_collections: "{{ lookup('vars', 'oc_product_delete_collections', errors='ignore') | default(true) }}"
+  signatureFile: "{{  lookup('vars', 'oelcpp_signature_file') if lookup('vars', 'oelcpp_signature_upload_mode', default='url') == 'url' else
+                          seaa_ansible_directory~'/roles/openshift_cluster/secrets/ibm-'~lookup('vars', 'oelcpp_name') |
+                          replace('-', '_')~'_operator-'~lookup('vars', 'oelcpp_oci_version')~'.sig'
+                  }}"
+  signatureFileExt: "{{ lookup('vars', 'oelcpp_signature_file_ext', default='.sig') }}"
+  signatureUploadMode: "{{ lookup('vars', 'oelcpp_signature_upload_mode', default='url') }}"
+  publicKey: "{{ lookup('vars', 'oelcpp_public_key') if lookup('vars', 'oelcpp_signature_upload_mode', default='url') == 'url' else
+                  seaa_ansible_directory~'/roles/openshift_cluster/secrets/'~lookup('vars', 'oelcpp_public_key', default='z-mod-stack.pub')
+              }}"
+  skipVerify: "{{ lookup('vars', 'oelcpp_skip_verify') }}"
+  domain: "{{ lookup('vars', 'oc_product_domain') }}"
+  credential_type: "{{ lookup('vars', 'oelcpp_credential_type', default='') }}"
+
+# SUB-OPERATOR CONFIG
+subop_config:
+  apiVersion: "{{ lookup('vars', 'subop_config_api_version') }}"
+  endpointNames: "{{ zos_endpoints }}" # "{{ endpoint.name }}"
+  finalizers:
+    - "{{ lookup('vars', 'subop_config_finalizer') }}"
+
+##### Edit variables below for any Custom Resources (CRs) #####
+
+# OelCPP Sub-Operator CRs
+oelcpp_instance:
+  name: "{{ hostvars[current_ocphost].oelcpp_instance_name |
+            default(oelcpp_instance_prefix |
+            get_simple_version_string(lookup('vars', 'oelcpp_instance_product_version'), seaa_append_version_to_software_instances) |
+            append_str_if_not_null('-'~current_zosendpoint), true)  |
+            default( lookup('vars', 'oelcpp_instance_name'), true) }}"
+  kind: "{{ 'ZosProductInstall' if zpm_consolidated_operator | bool == true else lookup('vars', 'oelcpp_instance_kind') }}"
+  apiVersion: "{{ broker_sub_operator_api_group~'/'~lookup('vars', 'zpm_oc_version') |
+    get_vmp_string if zpm_consolidated_operator | bool == true else lookup('vars', 'oelcpp_instance_api_version') }}"
+  finalizers:
+    - "{{ lookup('vars', 'oelcpp_instance_finalizer') }}"
+  zosEndpoint: "{{ endpoint.name }}"
+  licenseAccept: "{{ lookup('vars', 'oelcpp_instance_license_accept') | bool }}"
+  productVersion: "{{ lookup('vars', 'oelcpp_instance_product_version') }}"
+
+validate_oelcpp:
+  name: "{{ hostvars[current_ocphost].validate_oelcpp_name |
+            default(validate_oelcpp_prefix |
+            get_simple_version_string(lookup('vars', 'oelcpp_instance_product_version'), seaa_append_version_to_software_instances) |
+            append_str_if_not_null('-'~current_zosendpoint), true)  |
+            default( lookup('vars', 'validate_oelcpp_name'), true) }}"
+  kind: "{{ 'ZosProductValidate' if zpm_consolidated_operator | bool == true else lookup('vars', 'validate_oelcpp_kind') }}"
+  apiVersion: "{{ broker_sub_operator_api_group~'/'~lookup('vars', 'zpm_oc_version') |
+    get_vmp_string if zpm_consolidated_operator | bool == true else lookup('vars', 'validate_oelcpp_api_version') }}"
+  finalizers:
+    - "{{ lookup('vars', 'validate_oelcpp_finalizer') }}"
+  productCRName: "{{ hostvars[current_ocphost].oelcpp_instance_name |
+            default(oelcpp_instance_prefix |
+            get_simple_version_string(lookup('vars', 'oelcpp_instance_product_version'), seaa_append_version_to_software_instances) |
+            append_str_if_not_null('-'~current_zosendpoint), true)  |
+            default( lookup('vars', 'oelcpp_instance_name'), true) }}"
+  zosEndpoint: "{{ endpoint.name }}"
+
+product_filename: "{{ oc_product.oci_version if seaa_append_version_to_software_instances | bool == true else oc_product.oc_version }}"

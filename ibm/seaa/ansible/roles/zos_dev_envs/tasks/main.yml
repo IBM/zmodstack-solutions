@@ -1,0 +1,164 @@
+---
+# ****************************************************************************************************************************
+# *
+# - Main Task for USS-DEV-ENV role
+# *
+# ****************************************************************************************************************************
+- name: Verify automation and deployment strategies
+  tags: always
+  block:
+
+    - name: Fail seaa_automation_strategy '{{ seaa_automation_strategy }}' is not a supported value
+      ansible.builtin.fail:
+        msg: "Please supply valid 'seaa_automation_strategy' value to run the zos_dev_envs ansible role.\
+            - Set 'seaa_automation_strategy' to one of the following:\
+              - 'deploy_yaml' (default) - deploy or undeploy resources using native YAML API.\
+              - 'generate_yaml' - generate Native YAML, script and readme files for deployment or undeployment.\
+              - 'generate_deploy_yaml' - generate Native YAML, script and readme files and deploy or undeploy resources using native YAML API.\
+              - 'inline' - (#TODO to-be - deprecated)
+            "
+      when:
+        - not seaa_automation_strategy == "deploy_yaml"
+        - not seaa_automation_strategy == "generate_yaml"
+        - not seaa_automation_strategy == "generate_deploy_yaml"
+        - not seaa_automation_strategy == "inline"
+
+    - name: Fail seaa_deploy_strategy '{{ seaa_deploy_strategy }}' is not a supported value
+      ansible.builtin.fail:
+        msg: "Please supply valid 'seaa_deploy_strategy' values to run the zos_dev_envs ansible role.\
+            - Set 'seaa_deploy_strategy' to one of the following: \
+              - 'deploy' - deploy resources based on inventory and ansible variables referenced.\
+              - 'undeploy' - undeploy resources based on inventory and ansible variables referenced.\
+              - 'verify' - verify resources based on inventory and ansible variables referenced.\
+              - 'testing' - used to test resources based on inventory and ansible variables referenced.
+            "
+      when:
+        - not seaa_deploy_strategy == "deploy"
+        - not seaa_deploy_strategy == "undeploy"
+        - not seaa_deploy_strategy == "verify"
+        - not seaa_deploy_strategy == "testing"
+
+    - name: Fail if seaa_deploy_strategy is 'testing' and seaa_automation_strategy is 'generate_yaml' or 'generate_deploy_yml'
+      ansible.builtin.fail:
+        msg: "Error seaa_deploy_strategy of 'testing' is not supported with seaa_automation_strategy 'generate_yaml' or 'generate_deploy_yml',\
+         seaa_deploy_strategy of 'testing' ONLY supported with seaa_automation_strategy of 'deploy_yaml'."
+      when:
+        - seaa_deploy_strategy == "testing"
+        - seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yml"
+
+- name: Show Automation Status for Current OCP Host
+  tags:
+    - always
+  when:
+    - seaa_zoscb_smart_deploy | bool
+    - hostvars[current_ocphost]._is_active
+    - seaa_automation.debug | bool
+  block:
+    - name: Debug Automation Strategy
+      ansible.builtin.debug:
+        var: seaa_automation_strategy
+      no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+    - name: Debug Deployment Strategy
+      ansible.builtin.debug:
+        var: seaa_deploy_strategy
+      no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+    - name: Debug automation status for product '{{ seaa_product }}' on '{{ current_ocphost }}'
+      ansible.builtin.debug:
+        var: openshift_auth_token
+      no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+    - name: Debug var current_authenticated_host
+      ansible.builtin.debug:
+        var: current_authenticated_host
+
+    - name: Debug var ocp_cluster_cache
+      ansible.builtin.debug:
+        var: ocp_cluster_cache
+      no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+    - name: Waiting for user response
+      ansible.builtin.pause:
+        prompt: PRE-Check for known automation status on '{{ current_ocphost }}', press enter to continue ...
+      when: seaa_automation.prompt_during_automation | bool
+
+# Include Authentication and cache initialization task
+- name: Initialize Cache and Authenticate
+  when:
+    - hostvars[current_ocphost]._is_active
+  tags: always
+  block:
+    - name: Initialize Cache and Authenticate
+      ansible.builtin.include_tasks: "init_cache.yml"
+
+    # Set flags to check if ZOSCB and ZPM are already deployed or generated for a namespace
+    - name: Set flags to check if ZOSCB and ZPM are already deployed or generated for a namespace
+      ansible.builtin.set_fact:
+        zoscb_deployed: false
+        zpm_deployed: false
+
+# Deploy tagged components to stack
+- name: Deploy z/OS Cloud and Modernization Stack Components
+  when:
+    - hostvars[current_ocphost]._is_active
+    - seaa_deploy_strategy == "deploy" or seaa_deploy_strategy == "testing"
+  block:
+    - name: Deploy z/OS Cloud and Modernization Stack Components
+      ansible.builtin.include_tasks: "_deploy.yml"
+      with_items:
+        - "{{ hostvars[current_ocphost].namespace_names }}"
+      loop_control:
+        loop_var: current_namespace
+      tags: always
+  rescue:
+    - name: Debug rescued error
+      ansible.builtin.debug:
+        msg: "Caught an error while deploying on {{ current_ocphost }}"
+
+# Verify Deployed Resources when running testing strategy
+- name: Verifying z/OS Cloud and Modernization Stack Components
+  when:
+    - hostvars[current_ocphost]._is_active
+    - seaa_deploy_strategy == "verify" or seaa_deploy_strategy == "testing"
+  block:
+
+    - name: Verifying z/OS Cloud and Modernization Stack Components
+      ansible.builtin.include_tasks: "verify.yml"
+      with_items:
+        - "{{ hostvars[current_ocphost].namespace_names }}"
+      loop_control:
+        loop_var: current_namespace
+      tags: always
+  rescue:
+    - name: Debug rescued error
+      ansible.builtin.debug:
+        msg: "Caught an error while verifying on {{ current_ocphost }}"
+
+# Set flag to determin if component should be undeployed
+- name: Set fact to allow undeployment of non broker or zpm component when using "testing" strategy
+  when:
+    - hostvars[current_ocphost]._is_active
+    - seaa_deploy_strategy == "testing"
+    - seaa_product != "zoscb" and seaa_product != "zpm"
+  ansible.builtin.set_fact:
+    can_undeploy_component: true
+  tags: always
+
+# Undeploy tagged components from stack
+- name: Undeploy z/OS Cloud and Modernization Stack Components
+  when:
+    - hostvars[current_ocphost]._is_active
+    - seaa_deploy_strategy == "undeploy" or can_undeploy_component is defined and can_undeploy_component
+  block:
+    - name: Undeploy z/OS Cloud and Modernization Stack Components
+      ansible.builtin.include_tasks: "undeploy.yml"
+      with_items:
+        - "{{ hostvars[current_ocphost].namespace_names }}"
+      loop_control:
+        loop_var: current_namespace
+      tags: always
+  rescue:
+    - name: Debug rescued error
+      ansible.builtin.debug:
+        msg: "Caught an error while undeploying on {{ current_ocphost }}"

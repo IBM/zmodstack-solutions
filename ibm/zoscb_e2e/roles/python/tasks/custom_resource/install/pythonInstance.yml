@@ -1,0 +1,97 @@
+- name: Include debug resource task
+  ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/debug_resource.yml"
+  vars:
+    resource_variable: "{{ python_instance }}"
+  when: seaa_automation.debug | bool
+
+- name: "Create sub-operator CR {{ python_instance.kind }}: '{{ python_instance.name }} \
+        ' in project '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}' for zosendpoint '{{ python_instance.zosEndpoint }}'"
+  when: seaa_automation_strategy == "inline"
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ project_namespace.name }}"
+    api_key: "{{ ocp_cluster.auth_token }}"
+    definition:
+      kind: "{{ python_instance.kind }}"
+      apiVersion: "{{ python_instance.apiVersion }}"
+      metadata:
+        name: "{{ python_instance.name }}"
+      spec:
+        accept: "{{ python_instance.licenseAccept }}"
+        product_ver: "{{ python_instance.productVersion }}"
+        zosendpoint: "{{ python_instance.zosEndpoint }}"
+
+- name: Create pythonInstance with YAML file
+  when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+  block:
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/operators/instances/python-instance.yaml"
+        destination_file: "{{ oc_product.short_name }}-{{ product_filename }}_Instance.yaml"
+        is_zos_resource: true
+        zos_endpoint: "{{ endpoint }}"
+
+    # Capture start time when seaa_capture_deployment_wait_time flag set
+    - name: Get timestamp from the system
+      when:
+        - seaa_capture_deployment_wait_time | bool
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.shell: "echo $(($(date +'%s * 1000 + %-N / 1000000')))"
+      register: start_tstamp_ns
+      no_log: "{{ not seaa_automation.debug }}"
+      changed_when: start_tstamp_ns != 0
+
+    - name: "Create pythonInstance with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/instances/python-instance.yaml') | from_yaml }}"
+      register: mapped_suboperator
+
+- name: Waiting for PYTHON instance '{{ python_instance.name }}' to be available in project '{{ project_namespace.name }}'.
+  when: seaa_automation.prompt_during_automation | bool
+  block:
+    - name: Debug var python_instance
+      ansible.builtin.debug:
+        var: python_instance
+    - name: Waiting for user to proceed
+      ansible.builtin.pause:
+        prompt: "Check to see if '{{ python_instance.name }}' instance has installed on '{{ ocp_cluster.hostname }}' in project '{{ project_namespace.name }}'"
+
+- name: "Wait for installation of sub-operator CR {{ python_instance.kind }}: '{{ python_instance.name }}' on '{{ ocp_cluster.hostname }}'"
+  when: seaa_automation_strategy != "generate_yaml"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: "{{ python_instance.kind }}"
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ python_instance.name }}"
+    api_version: "{{ python_instance.apiVersion }}"
+  register: python_instance_info
+  until: "python_instance_info.resources is defined and
+          python_instance_info.resources | length > 0 and
+          'status' in python_instance_info.resources[0] and
+          (python_instance_info.resources[0].status.phase == 'Succeeded' or python_instance_info.resources[0].status.phase == 'Failed')"
+  failed_when: "'status' in python_instance_info.resources[0] and
+                python_instance_info.resources[0].status.phase != 'Succeeded'"
+  retries: "{{ seaa_deploy_retries | int }}" # 120
+  delay: "{{ seaa_deploy_delay | int }}" # 10
+
+- name: Capture Deploy Wait time
+  when:
+    - seaa_automation_strategy != "deploy_yaml" or seaa_automation_strategy != "inline"
+    - seaa_capture_deployment_wait_time | bool and start_tstamp_ns is defined
+  block:
+    - name: Capture wait time and add to deploy script
+      ansible.builtin.include_role:
+        name: zos_dev_envs
+        tasks_from: capture_deploy_time
+      vars:
+        resource_kind: "{{ python_instance.kind }}"
+        _script_command_comment: "Wait for '{{ python_instance.name }}' '{{ python_instance.kind }}' {{ deploy_type }}ment"
+        _deployment_file: "{{ seaa_yaml_single_deployment_file }}"
+        _deploy_name: "{{ python_instance.name }}"
+        _deploy_file: "{{ oc_product.short_name }}-{{ product_filename }}_Instance.yaml"

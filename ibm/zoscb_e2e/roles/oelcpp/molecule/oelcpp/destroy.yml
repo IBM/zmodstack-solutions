@@ -1,0 +1,34 @@
+---
+- name: "Destroy: Delete IBM Z and Cloud Modernization Stack - OelCPP Operator CRs"
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../../vars/main.yml
+    - ../../../ocp_cluster/vars/main.yml
+    - ../../../ocp_cluster/vars/endpoints.yml
+
+  tasks:
+    - name: "Include role: 'ocp_cluster'"
+      ansible.builtin.include_role:
+        name: "ocp_cluster"
+
+    - name: "Include role: 'oelcpp'"
+      ansible.builtin.include_role:
+        name: "oelcpp"
+
+    # LOGIN TO THE OPENSHIFT CLUSTER
+    - import_tasks: ../../../../common/tasks/clusterLogin.yml
+
+    # DESTROY SUB-OPERATOR CUSTOM RESOURCES
+    - import_tasks: ../../tasks/custom_resource/uninstall/validateOelcpp.yml
+    - import_tasks: ../../tasks/custom_resource/uninstall/oelcppInstance.yml
+
+    # DELETE SUB-OPERATOR CONFIG
+    - import_tasks: ../../../../common/tasks/operator_collection/destroy/subOperatorConfig.yml
+
+    # DELETE IMPORTED OPERATOR COLLECTION
+    - import_tasks: ../../../../common/tasks/operator_collection/destroy/operatorCollection.yml
+
+    # CLEAN UP OPERATOR COLLECTION TAR.GZ FILE LOCALLY
+    #- import_tasks: ../../../../common/tasks/operator_collection/deleteFile.yml

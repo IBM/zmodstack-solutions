@@ -1,0 +1,13 @@
+- name: "Find operator collection tar.gz file locally"
+  ansible.builtin.find:
+    paths: "{{ zoscb_e2e_roles_directory }}/{{ oc_product.short_name }}/oc_file"
+    patterns: "*.tar.gz"
+  register: oc_file
+
+- name: "Identify operator collection tar.gz file name"
+  ansible.builtin.set_fact:
+    oc_filename: "{{ oc_file.files[0].path.split('/') | last }}"
+
+- name: "Identify operator collection version from file: '{{ oc_filename }}'"
+  ansible.builtin.set_fact:
+    oc_version: "{{ oc_filename.split('-')[2].split('.tar.gz')[0] }}"

@@ -1,0 +1,311 @@
+###############################################################################
+# © Copyright IBM Corporation 2022
+###############################################################################
+
+###############################################################################
+# Requirements/Limitations:
+#    - This playbook is called from script: solutions-enablement/scenarios/scripts/run_playbooks/run-undeploy-oel-dev-env.sh
+#
+###############################################################################
+---
+- name: Undeploy OEL-Dev-Env-aaS Playbook
+  hosts: localhost
+  become: false
+  gather_facts: false
+
+  vars_files:
+    # Reference ZSTACK ansible variable config and constants  (**** Requires "seaa_variables_directory" variable to be set for this playbook ****)
+    - "{{ seaa_variables_directory }}/config/seaa_config.yaml"
+    - "{{ seaa_variables_directory }}/config/seaa_trouble.yaml"
+    - "{{ seaa_variables_directory }}/protected/constants.yaml"
+
+  tasks:
+    # ****************************************************************************************************************************
+    #
+    # Load Default variables from default variable files
+    #
+    # ****************************************************************************************************************************
+    - name: Include Default Variables from files
+      ansible.builtin.include_vars:
+        dir: "{{ seaa_variables_directory }}/defaults"
+        ignore_unknown_extensions: true
+        extensions:
+          - 'yaml'
+      tags:
+        - always
+
+    # ****************************************************************************************************************************
+    #
+    # This custom module validates variables used in the seaa framework playbook run, this validation takes into count all 
+    # variable files and inventory files used for playbook run. The following is sudo code for the ansibel-inventory 
+    # command used with this module:
+    #
+    # ansible-inventory -i sample-inventory.yaml --list --yaml -e @<seaa_ansible_variables_dir>/config/seaa_config.yaml \
+    #   -e @<seaa_ansible_variables_dir>/protected/constants.yaml \
+    #   -e @<seaa_ansible_variables_dir>defaults/<all_default_files> \
+    #   -e 'SEAA_EXTRAVARS' environment variable
+    #
+    # By default the validation module uses the 'seaa_schema.yaml' file located as below:
+    # <seaa_ansible_variables_dir>/protected/seaa_schema.yaml
+    #
+    # ****************************************************************************************************************************
+    - name: Validate SEAA framework inventory and ansible variables
+      run_once: true
+      seaa_variables_validation:
+        inventory_source: "{{ ansible_inventory_sources }}"
+      tags: always
+    
+    # ****************************************************************************************************************************
+    #
+    # Print Contents of seaa_config.yaml - to show what current configuration of automated run is
+    #
+    # ****************************************************************************************************************************
+    - name: Display contents of SEAA framework configuration file
+      when: show_config_before_run
+      tags:
+        - always
+      block:
+        - name: Debug SEAA configuration file
+          ansible.builtin.debug:
+            var: item
+          with_file:
+            - "{{ seaa_variables_directory }}/config/seaa_config.yaml"
+        - name: Waiting for user response
+          ansible.builtin.pause:
+            prompt: Review seaa config, press enter to continue ...
+
+    # ****************************************************************************************************************************
+    # *
+    # *  Playbook section for deleting all z/OS Endpoint and Resources
+    # *
+    # ****************************************************************************************************************************
+
+    # ****************************************************************************************************************************
+    # Outline of ZPM Admin Steps to used in this Playbook to undeploy zStack
+    # *
+    # - name: Undeploy ZOAU on z/OS Endpoint
+    # - name: Undeploy Python on z/OS Endpoint
+    # - name: Undeploy OelCpp on z/OS Endpoint
+    # - name: Undeploy Nodejs on z/OS Endpoint
+    # - name: Undeploy Java on z/OS Endpoint
+    # - name: Undeploy Go on z/OS Endpoint
+    # - name: Undeploy ZPM on z/OS Endpoint
+    # - name: Undeploy z/OS Cloud Broker from OCP
+    #   - Remove Sub-Operators from Broker
+    #   - Remove z/OS Endpoint from Broker
+    #   - Delete Broker on OCP
+    #   - Remove Project from OCP_Cluster
+    # *
+    # ****************************************************************************************************************************
+
+    # ****************************************************************************************************************************
+    # *
+    # *  Playbook section for removing all OCP resources and installed product from z/OS Endpoint
+    # *
+    # ****************************************************************************************************************************
+    - name: Deploy IBM z/OS Cloud and Modernization Stack - Openshift z/OS Cloud Broker Operator and Sub-Operators
+      block:
+        # ****************************************************************************************************************************
+        # *
+        # - name: Undeploy ZOAU from z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Undeploy role/task tagged for ZOAU
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy == "undeploy"
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          vars:
+            # Need this so when tagging "oel-dev" role does not try to run each product deploy/undeploy
+            seaa_product: zoau
+            seaa_deploy_strategy: undeploy
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - oel-dev
+            - zoau
+
+        # ****************************************************************************************************************************
+        # *
+        # - name: Undeploy Python from z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Undeploy role/task tagged for Python
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy == "undeploy"
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          vars:
+            seaa_product: python
+            seaa_deploy_strategy: undeploy
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - oel-dev
+            - python
+
+        # ****************************************************************************************************************************
+        # *
+        # - name: Undeploy OelCpp from z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Undeploy role/task tagged for Oelcpp
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy == "undeploy"
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          vars:
+            seaa_product: oelcpp
+            seaa_deploy_strategy: undeploy
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - oel-dev
+            - oelcpp
+
+        # ****************************************************************************************************************************
+        # *
+        # - name: Undeploy Nodejs from z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Undeploy role/task tagged for Nodejs
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy == "undeploy"
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          vars:
+            seaa_product: nodejs
+            seaa_deploy_strategy: undeploy
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - oel-dev
+            - nodejs
+
+        # ****************************************************************************************************************************
+        # *
+        # - name: Undeploy Java from z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Undeploy role/task tagged for Java
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy == "undeploy"
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          vars:
+            seaa_product: java
+            seaa_deploy_strategy: undeploy
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - oel-dev
+            - java
+
+        # ****************************************************************************************************************************
+        # *
+        # - name: Undeploy Go from z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Undeploy role/task tagged for Go
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy == "undeploy"
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          vars:
+            seaa_product: go
+            seaa_deploy_strategy: undeploy
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - oel-dev
+            - go
+
+        # ****************************************************************************************************************************
+        # *
+        # Undeploy ZPM on z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Undeploy role/task tagged for z/OS Package Manager
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy == "undeploy"
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          vars:
+            seaa_product: zpm
+            seaa_deploy_strategy: undeploy
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          # tags:
+          #   - always
+          tags:
+            - oel-dev
+            - zpm
+
+
+        # ****************************************************************************************************************************
+        # *
+        # Install z/OS Cloud Broker
+        # *
+        # - TODO (*** Remove pre-req - catalog source has to exist on cluster***)
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Undeploy role/task tagged for z/OS Cloud Broker
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy == "undeploy"
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          vars:
+            seaa_product: zoscb
+            seaa_deploy_strategy: undeploy
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - always
+
+    # Dynamically INCLUDE ansible role
+    - name: Cleanup resources used by z/OS Dev role and purge ZPM and Broker instances if purge variable set
+      when:
+        - hostvars[current_ocphost]._is_active
+        - seaa_deploy_strategy == "undeploy"
+      ansible.builtin.include_role:
+        name: "zos_dev_envs"
+        tasks_from: cleanup.yml
+      vars:
+        seaa_deploy_strategy: undeploy
+      with_items:
+        - "{{ groups['ocphosts'] }}"
+      loop_control:
+        loop_var: current_ocphost
+      tags:
+        - always

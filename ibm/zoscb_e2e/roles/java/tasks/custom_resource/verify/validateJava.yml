@@ -1,0 +1,17 @@
+- name: "Retrieve sub-operator CR {{ validate_java.kind }}: '{{ validate_java.name }}'"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: "{{ validate_java.kind }}"
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ validate_java.name }}"
+    api_version: "{{ validate_java.apiVersion }}"
+  register: validate_java_info
+  until: "validate_java_info.resources is defined and validate_java_info.resources[0].status.phase !='Running'"
+  retries: "{{ seaa_verify_retries | int }}" # 30
+  delay: "{{ seaa_verify_delay | int }}" # 10
+
+- name: "Verify sub-operator CR {{ validate_java.kind }}: '{{ validate_java.name }}'"
+  ansible.builtin.assert:
+    that:
+      - validate_java_info.resources[0].status.phase == "Succeeded"
+  when: info_only is undefined

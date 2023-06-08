@@ -1,0 +1,162 @@
+---
+# ****************************************************************************************************************************
+# *
+# - Include task to set this_project_name from current_namespace for verify
+# *
+# ****************************************************************************************************************************
+- name: Set this_project_name
+  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_the_project_name.yml"
+  tags: always
+
+# ****************************************************************************************************************************
+# *
+# - Set "zos_endpoints" list for iterating multiple zos endpoint deployments
+# *
+# ****************************************************************************************************************************
+- name: Set zos endpoint list
+  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_inventory_zosendpoints.yml"
+  tags: always
+
+# ****************************************************************************************************************************
+# *
+# - IMPORTANT: Include zos endpoint variable dicstion used by each deplotment to iterate over zosendpoints in inventory
+# *
+# ****************************************************************************************************************************
+- name: Include variables endpoint variables
+  ansible.builtin.include_vars: "{{ zoscb_e2e_roles_directory | get_expanded_dir }}/ocp_cluster/vars/endpoints.yml"
+  tags: always
+  when: not endpoint_vars_loaded
+
+- name: Set endpoint_vars_loaded flag
+  ansible.builtin.set_fact:
+    endpoint_vars_loaded: true
+  when: not endpoint_vars_loaded
+
+# ****************************************************************************************************************************
+# *
+# - name: Verify ZOSCB on OCP CLUSTER
+# *
+# ****************************************************************************************************************************
+# Block to verify Cloud Broker
+- name: Verify Instance of z/OS Cloud Broker
+  # Need this so when tagging "oel-dev" role does not try to run each product verify/uninstall
+  when: seaa_product == 'zoscb'
+  tags:
+    - oel-dev
+    - zoscb
+  block:
+    # Verify z/OS Cloud Broker
+    - name: Verify z/OS Cloud Broker
+      ansible.builtin.include_tasks: "verify/zoscb.yml"
+
+# ****************************************************************************************************************************
+# *
+# - name: Verify ZPM on z/OS Endpoint
+# *
+# ****************************************************************************************************************************
+# Block for installing sub-operator product
+- name: Verify Instance of z/OS Package Manager
+  when: seaa_product == 'zpm'
+  tags:
+    - oel-dev
+    - zpm
+  block:
+    # Verify z/OS Package Manager
+    - name: Verify z/OS Package Manager
+      ansible.builtin.include_tasks: "verify/zpm.yml"
+
+# ****************************************************************************************************************************
+# *
+# - name: Verify Go on z/OS Endpoint
+# *
+# ****************************************************************************************************************************
+# Block for installing sub-operator product
+- name: Verify Instance of Go
+  when: seaa_product == 'go'
+  tags:
+    - oel-dev
+    - go
+  block:
+    # Verify Go
+    - name: Verify Go
+      ansible.builtin.include_tasks: "verify/go.yml"
+
+# ****************************************************************************************************************************
+# *
+# - name: Verify Java on z/OS Endpoint
+# *
+# ****************************************************************************************************************************
+# Block for installing sub-operator product
+- name: Verify Instance of Java
+  when: seaa_product == 'java'
+  tags:
+    - oel-dev
+    - java
+  block:
+    # Verify Java
+    - name: Verify Java
+      ansible.builtin.include_tasks: "verify/java.yml"
+
+# ****************************************************************************************************************************
+# *
+# - name: Verify Nodejs on z/OS Endpoint
+# *
+# ****************************************************************************************************************************
+# Block for installing sub-operator product
+- name: Verify Instance of Nodejs
+  when: seaa_product == 'nodejs'
+  tags:
+    - oel-dev
+    - nodejs
+  block:
+    # Verify Nodejs
+    - name: Verify Nodejs
+      ansible.builtin.include_tasks: "verify/nodejs.yml"
+
+# ****************************************************************************************************************************
+# *
+# - name: Verify OelCpp on z/OS Endpoint
+# *
+# ****************************************************************************************************************************
+# Block for installing sub-operator product
+- name: Verify Instance of Oelcpp
+  when: seaa_product == 'oelcpp'
+  tags:
+    - oel-dev
+    - oelcpp
+  block:
+    # Verify Oelcpp
+    - name: Verify Oelcpp
+      ansible.builtin.include_tasks: "verify/oelcpp.yml"
+
+# ****************************************************************************************************************************
+# *
+# - name: Verify Python on z/OS Endpoint
+# *
+# ****************************************************************************************************************************
+# Block for installing sub-operator product
+- name: Verify Instance of Python
+  when: seaa_product == 'python'
+  tags:
+    - oel-dev
+    - python
+  block:
+    # Verify Python
+    - name: Verify Python
+      ansible.builtin.include_tasks: "verify/python.yml"
+
+# ****************************************************************************************************************************
+# *
+# - name: Verify ZOAU on z/OS Endpoint
+# *
+# ****************************************************************************************************************************
+# Block for installing sub-operator product
+- name: Verify Instance of ZOAU
+  when: seaa_product == 'zoau'
+  tags:
+    - oel-dev
+    - zoau
+  block:
+    # Verify z/OS Open Automation Utility
+    - name: Verify z/OS Open Automation Utility
+      ansible.builtin.include_tasks: "verify/zoau.yml"

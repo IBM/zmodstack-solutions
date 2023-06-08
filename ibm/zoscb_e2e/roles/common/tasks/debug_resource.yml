@@ -1,0 +1,58 @@
+- name: Debug Resource Block
+  block:
+
+    - name: Set local log
+      ansible.builtin.set_fact:
+        local_nolog: true
+
+    - name: Set not is_resource_variable
+      ansible.builtin.set_fact:
+        is_resource_variable: false
+      no_log: "{{ local_nolog }}"
+
+    - name: Set fact is_resource_variable
+      ansible.builtin.set_fact:
+        is_resource_variable: true
+      when: resource_variable_kind is defined
+      no_log: "{{ local_nolog }}"
+
+    - name: Debug known OCP resource_variable
+      when: is_resource_variable
+      block:
+        - name: Debug '{{ resource_variable_kind }}' -> '{{ resource_variable_name }}'
+          ansible.builtin.debug:
+            var: resource_variable
+          when: seaa_automation.debug | bool
+
+    - name: Debug '{{ resource_variable.kind }}' -> '{{ resource_variable.name }}'
+      ansible.builtin.set_fact:
+        debug_msg: Debug '{{ resource_variable.kind }}' -> '{{ resource_variable.name }}'
+      when: not is_resource_variable and resource_variable.kind is defined
+      no_log: "{{ local_nolog }}"
+
+    - name: Debug resource kind '{{ resource_variable.resources[0].kind }}'
+      ansible.builtin.set_fact:
+        debug_msg: Debug '{{ resource_variable.resources[0].kind }}'
+      when: not is_resource_variable and resource_variable.resources[0].kind is defined
+      no_log: "{{ local_nolog }}"
+
+    - name: Debug unknown resource kind
+      ansible.builtin.set_fact:
+        debug_msg: Debug unknown resource kind
+      when: debug_msg is undefined and not is_resource_variable
+      no_log: "{{ local_nolog }}"
+
+    - name: Debug resource variable
+      when: not is_resource_variable
+      block:
+        - name: "{{ debug_msg }}"
+          ansible.builtin.debug:
+            var: resource_variable
+          when: seaa_automation.debug | bool
+
+    - name: Review resource variable attributes
+      ansible.builtin.pause:
+        prompt: Review resource variable attributes, press enter to continue ...
+      when:
+        - seaa_automation.prompt_during_automation | bool
+        - seaa_automation.debug | bool and (seaa_automation.track_resources is defined and seaa_automation.track_resources)

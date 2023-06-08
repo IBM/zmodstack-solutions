@@ -8,4 +8,4 @@
 
 ## Reporting a Vulnerability
 
-To report a security issue, please [raise an issue](https://github.com/IBM/operator-collection-sdk/issues) with a detailed description of the issue, the steps you took to create the issue, affected versions, and if known, mitigations for the issue.
+To report a security issue, please [raise an issue](https://github.com/IBM/zmodstack-solutions/issues) with a detailed description of the issue, the steps you took to create the issue, affected versions, and if known, mitigations for the issue.

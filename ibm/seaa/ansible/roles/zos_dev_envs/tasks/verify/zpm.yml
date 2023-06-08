@@ -1,0 +1,50 @@
+---
+# Include ansible variables for product sub-operator being verifyed
+- name: Include ZPM vars
+  ansible.builtin.include_vars:
+    file: "{{ zoscb_e2e_roles_directory }}/zpm/vars/main.yml"
+  when: not zpm_vars_loaded
+
+- name: Set zpm_vars_loaded flag
+  ansible.builtin.set_fact:
+    zpm_vars_loaded: true
+  when: not zpm_vars_loaded
+
+# Include sub operator role
+- name: "Include role: 'zpm'"
+  ansible.builtin.include_role:
+    name: "zpm"
+
+
+- name: Verify Operator Collection and SubOperator
+  block:
+
+    # VERIFY IMPORTED OPERATOR COLLECTION
+    - name: Verify operatorCollection
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/operator_collection/verify/operatorCollection.yml"
+
+    # VERIFY SUB-OPERATOR CONFIG
+    - name: Verify subOperatorConfig
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/operator_collection/verify/subOperatorConfig.yml"
+
+# Verify ZPM SUB-OPERATOR CUSTOM RESOURCES
+- name: Verify ZPM on each zosendpoint
+  ansible.builtin.include_tasks: "{{ zpm_cr_task_dir }}/verify/zpm.yml"
+  when:
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_software_instances | bool or info_only is defined
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint
+
+- name: Verify zpmDiagnostics on each zosendpoint
+  ansible.builtin.include_tasks: "{{ zpm_cr_task_dir }}/verify/zpmDiagnostics.yml"
+  when:
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_validate_crs | bool
+    - zpm_create_diagnostics_cr | bool
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint

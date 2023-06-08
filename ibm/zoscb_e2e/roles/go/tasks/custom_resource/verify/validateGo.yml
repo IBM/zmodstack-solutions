@@ -1,0 +1,17 @@
+- name: "Retrieve sub-operator CR {{ validate_go.kind }}: '{{ validate_go.name }}'"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: "{{ validate_go.kind }}"
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ validate_go.name }}"
+    api_version: "{{ validate_go.apiVersion }}"
+  register: validate_go_info
+  until: "validate_go_info.resources is defined and validate_go_info.resources[0].status.phase !='Running'"
+  retries: "{{ seaa_verify_retries | int }}" # 30
+  delay: "{{ seaa_verify_delay | int }}" # 10
+
+- name: "Verify sub-operator CR {{ validate_go.kind }}: '{{ validate_go.name }}'"
+  ansible.builtin.assert:
+    that:
+      - validate_go_info.resources[0].status.phase == "Succeeded"
+  when: info_only is undefined

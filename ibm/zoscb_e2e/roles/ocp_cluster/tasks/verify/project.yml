@@ -1,0 +1,62 @@
+---
+- name: "Retrieve Project: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: Project
+    name: "{{ project_namespace.name }}"
+    api_version: "{{ project_namespace.apiVersion }}"
+  register: project_info
+
+- name: "Verify namespace: '{{ project_namespace.name }}'"
+  ansible.builtin.assert:
+    that:
+      - project_info.resources[0].status.phase == "Active"
+  when: info_only is undefined
+
+- name: Set default should deploy fact to true
+  ansible.builtin.set_fact:
+    should_deploy_project: true
+
+- name: Set flag if project should deploy
+  when:
+    - info_only is defined
+    - not config_var_seaa_deploy_resource_ifpresent
+  block:
+
+    # Set Project is deployed fact
+    - name: Set resource has api and resources deployed
+      ansible.builtin.set_fact:
+        has_project_info: true
+      when:
+        - project_info is defined
+        - project_info | type_debug != "NoneType"
+        - project_info | length > 0
+        - project_info | json_query('resources') is not none
+        - project_info.resources | length > 0
+        - project_info.resources[0].status.phase == "Active"
+        - project_info.resources[0].metadata.annotations | length > 0
+
+    - name: Check if openshift.io/description field exists
+      # ansible.builtin.debug:
+      #   msg: "The openshift.io/description field exists."
+      ansible.builtin.set_fact:
+        has_real_ocpproject_info: true
+      when:
+        - project_info.resources[0].metadata.annotations["openshift.io/description"] is defined
+        - project_info.resources[0].metadata.annotations["openshift.io/display-name"] is defined
+        - project_info.resources[0].metadata.annotations["openshift.io/requester"] is defined
+
+    # Set Project is deployed fact with expected values
+    - name: Check if resource be deploy or if it is the same as the one being deployed
+      ansible.builtin.set_fact:
+        should_deploy_project: false
+      when:
+        - has_real_ocpproject_info is defined and has_real_ocpproject_info
+        # Check Deployed resource attributes
+        - project_info.resources[0].metadata.annotations['openshift.io/description'] == project_namespace.description
+        - project_info.resources[0].metadata.annotations['openshift.io/display-name'] == project_namespace.display_name
+        - project_info.resources[0].metadata.annotations['openshift.io/requester'] == project_namespace.requester
+  always:
+    - name: Reset flags for resoucre info validation
+      ansible.builtin.set_fact:
+        has_project_info: false

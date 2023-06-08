@@ -1,0 +1,21 @@
+#jinja2: lstrip_blocks: True
+---
+kind: "{{ go_instance.kind }}"
+apiVersion: "{{ go_instance.apiVersion }}"
+metadata:
+  name: "{{ go_instance.name }}"
+spec:
+{% if go_instance.licenseAccept == true %}
+  accept: true
+{% else %}
+  accept: false
+{% endif %}
+{% if zpm_consolidated_operator | bool == true %}
+  product_name: {{ oc_product.code_name }}
+{% endif %}
+  product_ver: "{{ go_instance.productVersion }}"
+  zosendpoint: "{{ go_instance.zosEndpoint }}"
+{% if oc_product.credential_type == "personal" %}
+  credential: "ssh-key-{{ endpoint.username }}-{{ endpoint.name }}"
+{% endif %}
+

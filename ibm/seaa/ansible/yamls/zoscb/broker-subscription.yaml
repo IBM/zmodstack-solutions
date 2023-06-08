@@ -1,0 +1,13 @@
+---
+kind: Subscription
+apiVersion: "{{ broker_subscription.apiVersion }}"
+metadata:
+  name: "{{ broker_subscription.name }}"
+spec:
+  channel: "{{ broker_subscription.channel }}"
+  installPlanApproval: "{{ broker_subscription.installPlanApproval }}"
+  name: "{{ broker_subscription.name }}"
+  source: "{{ broker_subscription.source }}"
+  sourceNamespace: "{{ broker_subscription.sourceNamespace }}"
+  startingCSV: "{{ broker_subscription.name }}.v{{ broker_subscription.version }}"
+  apiVersion: operators.coreos.com/v1alpha1

@@ -1,0 +1,16 @@
+---
+kind: Route
+apiVersion: "{{ route.apiVersion }}"
+metadata:
+  name: "{{ route.name }}"
+spec:
+  to:
+    kind: "{{ route.toKind }}"
+    name: "{{ route.toName }}"
+    weight: {{ route.weight | int }}
+  port:
+    targetPort: "{{ route.targetPort }}"
+  tls:
+    termination: "{{ route.tlsTermination }}"
+    insecureEdgeTerminationPolicy: "{{ route.tlsInsecureEdgeTerminationPolicy }}"
+  wildcardPolicy: "{{ route.wildcardPolicy }}"

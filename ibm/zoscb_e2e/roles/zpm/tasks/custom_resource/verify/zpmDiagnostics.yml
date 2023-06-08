@@ -1,0 +1,37 @@
+- name: "Info_only Retrieve sub-operator CR {{ zos_package_manager_diagnostics.kind }}: '{{ zos_package_manager_diagnostics.name }}'"
+  when: info_only is defined
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: "{{ zos_package_manager_diagnostics.kind }}"
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ zos_package_manager_diagnostics.name }}"
+    api_version: "{{ zos_package_manager_diagnostics.apiVersion }}"
+  register: zos_package_manager_diagnostics_info_only
+
+- name: Debug resource
+  ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/debug_resource.yml"
+  vars:
+    resource_variable: "{{ zos_package_manager_diagnostics_info_only }}"
+  when: info_only is defined and seaa_automation.debug | bool
+
+- name: "Retrieve sub-operator CR {{ zos_package_manager_diagnostics.kind }}: '{{ zos_package_manager_diagnostics.name }}'"
+  when: info_only is undefined
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: "{{ zos_package_manager_diagnostics.kind }}"
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ zos_package_manager_diagnostics.name }}"
+    api_version: "{{ zos_package_manager_diagnostics.apiVersion }}"
+  register: zos_package_manager_diagnostics_info
+  # until: "zos_package_manager_diagnostics_info.resources is defined and zos_package_manager_diagnostics_info.resources[0].status.phase !='Running'"
+  until: "zos_package_manager_diagnostics_info.resources is defined and
+          zos_package_manager_diagnostics_info.resources | length > 0"
+  retries: "{{ seaa_verify_retries | int }}" # 30
+  delay: "{{ seaa_verify_delay | int }}" # 10
+
+- name: "Verify sub-operator CR {{ zos_package_manager_diagnostics.kind }}: '{{ zos_package_manager_diagnostics.name }}'"
+  ansible.builtin.assert:
+    that:
+      - "'{{ zos_package_manager_diagnostics.finalizers[0] }}' in zos_package_manager_diagnostics_info.resources[0].metadata.finalizers"
+      - zos_package_manager_diagnostics_info.resources[0].status.phase == "Succeeded"
+  when: info_only is undefined

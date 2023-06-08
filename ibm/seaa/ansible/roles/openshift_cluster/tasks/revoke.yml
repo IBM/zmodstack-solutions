@@ -1,0 +1,9 @@
+---
+- name: Revoke access token if it has been defined
+  when: openshift_auth_token is defined
+  community.okd.openshift_auth:
+    state: absent
+    api_key: "{{ openshift_token }}"
+    host: "{{ openshift_host }}"
+    validate_certs: "{{ validate_openshift_certs }}"
+    ca_cert: "{{ openshift_cert }}"

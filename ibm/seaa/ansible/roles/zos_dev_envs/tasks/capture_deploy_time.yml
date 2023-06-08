@@ -1,0 +1,31 @@
+---
+# Block to capture wait time to add to deploy script
+- name: Capture Deploy Wait time
+  when:
+    - seaa_automation_strategy != "deploy_yaml"
+    - seaa_capture_deployment_wait_time | bool and start_tstamp_ns is defined
+  no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+  block:
+
+    - name: Get timestamp from the system
+      ansible.builtin.shell: "echo $(($(date +'%s * 1000 + %-N / 1000000')))"
+      register: end_tstamp_ns
+      changed_when: end_tstamp_ns.rc == 0
+
+    - name: Get timestamp from the system
+      ansible.builtin.shell: "echo $(({{ end_tstamp_ns.stdout | int - start_tstamp_ns.stdout | int }}))"
+      register: time_lapse
+      changed_when: time_lapse.rc == 0
+
+    - name: Include task to generate Secret yaml file
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_cmd.yml"
+      vars:
+        command_to_execute: "sleep"
+        script_command: "waitFor{{ deploy_type | capitalize }}ment"
+        deploy_kind: "{{ resource_kind }}" # OperatorCollection
+        timelapse: "{{ (time_lapse.stdout | float) // 1000 }}"
+        script_command_string: "{{ (time_lapse.stdout | float) // 1000 }} {{ _deploy_file }}"
+        script_command_comment: "{{ _script_command_comment }}"
+        deployment_file: "{{ _deployment_file }}"
+        deploy_name: "{{ _deploy_name }}"
+        deploy_file: "{{ _deploy_file }}"

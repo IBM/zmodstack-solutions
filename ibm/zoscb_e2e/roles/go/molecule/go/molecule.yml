@@ -1,0 +1,61 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+driver:
+  name: delegated
+  options:
+    managed: True
+    ansible_connection_options: {}
+lint: |
+  set -e
+  ansible-lint
+platforms:
+- name: Ubuntu
+  groups:
+  - k8s
+provisioner:
+  name: ansible
+  env:
+    OCP_CLUSTER_HOSTNAME: ${OCP_CLUSTER_HOSTNAME:-"<host_name>"}
+    OCP_CLUSTER_PORT: ${OCP_CLUSTER_PORT:-6443}
+    OCP_CLUSTER_AUTH_TOKEN: ${OCP_CLUSTER_AUTH_TOKEN:-"default-notoken"}
+
+    NAMESPACE_NAME: ${NAMESPACE_NAME:-"default-zoscb-e2e"}
+
+    ROUTE_NAME: ${ROUTE_NAME:-"e2e-automation-route"}
+
+    OC_PRODUCT_NAME: ${OC_PRODUCT_NAME:-"zos-go"}
+    OC_PRODUCT_API_VERSION: ${OC_PRODUCT_API_VERSION:-"zoscb.ibm.com/v2beta1"}
+    OC_PRODUCT_FINALIZER: ${OC_PRODUCT_FINALIZER:-"operatorcollections.zoscb.ibm.com/finalizer"}
+
+    SUBOP_CONFIG_API_VERSION: ${SUBOP_CONFIG_API_VERSION:-"zoscb.ibm.com/v2beta1"}
+    SUBOP_CONFIG_FINALIZER: ${SUBOP_CONFIG_FINALIZER:-"suboperatorconfigs.zoscb.ibm.com/finalizer"}
+
+    GO_INSTANCE_NAME: ${GO_INSTANCE_NAME:-"example-go"}
+    GO_INSTANCE_KIND: ${GO_INSTANCE_KIND:-"GoInstance"}
+    GO_INSTANCE_API_VERSION: ${GO_INSTANCE_API_VERSION:-"zos-go.zpm.zoscb.ibm.com/v0minor1patch28"}
+    GO_INSTANCE_FINALIZER: ${GO_INSTANCE_FINALIZER:-"zos-go.zpm.zoscb.ibm.com/finalizer"}
+    GO_INSTANCE_LICENSE_ACCEPT: ${GO_INSTANCE_LICENSE_ACCEPT:-true}
+    GO_INSTANCE_PRODUCT_VERSION: ${GO_INSTANCE_PRODUCT_VERSION:-"1.17.0.1"}
+
+    VALIDATE_GO_NAME: ${VALIDATE_GO_NAME:-"example-validate-go"}
+    VALIDATE_GO_KIND: ${VALIDATE_GO_KIND:-"ValidateGo"}
+    VALIDATE_GO_API_VERSION: ${VALIDATE_GO_API_VERSION:-"zos-go.zpm.zoscb.ibm.com/v0minor1patch28"}
+    VALIDATE_GO_FINALIZER: ${VALIDATE_GO_FINALIZER:-"zos-go.zpm.zoscb.ibm.com/finalizer"}
+verifier:
+  name: ansible
+scenario:
+  name: go
+  test_sequence:
+    - dependency
+    - lint
+    - syntax
+    - create
+    - prepare
+    - converge
+    - side_effect
+    - verify
+    - cleanup
+    - destroy

@@ -1,0 +1,49 @@
+- name: "Info Only Retrieve z/OS endpoint: '{{ endpoint.name }}' from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+  when: info_only is defined
+  block:
+
+    - name: "Info Only Retrieve z/OS endpoint: '{{ endpoint.name }}' from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      kubernetes.core.k8s_info:
+        api_key: "{{ ocp_cluster.auth_token }}"
+        kind: "{{ endpoint.kind }}" # ZosEndpoint
+        namespace: "{{ project_namespace.name }}"
+        name: "{{ endpoint.name }}"
+        api_version: "{{ endpoint.apiVersion }}"
+      register: endpoint_info_only
+
+    # Check if endpoint exist
+    - name: Check if resource info exist
+      ansible.builtin.set_fact:
+        zosendpoint_not_found: true
+      when:
+        - endpoint_info_only | json_query('resources') is none or
+          endpoint_info_only.resources | length == 0
+
+    # Check if endpoint Port matches deployed endpoints port
+    - name: Check por endpoint info exist
+      ansible.builtin.set_fact:
+        zosendpoint_not_found: true
+      when:
+        - not zosendpoint_not_found
+        - endpoint_info_only.resources[0].spec.port != endpoint.port
+
+- name: "Retrieve z/OS endpoint: '{{ endpoint.name }}' from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+  when: info_only is undefined
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: "{{ endpoint.kind }}" # ZosEndpoint
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ endpoint.name }}"
+    api_version: "{{ endpoint.apiVersion }}"
+  register: endpoint_info
+  until:
+    - "endpoint_info.resources is defined and endpoint_info.resources | length > 0"
+  retries: "{{ seaa_verify_retries | int }}" # 30
+  delay: "{{ seaa_verify_delay | int }}" # 10
+
+- name: "Verify endpoint: '{{ endpoint.name }}'"
+  when: info_only is undefined
+  ansible.builtin.assert:
+    that:
+      - endpoint_info.resources[0].metadata.creationTimestamp != ""
+      - "'zosendpoints.zoscb.ibm.com/finalizer' in endpoint_info.resources[0].metadata.finalizers"

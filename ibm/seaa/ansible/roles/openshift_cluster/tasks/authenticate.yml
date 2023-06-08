@@ -1,0 +1,33 @@
+---
+- name: Set fact local_secure_log
+  ansible.builtin.set_fact:
+    local_secure_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+- name: Wait for user to proceed
+  ansible.builtin.pause:
+    prompt: seaa_security_secure_log should ALWAYS be set to 'true' UNLESS DEBUGGING authentication issue!!!
+  when: not local_secure_log
+
+- name: Authenticate
+  no_log: "{{ local_secure_log }}"
+  community.okd.openshift_auth:
+    username: "{{ openshift_cluster_username }}"
+    password: "{{ openshift_cluster_password }}"
+    host: "{{ openshift_host }}"
+    validate_certs: "{{ validate_openshift_certs }}"
+    ca_cert: "{{ openshift_cert }}"
+  register: openshift_auth_results
+  until:
+    - openshift_auth_results.failed == false
+    - openshift_auth_results.openshift_auth.api_key != ""
+  delay: 10
+  retries: 3
+
+- name: Debug authenticate status
+  when: seaa_automation.debug is defined and seaa_automation.debug | bool
+  no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+  block:
+
+    - name: Debug var
+      ansible.builtin.debug:
+        var: openshift_auth_results

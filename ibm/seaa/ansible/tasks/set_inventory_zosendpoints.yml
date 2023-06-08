@@ -1,0 +1,22 @@
+---
+- name: Set List of z/OS Endpoints
+  tags: always
+  no_log: "{{ not seaa_automation.debug | bool }}"
+  block:
+
+    - name: Clear zos_endpoints
+      ansible.builtin.set_fact:
+        zos_endpoints: ""
+
+    - name: Set List of z/OS Endpoints to map
+      when: hostvars[current_zosendpoint]._is_active
+      ansible.builtin.set_fact:
+        zos_endpoints: "{{ zos_endpoints | default() }},{{ current_zosendpoint }}"
+      with_items:
+        - "{{ groups['zosendpoints'] }}"
+      loop_control:
+        loop_var: current_zosendpoint
+
+    - name: Set zos_endpoints array fact
+      ansible.builtin.set_fact:
+        zos_endpoints: "{{ zos_endpoints | trim_and_strip_firstchar }}"

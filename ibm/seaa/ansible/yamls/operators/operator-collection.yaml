@@ -1,0 +1,20 @@
+#jinja2: lstrip_blocks: True
+---
+apiVersion: "{{ oc_product.apiVersion }}"
+kind: OperatorCollection
+metadata:
+  name: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
+spec:
+{% if oc_product.skipVerify == true %}
+  collectionURL: "{{ oc_download_uri }}"
+  skipSignatureVerification: true
+{% else %}
+  {% if zpm_consolidated_operator | bool == false %}
+  collectionURL: "{{ oc_signature_uri~'/v'~oc_product.oc_version~'/'~operator_name~'.tar.gz' }}"
+  {% else %}
+  collectionURL: "{{ oc_download_uri }}"
+  {% endif %}
+  skipSignatureVerification: false
+  signatureSecret: signature-{{ oc_product.short_name }}-{{ oc_product.oc_version }}
+{% endif %}
+

@@ -1,0 +1,84 @@
+---
+# CREATE NAMESPACE
+- name: Create OpenShift project
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/create/project.yml"
+  when:
+    - seaa_deploy_role == "admin" or seaa_developer_deploys_namespace | bool
+    - should_deploy_project is undefined or should_deploy_project
+
+# ADD developer PERSONAL Secrets
+- name: Add developer secrets
+  when:
+    - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+    - seaa_deploy_role == "developer"
+  block:
+    # Include ansible variables for product sub-operator being installed
+    - name: Include SubOperator vars
+      ansible.builtin.include_vars:
+        file: "{{ zoscb_e2e_roles_directory }}/zpm/vars/main.yml"
+      when: not subop_vars_loaded
+
+    - name: Set subop_vars_loaded flag
+      ansible.builtin.set_fact:
+        subop_vars_loaded: true
+      when: not subop_vars_loaded
+
+    - name: Manage Secret for OC
+      when:
+        - hostvars[current_zosendpoint]._is_active
+      ansible.builtin.include_role:
+        name: openshift_cluster
+        tasks_from: manage_secrets
+      vars:
+        deploy_type: "{{ seaa_deploy_strategy }}"
+        resource_kind: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
+        cred_type: "{{ oc_product.credential_type }}"
+      with_items:
+        - "{{ groups['zosendpoints'] }}"
+      loop_control:
+        loop_var: current_zosendpoint
+
+# CREATE PERSISTENT VOLUME CLAIM
+- name: Create PVC
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/create/persistentVolumeClaim.yml"
+  when:
+    - broker_instance.storage.configure
+    - not broker_instance.storage.enabled
+    - seaa_deploy_role == "admin"
+
+# CREATE OPERATOR GROUP
+- name: Create operator group
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/create/operatorGroup.yml"
+  when:
+    - seaa_deploy_role == "admin" # TODO Discuss with latrell shoul Devs deploy own projects
+
+# CREATE Z CLOUD BROKER SUBSCRIPTION
+- name: Create broker subscription
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/create/brokerSubscription.yml"
+  when:
+    - seaa_deploy_role == "admin"
+
+# CREATE Z CLOUD BROKER INSTANCE
+- name: Create broker instance
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/create/brokerInstance.yml"
+  when:
+    - seaa_deploy_role == "admin"
+
+# CREATE INSECURE ROUTE
+- name: Create route
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/create/route.yml"
+  when:
+    - seaa_automation_strategy == "inline"
+    - seaa_deploy_role == "admin" or seaa_developer_deploys_namespace | bool
+
+# CREATE ENDPOINT
+- name: Create zosendpoints
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/create/endpoint.yml"
+  when:
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_role == "admin"
+    - seaa_deploy_zosendpoints | bool
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint

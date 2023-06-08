@@ -1,0 +1,10 @@
+- name: "Delete directory: 'oc_file'"
+  ansible.builtin.file:
+    path: "{{ zoscb_e2e_roles_directory }}/{{ oc_product.short_name }}/oc_file/"
+    state: absent
+
+- name: "Recreate directory: 'oc_file'"
+  ansible.builtin.file:
+    path: "{{ zoscb_e2e_roles_directory }}/{{ oc_product.short_name }}/oc_file/"
+    mode: '755'
+    state: directory

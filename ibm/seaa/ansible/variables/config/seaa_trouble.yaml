@@ -1,0 +1,26 @@
+# *******************************************************************************
+# Dictionary to help with seaa interactive automation and debugging
+# Currently to override this the entire dictionary has to be provided since
+# hash merging in ansible is deprecated
+# *******************************************************************************
+seaa_automation:
+
+  # Enable ability to prompt during automation runs
+  # - during prompt verify (Ansible Variable, Automation Configuration and Custom Resources) before allowing automation to continue
+  prompt_during_automation: false
+
+  # Turn on debugging for deploying/undeploying stack resources
+  debug: false
+
+  # Turn on additional tracking of resource creation
+  track_resources: false
+
+# *******************************************************************************
+# Trouble shoot security related issues
+# WARNING: only set these security variable to 'false' when debugging issues on local workstation runs
+# *******************************************************************************
+# Debug issues with authenticating with ocp cluster
+seaa_security_secure_log: true
+
+# Debug issues with 1password vault integration
+seaa_security_secure_log_1password: true

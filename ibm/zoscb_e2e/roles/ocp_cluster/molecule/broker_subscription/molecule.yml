@@ -1,0 +1,51 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    collections-path: "~/.ansible/collections/"
+driver:
+  name: delegated
+  options:
+    managed: True
+    ansible_connection_options: {}
+lint: |
+  set -e
+  ansible-lint
+platforms:
+- name: Ubuntu
+  groups:
+  - k8s
+provisioner:
+  name: ansible
+  env:
+    OCP_CLUSTER_HOSTNAME: ${OCP_CLUSTER_HOSTNAME:-"<host_name>"}
+    OCP_CLUSTER_PORT: ${OCP_CLUSTER_PORT:-6443}
+    OCP_CLUSTER_AUTH_TOKEN: ${OCP_CLUSTER_AUTH_TOKEN:-"default-notoken"}
+
+    NAMESPACE_NAME: ${NAMESPACE_NAME:-"default-zoscb-e2e"}
+
+    BROKER_SUBSCRIPTION_NAME: ${BROKER_SUBSCRIPTION_NAME:-"ibm-zoscb"}
+    BROKER_SUBSCRIPTION_VERSION: ${BROKER_SUBSCRIPTION_VERSION:-"2.1.0"}
+    BROKER_SUBSCRIPTION_API_VERSION: ${BROKER_SUBSCRIPTION_API_VERSION:-"operators.coreos.com/v1alpha1"}
+    BROKER_SUBSCRIPTION_CHANNEL: ${BROKER_SUBSCRIPTION_CHANNEL:-"v2.1"}
+    BROKER_SUBSCRIPTION_INSTALL_PLAN_APPROVAL: ${BROKER_SUBSCRIPTION_INSTALL_PLAN_APPROVAL:-"Automatic"}
+    BROKER_SUBSCRIPTION_SOURCE: ${BROKER_SUBSCRIPTION_SOURCE:-"ibm-operator-catalog"}
+    BROKER_SUBSCRIPTION_SOURCE_NAMESPACE: ${BROKER_SUBSCRIPTION_SOURCE_NAMESPACE:-"openshift-marketplace"}
+verifier:
+  name: ansible
+scenario:
+  name: broker_subscription
+  test_sequence:
+    - dependency
+    - lint
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - side_effect
+    - verify
+    - cleanup
+    - destroy

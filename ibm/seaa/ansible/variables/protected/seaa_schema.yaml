@@ -1,0 +1,96 @@
+# Define variable based on the following 
+# Current IMPLEMENTATION - Variable listed has to exist for all host groups and is always required if listed
+# variable_types: <type>
+#
+# possible types: https://docs.ansible.com/ansible/latest/dev_guide/developing_program_flow_modules.html#argument-spec
+# str
+# list
+# dict
+# bool
+# int
+# float
+# path
+# raw
+# jsonarg
+# json
+# bytes
+# bits
+---
+# namespace_names:
+#     data_type: list,
+#     inventory_group:
+#       - name: all
+#         required: true
+#         domain: all  
+namespace_names: 
+ - list
+ - str
+_is_active: bool
+ansible_connection: str
+ansible_host: str
+ansible_python_interpreter: str # <Provide Your Controlling Host Python Location>
+ansible_port: int # <Change if necessary>
+ansible_user: str #<z/OS user id>
+
+#****************************************************************************************
+# TODO: FUTURE IMPLEMENTATION
+# variable_types = {
+#     'variable_name':
+#         data_type: <list_variable_types>,
+#         enums: <accepted values list>
+#         inventory_inventory_group:
+#           - name: <group name>
+#             required: (true | false)
+#             domain: # Where the variable can be defined 
+#               [ all | extra-vars*(all variables can be set) | inventory (group and host vars) | default-files (seaa and component vars) ]
+# }
+#
+# 1) Need to add SEAA config values 
+
+# 2) Some inventory group var examples under consideration:
+# INVENTORY GROUP - 'OCPHOSTS'
+#
+# Openshift auth token
+# (Optional) Provide this token for the 'ansible_user' defined if 1Password is not configured to authenticate to the OCP host.
+# cluster_auth_token:
+#     data_type: str,
+#     inventory_group:
+#       - name: ocphosts
+#         required: true (tricky one is required when running local and no 1Password)
+
+# pvc_storage_class_name:
+
+# INVENTORY GROUP - 'ZOSENDPOINTS'
+# zpm_bash_dir - Condition with 'go' tag
+#
+# Filepath to SSH key used to connect from OCP to z/OS endpoint
+# example: "{{ lookup('env', 'HOME') }}/.ssh/id_zstack"
+# ansible_ssh_private_key_file: str #<LOCAL_PATH_TO_SSH_PRIVATE_KEY_USED_CONNECT_TO_ZOS_ENDPOINT>
+#     data_type: str,
+#     inventory_group:
+#       - name: zosendpoints
+#         required: true
+#
+# (Optional) Passphrase for SSH key used to connect from OCP to z/OS endpoint
+# ssh_passphrase: # <ADD_PASSPHRASE_FOR_SSH_KEY_TO_CONNECT_TO_ZOS_ENDPOINT_IF_SET>
+#     data_type: str,
+#     inventory_group:
+#       - name: zosendpoints
+#         required: false
+#
+# ZPM install directory not used if zpm_install_dir_prefix is provided
+# (Optional) default '/usr/lpp/IBM/zpm' located in <se-ansible-dir>/variables/defaults/zpm.yaml
+# zpm_install_dir: str # <Fully qualified location to ZPM install directory>
+#     data_type: str,
+#     inventory_group:
+#       - name: zosendpoints
+#         required: true ?? mutually exclusive with install_dir_prefix
+#
+# ZPM state directory not used if zpm_install_dir_prefix is provided
+# (Optional)-  default '/var/zpm' located in <se-ansible-dir>/variables/defaults/zpm.yaml
+# zpm_state_dir: str # <Fully qualified location to ZPM state directory>
+#     data_type: str,
+#     inventory_group:
+#       - name: zosendpoints
+#         required: true mutually exclusive with state_dir_prefix
+#   

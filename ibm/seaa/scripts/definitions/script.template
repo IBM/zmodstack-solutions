@@ -1,0 +1,79 @@
+#!/bin/sh
+#
+# Description:
+# <Add Text>
+#
+# For additional usage information use "--help" flag as input to script.
+#
+# Example to run script:
+# <Add Example to run script with required parms>
+#
+# **************************************************************************************************#
+# Print usage
+function printUsage {
+  echo "Usage: $(basename "$0"): " >&2
+  echo "  * --<Add Required Parm>=* (short '-<AddRPShort>=*') - <Add Required Parm Description>" >&2
+  echo "  ^ --<Add Conditional Parm>=* (short '-<AddCPShort>=*') - <Add Conditional Parm Description>" >&2
+  echo "    --<Add Optional Parm>=* (short '-<AddOPShort>==*') -< Add Optional Parm Description>" >&2
+}
+
+# Define environment variable for ansible call coopy this to solutions-enablement/scenarios/scripts/definitions/.env file
+# export <UPPERCASE_ADD_SCRIPT_NAME>_SCRIPT_DEF="script_name=<ADD_SCRIPT_NAME>.sh script_args=' \
+#    --<Add Required Parm>={{<Add Required Parm>}} \
+#    --<Add Conditional Parm>={{<Add Conditional Parm>}} \
+#    --<Add Optional Parm>={{<Add Optional Parm>}}'"
+
+# Parse command line
+function parseCommandLine {
+    for i in "$@"; do
+        case $i in
+            --<Add Required Parm>=*|-<AddRPShort>=*)
+                <Add Required Parm>==${i#*=}
+        ;;
+            --<Add Conditional Parm>=*|-<AddCPShort>=*)
+                <Add Conditional Parm>==${i#*=}
+        ;;
+            --<Add Optional Parm>=*|-<AddOPShort>=*)
+                <Add Optional Parm>==${i#*=}
+        ;;
+            -debug)
+                set -x
+		;;
+            --help)
+                printUsage;
+                exit 0;
+        ;;
+            *)
+                echo "Unrecognized option: $i"
+                printUsage;
+                exit 1;
+                ;;
+        esac
+    done
+}
+
+# Main function to run script
+function main {
+
+  #Parse command line
+  parseCommandLine "$@"
+
+  # Verify required parameters
+  if [[ -z "$<Add Required Parm>" ]]; then
+      echo "Not all required parameters provided. Please check usage below and re-run script with all required parameters:" >&2
+      printUsage
+      exit 4
+  fi
+
+  ...
+
+  <Add Scripting>
+}
+
+# Defaults
+<Add Required Parm>=<some default or null>
+<Add Conditional Parm>=<some default or null>
+<Add Optional Parm>=<some default or null>
+
+# Run script main
+main "$@"

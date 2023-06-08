@@ -1,0 +1,65 @@
+---
+# ****************************************************************************************************************************
+# *
+# - Include task to set this_project_name from current_namespace for deployment
+# *
+# ****************************************************************************************************************************
+- name: Set this_project_name
+  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_the_project_name.yml"
+  tags: always
+
+# Include Authentication and cache initialization task to reset authentecate host
+- name: Authentication Initialize Cache and Authenticate
+  ansible.builtin.include_tasks: "init_cache.yml"
+
+# Set smart feploy flags and verify current zpm and zoswcb installation status
+- name: Smart Deploy Setup
+  when:
+    - seaa_zoscb_smart_deploy | bool or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yaml"
+  vars:
+    seaa_product: cleanup
+  tags: always
+  block:
+    - name: Set up ssmart deploy and generate variables
+      ansible.builtin.include_tasks: "smart_deploy_and_generate.yml"
+  rescue:
+    - name: Debug rescue error
+      ansible.builtin.debug:
+        msg: "Caught an error while setting up smart deploying on {{ current_ocphost }}"
+
+- name: Check ocp_cluster_cache dictionary for existing token for current ocp host
+  ansible.builtin.set_fact:
+    existing_host_token: >-
+      {{ ocp_cluster_cache
+        | json_query(jmespath)
+      }}
+  when:
+    - ocp_cluster_cache is defined and ocp_cluster_cache != None
+  vars:
+    jmespath: "cached[? ocp_host=='{{ current_ocphost }}'].token"
+  no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+- name: Set flag for existing cached host to true
+  ansible.builtin.set_fact:
+    openshift_auth_token: "{{ existing_host_token[0] }}"
+  when:
+    - existing_host_token|type_debug != "NoneType"
+    - existing_host_token | length > 0
+
+# Remove ZPM, Broker and revoke Auth tokens
+- name: Undeploy ZPM
+  when:
+    - seaa_zpm_smart_deploy | bool or seaa_deploy_strategy == "testing"
+  # Undeploy ZPM
+  ansible.builtin.include_tasks: "undeploy/zpm.yml"
+  vars:
+    seaa_product: zpm
+
+# Remove ZPM, Broker and revoke Auth tokens
+- name: Undeploy z/OS Cloud Broker
+  # Undeploy z/OS Cloud Broker
+  when:
+    - (seaa_zoscb_smart_deploy | bool and seaa_zpm_smart_deploy | bool) or seaa_deploy_strategy == "testing"
+  ansible.builtin.include_tasks: "undeploy/zoscb.yml"
+  vars:
+    seaa_product: zoscb
