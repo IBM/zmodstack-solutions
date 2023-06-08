@@ -15,27 +15,27 @@ The following table provides details about variable files used with the Solution
 <tbody>
   <tr>
     <td rowspan="3">config/</td>
-    <td><a href=" https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/config/.config">.config</a>     </td>
+    <td><a href="https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/config/.config">.config</a>     </td>
     <td>SEAA framework configuration/setup</td>
   </tr>
-  <tr><td><a href=" https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/config/seaa_config.yaml">seaa_config</a></td>
+  <tr><td><a href="https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/config/seaa_config.yaml">seaa_config</a></td>
     <td>Control automation for SEAA framework</td></tr>
 	<tr><td><a href=" https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/config/seaa_config.yaml">seaa_trouble</a></td>
     <td>Troubleshooting SEAA framework</td></tr>
 <tr>
     <td rowspan="4">defaults/</td>
-    <td><a href=" https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/defaults/ocp.yaml">ocp</a>     </td>
+    <td><a href="https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/defaults/ocp.yaml">ocp</a>     </td>
     <td>Default variables for Openshift cluster</td>
   </tr>
-  <tr><td><a href=" https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/defaults/zoscb.yaml">zoscb</a></td>
+  <tr><td><a href="https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/defaults/zoscb.yaml">zoscb</a></td>
     <td>Default variables for z/OS Cloud Broker</td></tr>
-	<tr><td><a href=" https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/defaults/zpm.yaml">zpm</a></td>
+	<tr><td><a href="https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/defaults/zpm.yaml">zpm</a></td>
     <td>Default variables for z/OS Package Manager</td></tr>
-	<tr><td><a href=" https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/defaults/zproducts.yaml">zproducts</a></td>
+	<tr><td><a href="https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/defaults/zproducts.yaml">zproducts</a></td>
     <td>Default variables for z/OS products being deployed/undeployed</td></tr>
 <tr>
 	<td>protected/</td>
-	<td><a href=" https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/protected/constants.yaml">constants</a></td>
+	<td><a href="https://github.com/IBM/zmodstack-solutions/blob/main/ibm/seaa/ansible/variables/protected/constants.yaml">constants</a></td>
     <td>Constants used by the seaa framework that should not changed</td></tr>
 	</tbody>
 	</table>
