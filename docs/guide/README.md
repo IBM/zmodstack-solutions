@@ -12,7 +12,7 @@
 |Ansible [playbooks](/ibm/seaa/ansible/playbooks/README.md), [tasks](/ibm/seaa/ansible/tasks/README.md), [roles](/ibm/seaa/ansible/roles/README.md), [run_playbook scripts](/ibm/seaa/scripts/run_playbooks/README.md)|To deploy stack components
 |Admin shell [scripts](/ibm/seaa/scripts/admin/README.md) |To run administer stack resources on OpenShift cluster and z/OS endpoints. 
 
-See the [configuration](/ibm/seaa/ansible/variables/config/seaa_config.yaml) variables used to determine how automation behaves along with [tags](/docs/guide/seaa-tags.md) from the specific [playbook](/ibm/seaa/ansible/playbooks/README.md) from the list of playbooks.
+See the [configuration](/ibm/seaa/ansible/variables/config/seaa_config.yaml) variables used to control how automation runs along with [tags](/docs/guide/seaa-tags.md) used for the specific [playbook](/ibm/seaa/ansible/playbooks/README.md) being run.
 
 ## Framework Architectural Diagram
 ![Architectural Diagram](../images/seaa-architectural-diagram.png)
