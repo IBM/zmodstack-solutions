@@ -7,6 +7,6 @@
 <!-- - [zos-zos-admin-scripts](zos/zos-admin-scripts.yml) - Playbook for running scripts for z/OS endpoint admin task -->
 
 ---
-## [back to framework guide](/zmodstack-solutions/docs/guide/README.md)
+## [back to framework guide](/docs/guide/README.md)
 
 

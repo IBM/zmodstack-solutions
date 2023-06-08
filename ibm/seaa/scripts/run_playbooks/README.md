@@ -5,4 +5,4 @@ The following scripts used to run playbooks in the solutions repo.
 - run-undeploy-oel-dev-env.sh - Undeploy IBM Open Enterprise Languages to a z/OS Endpoint
 
 ---
-## [back to framework guide](/zmodstack-solutions/docs/guide/README.md)
+## [back to framework guide](/docs/guide/README.md)
