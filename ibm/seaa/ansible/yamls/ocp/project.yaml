@@ -1,0 +1,31 @@
+#jinja2: lstrip_blocks: True
+---
+kind: Project
+apiVersion: "{{ project_namespace.apiVersion }}"
+metadata:
+  name: "{{ project_namespace.name }}"
+  annotations:
+    openshift.io/description: "{{ project_namespace.description }}" #${project_description}
+    openshift.io/display-name: "{{ project_namespace.display_name }}" #${project_displayname}
+    openshift.io/requester: "{{ authenticated_user | default(project_namespace.requester, true) | trim }}" #${project_requesting_user}
+spec:
+  finalizers:
+    - kubernetes
+{% if not (seaa_developer_deploys_namespace | bool) and broker_instance.multiNamespace is defined and
+      broker_instance.multiNamespace == true and multi_namespaces | length > 0 and seaa_automation_strategy == "generate_yaml" %}
+# CREATE MULTI-NAMESPACES
+{% for m_namespace in multi_namespaces %}
+---
+kind: Project
+apiVersion: "{{ project_namespace.apiVersion }}"
+metadata:
+  name: "{{ m_namespace }}"
+  annotations:
+    openshift.io/description: "{{ project_namespace.description }} {multi-namespace}" #${project_description}
+    openshift.io/display-name: "{{ project_namespace.display_name }}" #${project_displayname}
+    openshift.io/requester: "{{ authenticated_user | default(project_namespace.requester, true) | trim }}" #${project_requesting_user}
+spec:
+  finalizers:
+    - kubernetes
+{% endfor %}
+{% endif %}

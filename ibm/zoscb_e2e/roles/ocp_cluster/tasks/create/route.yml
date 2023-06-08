@@ -1,0 +1,60 @@
+- ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/debug_resource.yml"
+  vars:
+    resource_variable: "{{ route }}"
+    resource_variable_kind: Route
+    resource_variable_name: "{{ route.name }}"
+  when: seaa_automation.debug | bool
+
+- name: Create route
+  when: seaa_automation_strategy == "inline"
+  block:
+    - name: "Create route: '{{ route.name }}' in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ project_namespace.name }}"
+        api_key: "{{ ocp_cluster.auth_token }}"
+        definition:
+          kind: Route
+          apiVersion: "{{ route.apiVersion }}"
+          metadata:
+            name: "{{ route.name }}"
+            namespace: "{{ project_namespace.name }}"
+          spec:
+            to:
+              kind: "{{ route.toKind }}"
+              name: "{{ route.toName }}"
+              weight: "{{ route.weight }}"
+            port:
+              targetPort: "{{ route.targetPort }}"
+            tls:
+              termination: "{{ route.tlsTermination }}"
+              insecureEdgeTerminationPolicy: "{{ route.tlsInsecureEdgeTerminationPolicy }}"
+            wildcardPolicy: "{{ route.wildcardPolicy }}"
+
+- name: Create route with YAML file
+  when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+  block:
+
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/ocp/route.yaml"
+        destination_file: "route.yaml"
+        is_ocp_resource: true
+
+    - name: "Create route with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/ocp/route.yaml') | from_yaml }}"
+      register: mapped_suboperator
+
+    - name: "Check for creation of Route  '{{ route.name }}' in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      ansible.builtin.pause:
+        prompt: "Create Route resource with Native YAML API, press enter to continue ...:"
+      when:
+        - seaa_automation.prompt_during_automation | bool
+        - seaa_automation.track_resources | bool

@@ -1,0 +1,44 @@
+#jinja2: lstrip_blocks: True
+---
+kind: "{{ broker_instance.kind }}"
+apiVersion: "{{ broker_instance.apiVersion }}"
+metadata:
+  name: "{{ broker_instance.name }}"
+spec:
+  license:
+{% if broker_instance.license.accept == true %}
+    accept: true
+{% else %}
+    accept: false
+{% endif %}
+{% if broker_instance.multiNamespace is defined and broker_instance.multiNamespace == true %}
+  multiNamespace: true
+{% else %}
+  multiNamespace: false
+{% endif %}
+  logLevel: "{{ broker_instance.loglevel }}"
+  resources:
+      limits:
+        cpu: "{{ broker_instance.resources.limits.cpu }}" #"200m"
+        memory: "{{ broker_instance.resources.limits.memory }}" #"256Mi"
+        ephemeral-storage: "{{ broker_instance.resources.limits.ephemeralStorage }}"
+      requests:
+        cpu: "{{ broker_instance.resources.requests.cpu }}"  #"100m"
+        memory: "{{ broker_instance.resources.requests.memory }}" #"128Mi"
+        ephemeral-storage: "{{ broker_instance.resources.requests.ephemeralStorage }}"
+  storage:
+{% if broker_instance.storage.configure == true %}
+    configure: true
+{% else %}
+    configure: false
+{% endif %}
+{% if broker_instance.storage.enabled == true %}
+    enabled: true
+{% else %}
+    enabled: false
+{% endif %}
+    pvc: "{{ broker_instance.storage.pvc }}"
+    size: "{{ broker_instance.storage.size }}"
+    storageClassName: "{{ broker_instance.storage.storageClassName }}"
+    volumeMode: "{{ broker_instance.storage.volumeMode }}"
+    accessModes: "{{ broker_instance.storage.accessMode }}"

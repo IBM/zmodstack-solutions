@@ -1,0 +1,10 @@
+---
+# .ansible-lint
+exclude_paths:
+  - molecule
+
+warn_list:
+  - command-instead-of-module
+
+skip_list:
+  - name[template]

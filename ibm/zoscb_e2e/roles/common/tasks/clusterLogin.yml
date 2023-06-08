@@ -1,0 +1,11 @@
+---
+# Use auth token to login to the cluster
+- name: "Login to OpenShift cluster: 'https://{{ ocp_cluster.ipaddress | default(ocp_cluster.hostname, true) }}:{{ ocp_cluster.port }} \
+          ' -> Authentication Method: Token-Based"
+  when: ocp_cluster.auth_token is defined
+  ansible.builtin.command: "oc login --token={{ ocp_cluster.auth_token }} \
+    --server=https://{{ ocp_cluster.ipaddress | default(ocp_cluster.hostname, true) }}:{{ ocp_cluster.port }} \
+    {{ '--insecure-skip-tls-verify' if not config_var_cluster_validate_certs | bool else '--certificate-authority='~config_var_cluster_cacert }}"
+  no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+  register: cluster_login
+  changed_when: cluster_login.rc != 0

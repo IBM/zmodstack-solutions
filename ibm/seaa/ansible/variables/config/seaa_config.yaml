@@ -1,0 +1,191 @@
+---
+# *******************************************************************************
+# z/OS Cloud and Modernization Stack automation configuration
+# *******************************************************************************
+
+# *******************************************************************************
+# Deploy related automation properties
+# *******************************************************************************
+
+# Auto deploy or undeploy z/OS Cloud Broker if it is deployed or not deployed
+# for seaa_deploy_strategy = 'undeploy' if this and 'seaa_purge_namespace' ZOSCB and ZPM will be undeployed
+seaa_zoscb_smart_deploy: true
+
+# Auto deploy z/OS Package Manager if it is not deployed
+# for seaa_deploy_strategy = 'deploy' this will only deploy if 'seaa_zoscb_smart_deploy' is set to true and broker is deployed
+# for seaa_deploy_strategy = 'undeploy' if this and 'seaa_purge_namespace' is true ZPM can be deployed without undeploying ZOSCB
+seaa_zpm_smart_deploy: true
+
+# Auto purge zpm, broker and OCP project namespace when undeploying and smart deploy is enabled
+seaa_purge_namespace: false
+
+# Set strategy of deployment possible values are deploy | undeploy | verify | testing (deploy, verify and undeploy)
+# "testing" deploy strategy only supported with deploy_yaml 'seaa_automation_strategy'
+seaa_deploy_strategy: deploy # deploy | undeploy | verify | testing
+
+# Users deployment role admin (default) | developer (can deploy projects, secrets, SubOp, software and validate instances)
+seaa_deploy_role: admin
+
+# Boolean to control if ZosEndpoints should be deployed default(true)
+seaa_deploy_zosendpoints: true
+
+# Boolean to control if operator collection should be deployed default(true)
+seaa_deploy_operator_collections: true
+
+# Boolean to control if sub-operator should be deployed default(true)
+seaa_deploy_suboperator: true
+
+# Boolean to control if product software instances should be deployed default(true)
+seaa_deploy_software_instances: true
+
+# Boolean to control if Validate Product software instances should be deployed default(false)
+seaa_deploy_validate_crs: true
+
+# Deploy SubOp Config to admin project (namespace) that is deploying broker instance
+seaa_deploy_suboc_to_admin_namespaces: true
+
+# IfNotPresent - create CRs only if state and object are not present otherwise use what is there, if it matches k8s verification/retrieve
+# Deploy resources (currently only implemented for OCP Projects because of issue on OCP 4.12) if they already present
+seaa_deploy_resource_ifpresent: true # Can be set in inventory per ocphost group
+
+# Flag to determine if developer 'seaa_deploy_role' developer role are able to deploy their own namespaces
+seaa_developer_deploys_namespace: false
+
+# Flag to deploy SSH Key secrets
+seaa_deploy_secrets: true
+
+
+
+
+# *******************************************************************************
+# Security related automation properties
+# *******************************************************************************
+
+# Default password vault item name default(se-login)
+seaa_security_password_vault_item: se-login
+
+# Encrypt secrets during deployment default(true)
+seaa_encrypt_secrets: true
+
+# Encrypt sensitive endpoint variables
+seaa_encrypt_sensitive_endpoint_vars: true
+
+# Ansible Vault ID
+# seaa_ansible_vault_id: "{{ lookup('env', 'SEAA_ANSIBLE_VAULT_ID') }}" #TODO and use with env var - ANSIBLE_VAULT_ID_MATCH
+
+# Path to ansible-vault password file used to encrypted content used in playbook
+seaa_ansible_vault_password_file: "{{ lookup('env', 'SEAA_ANSIBLE_VAULT_PASSWORD_FILE') }}"
+
+# Path to encrypted SSH Key file
+seaa_path_to_encrypted_files: "{{ seaa_ansible_directory }}/secrets"
+
+# Flag to use TLS with OCP login
+cluster_validate_certs: false  # Can be set in inventory per ocphost group
+
+# OCP cert to use for host when 'cluster_validate_certs' is true
+cluster_cacert: # "{{ lookup('env', 'KUBE_LB_SIGNER') }}"  # Can be set in inventory per ocphost group
+
+
+
+
+# *******************************************************************************
+# Generated YAML deployment files properties
+# *******************************************************************************
+
+# Define the automation strategy for k8s resources  default(deploy_yaml)
+# Set automation strategy using values generate_deploy_yaml, deploy_yaml, generate_yaml, inline (to-be - deprecated)
+# - "deploy_yaml" (default) - deploy or undeploy resources using native YAML API
+# - "generate_yaml" - generate Native YAML, script and readme files for deployment or undeployment
+# - "generate_deploy_yaml" - generate Native YAML, script and readme files and deploy or undeploy resources using native YAML API
+seaa_automation_strategy: deploy_yaml # deploy_yaml | generate_yaml | generate_deploy_yaml | inline (deprecated)
+
+# Output Directory for generated YAML files default(se ansible directory /yamls)
+seaa_yaml_output_dir: "{{ seaa_ansible_directory }}/yamls"
+
+# Name of top-level directory for generated content in the seaa_yaml_output_dir
+seaa_generated_content_dirname: _seaa_
+
+# Use the OCP host name in the generated YAML output directory if more than one ocphost is defined. default(true)
+# Note: if this is set to false and more than one host exist for the 'ocphost' then the ocphost name is appended to the
+# YAML output directory name - with the following naming convention: '{{ current_ocphost~'__'~project_namespace.name }}''
+seaa_seperate_generation_by_ocphost_dir: true # true | false | always
+
+# If deployment script exist append deployment steps, if false clear deployment steps default(false)
+seaa_append_to_deployment_script: false
+
+# Boolean to add the zProduct version number to the instance being deployed
+seaa_append_version_to_software_instances: true
+
+# Always delete the output directory if it exist and 'seaa_append_to_deployment_script' flag is not 'true'
+seaa_delete_outdir_if_exist: true
+
+# Boolean to copy endpoint zpm install and state dirs to endpoint
+# TODO REMOVE THIS
+seaa_copy_zpm_dir_params_to_endpoint: false
+
+# Continue deployment script on errors default(false)
+seaa_deployment_script_continue_on_error: false
+
+# Prompt during deployment executing steps default(true)
+seaa_prompt_during_deploy_script_run: true
+
+# Capture time to wait on deploying Operators and Sub-Operators in deploy scripts default(true)
+seaa_capture_deployment_wait_time: true
+
+
+
+
+# *******************************************************************************
+# ZOSCB automation properties
+# *******************************************************************************
+
+# *******************************************************************************
+# ZPM and Sub operator automation properties
+# *******************************************************************************
+
+# Flag to determine if deploying consolidated ZPM operator (no additional SUB-Operators for zProducts)
+#  if this is set to "true the 'seaa_deploy_operator_collections' and 'seaa_deploy_suboperator' variables are ignored for
+#  deploying/undeploying Operator Collections or Sub-operators for zProducts that have Broker v2.1 operators
+zpm_consolidated_operator: true
+
+# Delimiter to use when generating zpm directories with zpm_install_dir_prefix
+# Default - '/' creates a subdirectory for each ocp host that is deploying to the zos endpoint
+zpm_directory_delm: /
+
+# Used to determine how to organize directories on endpoints for deployed resources
+# host (default) - <INSTALL_DIR>/host/namespace
+# namespace - <INSTALL_DIR>/namespace/host
+zpm_directory_org_by: host # host | namespace
+
+# Name to append to zpm_install_dir for state directory if zpm_state_dir not specified
+zpm_append_dirname_to_state_dir: state
+
+
+
+# *******************************************************************************
+# Variables to configure timeouts and error handling when deploying and undeploying resources
+# *******************************************************************************
+# Set Deploy parameters for how many times to retry and delay between retries when creating CR's
+seaa_deploy_retries: 150 #150
+seaa_deploy_delay: 10
+
+# Set Deploy waiting parameters
+seaa_deploy_wait_timeout: 600
+
+# Set Undeploy waiting parameters
+seaa_undeploy_wait: true
+seaa_undeploy_wait_timeout: 400
+
+seaa_undeploy_namespace_wait_timeout: 800
+
+# Should undeploy task continue even on error (Warning this could leave orphaned CR's that will require manual cleanup,
+# this parameter does not apply to removing the OCP projects
+seaa_undeploy_continue_on_error: true
+
+# Set Deploy parameters for how many times to retry and delay between retries when creating CR's
+seaa_verify_retries: 30
+seaa_verify_delay: 10
+
+# Temporary fix for deleting projects that get recreated after undeploy script,
+# if this is set to true a two minute sleep is added before second deletion of project
+seaa_delete_project_twice: true

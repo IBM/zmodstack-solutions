@@ -1,0 +1,48 @@
+---
+- name: Set OC version for Galaxy mode
+  ansible.builtin.set_fact:
+    oc_version: "{{ oc_product.oc_version }}"
+  when: oc_product.import_mode == 'galaxy'
+
+- name: "Delete sub-operator config: '{{ oc_product.name }}' from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+  when: seaa_automation_strategy == "inline"
+  kubernetes.core.k8s:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    state: absent
+    namespace: "{{ project_namespace.name }}"
+    kind: SubOperatorConfig
+    api_version: "{{ subop_config.apiVersion }}"
+    label_selectors:
+      - "instance-name = {{ broker_instance.name }}"
+      - "name = {{ oc_product.name }}"
+    wait: "{{ seaa_undeploy_wait | bool }}" # yes
+    wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}" # 600
+
+- name: Block to delete sub-operator with YAML
+  when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+  # when: (csv_exist is defined and not csv_exist and seaa_automation_strategy == "generate_deploy_yaml") or seaa_automation_strategy == "generate_yaml"
+  block:
+
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/operators/sub-operator-config.yaml"
+        destination_file: "{{ oc_product.short_name }}-{{ oc_product.oc_version }}_soc.yaml"
+        is_suboperator_config: true
+
+    - name: "Undeploy mapped suboperator  With YAML '{{ oc_product.name }}.zpm.{{ oc_version }}-suboperatorconfig' from '{{ project_namespace.name }}' on '\
+            {{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: absent
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/sub-operator-config.yaml') | from_yaml }}"
+        label_selectors:
+          - "instance-name = {{ broker_instance.name }}"
+        wait: "{{ seaa_undeploy_wait | bool }}" # yes
+        wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}" # 600
+        continue_on_error: "{{ seaa_undeploy_continue_on_error | bool }}"
+      ignore_errors: "{{ seaa_undeploy_continue_on_error | bool }}"
+      register: delete_mapped_suboperator

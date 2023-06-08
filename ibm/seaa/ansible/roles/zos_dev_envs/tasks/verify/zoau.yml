@@ -1,0 +1,52 @@
+---
+# Include ansible variables for product sub-operator being verifyed
+- name: Include ZOAU vars
+  ansible.builtin.include_vars:
+    file: "{{ zoscb_e2e_roles_directory }}/zoau/vars/main.yml"
+  when: not zoau_vars_loaded
+
+- name: Set zoau_vars_loaded flag
+  ansible.builtin.set_fact:
+    zoau_vars_loaded: true
+  when: not zoau_vars_loaded
+
+# Include sub operator role
+- name: "Include role: 'zoau'"
+  ansible.builtin.include_role:
+    name: "zoau"
+
+
+- name: Verify Operator Collection and SubOperator
+  when:
+    - not zpm_consolidated_operator | bool
+  block:
+
+    # VERIFY IMPORTED OPERATOR COLLECTION
+    - name: Verify operatorCollection
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/operator_collection/verify/operatorCollection.yml"
+
+    # VERIFY SUB-OPERATOR CONFIG
+    - name: Verify subOperatorConfig
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/operator_collection/verify/subOperatorConfig.yml"
+
+# Verify ZOAU SUB-OPERATOR CUSTOM RESOURCES
+- name: Verify zoauInstance on each zosendpoint
+  ansible.builtin.include_tasks: "{{ zoau_cr_task_dir }}/verify/zoauInstance.yml"
+  when:
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_software_instances | bool
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint
+
+- name: Verify validateZoau on each zosendpoint
+  ansible.builtin.include_tasks: "{{ zoau_cr_task_dir }}/verify/validateZoau.yml"
+  when:
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_validate_crs | bool
+    - sub_operator_zoau_create_validate_cr | bool
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint

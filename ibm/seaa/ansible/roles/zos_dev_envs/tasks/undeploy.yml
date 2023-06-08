@@ -1,0 +1,279 @@
+---
+# ****************************************************************************************************************************
+# *
+# - Include task to set this_project_name from current_namespace for deployment
+# *
+# ****************************************************************************************************************************
+- name: Set this_project_name
+  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_the_project_name.yml"
+  tags: always
+
+# ****************************************************************************************************************************
+# *
+# - Set "zos_endpoints" list for iterating multiple zos endpoint deployments
+# *
+# ****************************************************************************************************************************
+- name: Set zos endpoint list
+  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_inventory_zosendpoints.yml"
+  tags: always
+
+# ****************************************************************************************************************************
+# *
+# - Set smart feploy flags and verify current zpm and zoswcb installation status
+# *
+# ****************************************************************************************************************************
+- name: Smart Deploy Setup
+  tags: always
+  when:
+    - seaa_zoscb_smart_deploy | bool or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yaml"
+  block:
+
+    - name: Setup Smart Deploy and Generate
+      ansible.builtin.include_tasks: "smart_deploy_and_generate.yml"
+  rescue:
+    - name: Debug rescue error
+      ansible.builtin.debug:
+        msg: "Caught an error while setting up smart deploying on {{ current_ocphost }}"
+
+- name: Undeploy  IBM Z and Cloud Modernization Stack  component
+  block:
+
+    # ****************************************************************************************************************************
+    # *
+    # - IMPORTANT: Include zos endpoint variable dicstion used by each deplotment to iterate over zosendpoints in inventory
+    # *
+    # ****************************************************************************************************************************
+    - name: Include variables endpoint variables
+      ansible.builtin.include_vars: "{{ zoscb_e2e_roles_directory | get_expanded_dir }}/ocp_cluster/vars/endpoints.yml"
+      tags: always
+      when: not endpoint_vars_loaded
+
+    - name: Set endpoint_vars_loaded flag
+      ansible.builtin.set_fact:
+        endpoint_vars_loaded: true
+      when: not endpoint_vars_loaded
+
+    # ****************************************************************************************************************************
+    # *
+    # - name: Undeploy ZOAU from z/OS Endpoint
+    # *
+    # ****************************************************************************************************************************
+    # Block for Undeploying sub-operator product
+    - name: Undeploy Instance of ZOAU
+      # Need this so when tagging "oel-dev" role does not try to run each product deploy/Undeploy
+      when: seaa_product == 'zoau'
+      tags:
+        - oel-dev
+        - zoau
+      block:
+        # Undeploy z/OS Open Automation Utilty
+        - name: Undeploy z/OS Open Automation Utilty
+          ansible.builtin.include_tasks: "undeploy/zoau.yml"
+
+    # ****************************************************************************************************************************
+    # *
+    # - name: Undeploy Python from z/OS Endpoint
+    # *
+    # ****************************************************************************************************************************
+    # Block for undeploying sub-operator product
+    - name: Undeploy Instance of Python
+      # Need this so when tagging "oel-dev" role does not try to run each product deploy/Undeploy
+      when: seaa_product == 'python'
+      tags:
+        - oel-dev
+        - python
+      block:
+        # Undeploy Python
+        - name: Undeploy Python
+          ansible.builtin.include_tasks: "undeploy/python.yml"
+
+    # ****************************************************************************************************************************
+    # *
+    # - name: Undeploy OelCpp from z/OS Endpoint
+    # *
+    # ****************************************************************************************************************************
+    # Block for undeploying sub-operator product
+    - name: Undeploy Instance of Oelcpp
+      # Need this so when tagging "oel-dev" role does not try to run each product deploy/Undeploy
+      when: seaa_product == 'oelcpp'
+      tags:
+        - oel-dev
+        - oelcpp
+      block:
+        # Undeploy Open CPP
+        - name: Undeploy Open CPP
+          ansible.builtin.include_tasks: "undeploy/oelcpp.yml"
+
+    # ****************************************************************************************************************************
+    # *
+    # - name: Undeploy Nodejs from z/OS Endpoint
+    # *
+    # ****************************************************************************************************************************
+    # Block for undeploying sub-operator product
+    - name: Undeploy Instance of Nodejs
+      # Need this so when tagging "oel-dev" role does not try to run each product deploy/Undeploy
+      when: seaa_product == 'nodejs'
+      tags:
+        - oel-dev
+        - nodejs
+      block:
+        # Undeploy NodeJS
+        - name: Undeploy NodeJS
+          ansible.builtin.include_tasks: "undeploy/nodejs.yml"
+
+    # ****************************************************************************************************************************
+    # *
+    # - name: Undeploy Java from z/OS Endpoint
+    # *
+    # ****************************************************************************************************************************
+    # Block for Undeploying sub-operator product
+    - name: Undeploy Instance of Java
+      # Need this so when tagging "oel-dev" role does not try to run each product deploy/Undeploy
+      when: seaa_product == 'java'
+      tags:
+        - oel-dev
+        - java
+      block:
+        # Undeploy Java
+        - name: Undeploy Java
+          ansible.builtin.include_tasks: "undeploy/java.yml"
+
+    # ****************************************************************************************************************************
+    # *
+    # - name: Undeploy Go from z/OS Endpoint
+    # *
+    # ****************************************************************************************************************************
+    # Block for undeploying sub-operator product
+    - name: Undeploy Instance of Go
+      # Need this so when tagging "oel-dev" role does not try to run each product deploy/Undeploy
+      when: seaa_product == 'go'
+      tags:
+        - oel-dev
+        - go
+      block:
+        # Undeploy Go
+        - name: Undeploy Go
+          ansible.builtin.include_tasks: "undeploy/go.yml"
+
+    # ****************************************************************************************************************************
+    # *
+    # Undeploy ZPM on z/OS Endpoint
+    # *
+    # ****************************************************************************************************************************
+    # ****************************************************************************************************************************
+    # *
+    # - name: Verify ZPM on z/OS Endpoint
+    # *
+    # ****************************************************************************************************************************
+    # Block for installing sub-operator product
+    - name: Undeploy Instance of z/OS Package Manager
+      # Need this so when tagging "oel-dev" role does not try to run each product deploy/Undeploy
+      when:
+        - (seaa_zoscb_smart_deploy | bool and seaa_zpm_smart_deploy | bool and seaa_product == 'zpm') or
+          (seaa_product == 'zpm')
+      tags:
+        - oel-dev
+        - zpm
+      block:
+        - name: Verify ZPM is deployd whn smart deploy is true
+          when: seaa_zpm_smart_deploy | bool
+          block:
+            # Verify z/OS Package Manager
+            - name: Verify z/OS Package Manager
+              ansible.builtin.include_tasks: "verify/zpm.yml"
+              vars:
+                info_only: true
+
+            # Set zpm deployed fact
+            - name: Set zpm_deploy_verified fact
+              ansible.builtin.set_fact:
+                zpm_deploy_verified: true
+              when:
+                - zos_package_manager_info_only is defined and zos_package_manager_info_only.api_found
+                - zos_package_manager_info_only.resources is defined
+                - zos_package_manager_info_only.resources | length > 0
+
+        # Undeploy z/OS Cloud Broker
+        - name: Undeploy z/OS Cloud Broker
+          ansible.builtin.include_tasks: "undeploy/zpm.yml"
+          when:
+            - (zpm_deploy_verified is defined and zpm_deploy_verified) or
+              (not seaa_zoscb_smart_deploy | bool and not seaa_zpm_smart_deploy | bool and seaa_product == 'zpm')
+      always:
+        - name: Set zoscb_undeployed fact
+          ansible.builtin.set_fact:
+            zpm_undeployed: true
+
+    # ****************************************************************************************************************************
+    # *
+    # Undeploy z/OS Cloud Broker
+    # *
+    # - TODO (*** Remove pre-req - catalog source has to exist on cluster***)
+    # ****************************************************************************************************************************
+    # ****************************************************************************************************************************
+    # *
+    # - name: Verify ZOSCB on OCP CLUSTER
+    # *
+    # ****************************************************************************************************************************
+    - name: Undeploy Instance of z/OS Cloud Broker
+      # Need this so when tagging "oel-dev" role does not try to run each product deploy/undeploy
+      when:
+        (seaa_zoscb_smart_deploy | bool and seaa_product == 'zoscb') or
+        (seaa_product == 'zoscb')
+      tags:
+        - oel-dev
+        - zoscb
+      block:
+        - name: Verify ZOSCB is deployd when smart deploy is true
+          when: seaa_zoscb_smart_deploy | bool
+          block:
+
+            # Verify z/OS Cloud Broker
+            - name: Verify z/OS Cloud Broker
+              ansible.builtin.include_tasks: "verify/zoscb.yml"
+              vars:
+                info_only: true
+
+            # Set zoscb deployed fact
+            - name: Set zoscb_deploy_verified fact
+              ansible.builtin.set_fact:
+                zoscb_deploy_verified: true
+              when:
+                - broker_instance_info_only.api_found
+                - broker_instance_info_only.resources is defined
+                - broker_instance_info_only.resources | length > 0
+
+        - name: Check if Broker needs to be undeployed
+          when: seaa_automation.debug | bool
+          tags: always
+          block:
+
+            - name: Debug var broker_instance_info_only
+              ansible.builtin.debug:
+                var: broker_instance_info_only
+            - name: Debug var zoscb_deploy_verified
+              ansible.builtin.debug:
+                var: zoscb_deploy_verified
+            - name: Debug var seaa_product
+              ansible.builtin.debug:
+                var: seaa_product
+
+            - name: Waiting for user response
+              ansible.builtin.pause:
+                prompt: Check if Broker needs to be undeployed, press enter to continue ...
+              when: seaa_automation.prompt_during_automation | bool
+
+        # Undeploy z/OS Cloud Broker
+        - name: Undeploy z/OS Cloud Broker
+          ansible.builtin.include_tasks: "undeploy/zoscb.yml"
+          when:
+            - (zoscb_deploy_verified is defined and zoscb_deploy_verified) or
+              (not seaa_zoscb_smart_deploy | bool and seaa_product == 'zoscb')
+      always:
+        - name: Set zoscb_undeployed fact
+          ansible.builtin.set_fact:
+            zoscb_undeployed: true
+  always:
+    - name: Unset this_project_name after iteration
+      ansible.builtin.set_fact:
+        this_project_name: none

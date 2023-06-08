@@ -1,0 +1,43 @@
+---
+# ************************************
+# OpenShift variables defaults can be changed in inventory for OCP hosts
+# *************************************
+
+# *************************************
+# OCP Project/Namespace variables
+# *************************************
+project_description: "Project created via SEAA framework"
+project_displayname: "** seaa automated **"
+
+#This is the default value and only used if authenticated user is not in cache
+project_requesting_user: # no-name
+
+# Default project name:
+namespace_name:
+
+# *************************************
+# PVC
+# *************************************
+pvc_name: zoscloudbroker
+pvc_api_version: v1
+pvc_access_mode: ReadWriteMany
+pvc_storage: 5Gi
+pvc_volume_mode: Filesystem
+pvc_storage_class_name: rook-cephfs
+
+# *************************************
+# Tekton Variables -
+# *************************************
+operator_group_name: se-automation-og
+
+# *************************************
+# Broker Automation passthrough UI Route
+# *************************************
+route_name: se-automation-route
+route_to_kind: Service
+route_to_name: ibm-zoscb-ui-zoscloudbroker
+route_target_port: ui-port
+route_tls_termination: passthrough
+route_tls_insecure_edge_termination_policy: None
+route_wildcard_policy: None
+route_weight: 100

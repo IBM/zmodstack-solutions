@@ -1,0 +1,313 @@
+###############################################################################
+# © Copyright IBM Corporation 2022
+###############################################################################
+
+###############################################################################
+# Requirements/Limitations:
+#    - This playbook is called from script: solutions-enablement/scenarios/scripts/run_playbooks/run-deploy-oel-dev-env.sh
+#
+###############################################################################
+---
+- name: Deploy OEL-Dev-Env-aaS Playbook
+  hosts: localhost
+  become: false
+  gather_facts: false
+
+  vars_files:
+    # Reference ZSTACK ansible variable constants  (**** Requires "seaa_variables_directory" variable to be set for this playbook ****)
+    - "{{ seaa_variables_directory }}/config/seaa_config.yaml"
+    - "{{ seaa_variables_directory }}/config/seaa_trouble.yaml"
+    - "{{ seaa_variables_directory }}/protected/constants.yaml"
+
+  tasks:
+
+    # ****************************************************************************************************************************
+    # *
+    # Load Default variables from default variable files
+    # *
+    # ****************************************************************************************************************************
+    - name: Include Default Variables from files
+      ansible.builtin.include_vars:
+        dir: "{{ seaa_variables_directory }}/defaults"
+        ignore_unknown_extensions: true
+        extensions:
+          - 'yaml'
+      tags:
+        - always
+
+    # ****************************************************************************************************************************
+    #
+    # This custom module validates variables used in the seaa framework playbook run, this validation takes into count all 
+    # variable files and inventory files used for playbook run. The following is sudo code for the ansibel-inventory 
+    # command used with this module:
+    #
+    # ansible-inventory -i sample-inventory.yaml --list --yaml -e @<seaa_ansible_variables_dir>/config/seaa_config.yaml \
+    #   -e @<seaa_ansible_variables_dir>/protected/constants.yaml \
+    #   -e @<seaa_ansible_variables_dir>defaults/<all_default_files> \
+    #   -e 'SEAA_EXTRAVARS' environment variable
+    #
+    # By default the validation module uses the 'seaa_schema.yaml' file located as below:
+    # <seaa_ansible_variables_dir>/protected/seaa_schema.yaml
+    #
+    # ****************************************************************************************************************************
+    - name: Validate SEAA framework inventory and ansible variables
+      run_once: true
+      seaa_variables_validation:
+        inventory_source: "{{ ansible_inventory_sources }}"
+      tags: always
+
+    # ****************************************************************************************************************************
+    # *
+    # Print Contents of seaa_config.yaml - to show what current configuration of automated run is
+    # *
+    # ****************************************************************************************************************************
+    - name: Display contents of SEAA framework configuration file
+      when: show_config_before_run
+      tags:
+        - always
+      block:
+        - name: Debug var item
+          ansible.builtin.debug:
+            var: item
+          with_file:
+            - "{{ seaa_variables_directory }}/config/seaa_config.yaml"
+        - name: Waiting for user response
+          ansible.builtin.pause:
+            prompt: Review seaa config, press enter to continue ...
+
+    # ****************************************************************************************************************************
+    # *
+    # *  Playbook section for creating all OCP resources to install zCMS on z/OS Endpoint
+    # *
+    # ****************************************************************************************************************************
+
+    # ****************************************************************************************************************************
+    # *
+    # *  Playbook section for creating all z/OS Endpoint and Resources
+    # *
+    # ****************************************************************************************************************************
+    # Sysprog Creates z/OS Endpoint Instance (wazi-sandbox or wazi-aas) (TODO- manually for now)
+    # IBMUSER (SUPERUSER) creates zpmadmin and zpmdev ids with appropiate z/OS authority (TODO- use IBMUSER for now)
+    # Set UP SSH access for users
+    # Configue ZPM ADMIN user
+    # - name: Add ZPM admin user to z/OS system
+    #   include_role:
+    #     name: /Users/acrand/git/z_ansible_collections_samples/zos_concepts/user_management/add_remove_user/roles/add-zos-user
+
+    # Create larger volumes if required
+    # Bring volume online and mount zfs
+    # Create zpm_install_dir and zpm_state_dir
+
+    # TODO - Scenario - HOW to Apply Services ... to your USS dev envrionments..
+     # set latest (with expection) -
+     # verify we can get to other intallable versions of zProduct
+
+    # ****************************************************************************************************************************
+    # Outline of ZPM Admin Installation Steps Performed Below in this Playbook
+    # *
+    # - name: Create Broker on OCP
+    #   - Bootstrap OCP_Cluster on OCP
+    #   - Add z/OS Endpoint to Broker
+    # - name: Install ZPM on z/OS Endpoint
+    # - name: Install Go on z/OS Endpoint
+    # - name: Install Java on z/OS Endpoint
+    # - name: Install Nodejs on z/OS Endpoint
+    # - name: Install OelCpp on z/OS Endpoint
+    # - name: Install Python on z/OS Endpoint
+    # - name: Install ZOAU on z/OS Endpoint
+    # *
+    # ****************************************************************************************************************************
+
+    - name: Deploy IBM z/OS Cloud and Modernization Stack - Openshift z/OS Cloud Broker Operator and Sub-Operators
+      block:
+        # ****************************************************************************************************************************
+        # *
+        # Install z/OS Cloud Broker
+        # *
+        # - TODO (*** Remove pre-req - catalog source has to exist on cluster***)
+        # ****************************************************************************************************************************
+
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Install role/task tagged for z/OS Cloud Broker
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy != "undeploy"
+          vars:
+            seaa_product: zoscb
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - always
+
+        # ****************************************************************************************************************************
+        # *
+        # Install ZPM on z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Install role/task tagged for z/OS Package Manager
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy != "undeploy"
+          vars:
+            seaa_product: zpm
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - oel-dev
+            - zpm
+
+        # ****************************************************************************************************************************
+        # *
+        # - name: Install Go on z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Install role/task tagged for Go
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy != "undeploy"
+          vars:
+            seaa_product: go
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - oel-dev
+            - go
+
+        # ****************************************************************************************************************************
+        # *
+        # - name: Install Java on z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Install role/task tagged for Java
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy != "undeploy"
+          vars:
+            seaa_product: java
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - oel-dev
+            - java
+
+        # ****************************************************************************************************************************
+        # *
+        # - name: Install Nodejs on z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Install role/task tagged for Nodejs
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy != "undeploy"
+          vars:
+            seaa_product: nodejs
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - oel-dev
+            - nodejs
+
+        # ****************************************************************************************************************************
+        # *
+        # - name: Install OelCpp on z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Install role/task tagged for OELCPP
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy != "undeploy"
+          vars:
+            seaa_product: oelcpp
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - oel-dev
+            - oelcpp
+
+        # ****************************************************************************************************************************
+        # *
+        # - name: Install Python on z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Install role/task tagged for Python
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy != "undeploy"
+          vars:
+            seaa_product: python
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - oel-dev
+            - python
+
+        # ****************************************************************************************************************************
+        # *
+        # Install ZOAU on z/OS Endpoint
+        # *
+        # ****************************************************************************************************************************
+        # Dynamically INCLUDE ansible role
+        - name: Include z/OS Dev Install role/task tagged for ZOAU
+          ansible.builtin.include_role:
+            name: "zos_dev_envs"
+          when:
+            - hostvars[current_ocphost]._is_active
+            - seaa_deploy_strategy != "undeploy"
+          vars:
+            seaa_product: zoau
+          with_items:
+            - "{{ groups['ocphosts'] }}"
+          loop_control:
+            loop_var: current_ocphost
+          tags:
+            - oel-dev
+            - zoau
+
+    # Dynamically INCLUDE ansible role
+    - name: Cleanup resources used by USS Dev Install Role
+      when:
+        - hostvars[current_ocphost]._is_active
+        - seaa_deploy_strategy != "undeploy"
+      ansible.builtin.include_role:
+        name: "zos_dev_envs"
+        tasks_from: cleanup.yml
+      with_items:
+        - "{{ groups['ocphosts'] }}"
+      loop_control:
+        loop_var: current_ocphost
+      tags:
+        - always

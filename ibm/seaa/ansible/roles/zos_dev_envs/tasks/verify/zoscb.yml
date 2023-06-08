@@ -1,0 +1,41 @@
+---
+# Verify NAMESPACE
+- name: Verify project
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/project.yml"
+
+# Verify PERSISTENT VOLUME CLAIM
+- name: Verify project
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/persistentVolumeClaim.yml"
+
+# Verify OPERATOR GROUP
+- name: Verify project
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/operatorGroup.yml"
+
+# Verify Z CLOUD BROKER SUBSCRIPTION
+- name: Verify project
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/brokerSubscription.yml"
+
+# Verify Z CLOUD BROKER INSTANCE
+- name: Verify project
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/brokerInstance.yml"
+
+# Verify INSECURE ROUTE
+- name: Verify project
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/route.yml"
+  when:
+    - seaa_automation_strategy == "inline"
+
+# Verify ENDPOINT info_only is used with smart deploy to deterning if ALL endpoints are deployed
+- name: Verify endpoints are deployed
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/endpoint.yml"
+  when:
+    - hostvars[current_zosendpoint]._is_active
+    - info_only is undefined or not info_only
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint
+
+# Verify Cluster Service Version
+- name: Verify CSV
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/clusterServiceVersion.yml"

@@ -1,0 +1,100 @@
+---
+# OPENSHIFT CLUSTER - TODO:DOC -  Inventory > Runtime Vars
+ocp_cluster:
+  name: "{{ current_ocphost }}"
+  hostname: "{{ hostvars[current_ocphost].ansible_host }}" # "{{ lookup('vars', 'OCP_CLUSTER_HOSTNAME') }}"
+  ipaddress: "{{ hostvars[current_ocphost].cluster_ip_address }}" # "{{ lookup('vars', 'OCP_CLUSTER_IP_ADDRESS') }}"
+  port: "{{ hostvars[current_ocphost].ansible_port }}" # "{{ lookup('vars', 'OCP_CLUSTER_PORT') | int }}"
+  auth_token: "{{ hostvars[current_ocphost].cluster_auth_token |
+                  default(lookup('vars', 'openshift_auth_token', default=''), true) |
+                  default(lookup('vars', 'cluster_auth_token', default=''), true) }}" # "{{ lookup('vars', 'OCP_CLUSTER_AUTH_TOKEN') }}"
+
+# ZPM_REGISTRY
+zpm_registry:
+  host: "{{ lookup('vars', 'zpm_registry_host') | default('', true) }}"
+  user: "{{ lookup('vars', 'zpm_registry_user') | default('', true) }}"
+  password: "{{ lookup('vars', 'zpm_registry_password') | default('', true) }}"
+
+# NAMESPACE (Project) - TODO:DOC -  Defaults if Null -> Inventory Vars -> Constants?
+project_namespace:
+  apiVersion: "{{ lookup('vars', 'project_api_version') }}"
+  description: "{{ lookup('vars', 'project_description') }}"
+  display_name: "{{ lookup('vars', 'project_displayname') }}"
+  requester: "{{ lookup('vars', 'project_requesting_user') |
+                 default(hostvars[current_ocphost].ansible_user, true) |
+                 default(ansible_user, true) }}"
+  name: "{{ this_project_name | default(lookup('vars', 'namespace_name'), true) }}"
+
+# PVC (PersistentVolumeClaim) - TODO:DOC -  Defaults if Null -> Inventory Vars -> Constants?
+persistent_volume_claim:
+  name: "{{ lookup('vars', 'pvc_name') }}"
+  apiVersion: "{{ lookup('vars', 'pvc_api_version') }}"
+  accessModes:
+    - "{{ lookup('vars', 'pvc_access_mode') }}"
+  storage: "{{ lookup('vars', 'pvc_storage') }}"
+  volumeMode: "{{ lookup('vars', 'pvc_volume_mode') }}"
+  storageClassName: "{{ hostvars[current_ocphost].pvc_storage_class_name |
+   default(lookup('vars', 'pvc_storage_class_name'), true) }}"  # "{{ lookup('vars', 'pvc_storage_class_name') }}"
+
+# OPERATOR GROUP (OperatorGroup) TODO:DOC -  Defaults and Constants
+operator_group:
+  name: "{{ lookup('vars', 'operator_group_name') }}"
+  apiVersion: "{{ lookup('vars', 'operator_group_api_version') }}" # operators.coreos.com/v1
+
+# Z CLOUD BROKER SUBSCRIPTION (Subscription) TODO:DOC -  Inventory Vars -> override Defaults
+broker_subscription:
+  name: "{{ hostvars[current_ocphost].broker_subscription_name |
+   default(lookup('vars', 'broker_subscription_name'), true) }}" # "{{ lookup('vars', 'broker_subscription_name') }}"
+  version: "{{ hostvars[current_ocphost].broker_subscription_version |
+   default(lookup('vars', 'broker_subscription_version'), true) }}"
+  apiVersion: "{{ hostvars[current_ocphost].broker_subscription_api_version |
+   default(lookup('vars', 'broker_subscription_api_version'), true) }}"
+  channel: "{{ hostvars[current_ocphost].broker_subscription_channel |
+   default(lookup('vars', 'broker_subscription_channel'), true) }}"
+  installPlanApproval: "{{ hostvars[current_ocphost].broker_subscription_install_plan_approval |
+   default(lookup('vars', 'broker_subscription_install_plan_approval'), true) }}"
+  source: "{{ hostvars[current_ocphost].broker_subscription_source |
+   default(lookup('vars', 'broker_subscription_source'), true) }}"
+  sourceNamespace: "{{ hostvars[current_ocphost].broker_subscription_source_namespace |
+   default(lookup('vars', 'broker_subscription_source_namespace'), true) }}"
+
+# Z CLOUD BROKER INSTANCE (ZosCloudBroker) Default (with local defaults and storageClassName - Inventory Vars -> override Defaults
+broker_instance:
+  name: "{{ lookup('vars', 'broker_instance_name') }}"
+  kind: "{{ lookup('vars', 'broker_instance_kind') }}"
+  apiVersion: "{{ lookup('vars', 'broker_instance_api_version') }}"
+  license:
+    accept: "{{ lookup('vars', 'broker_instance_license_accept') | bool }}"
+  loglevel: "{{ lookup('vars', 'broker_instance_log_level') }}"
+  multiNamespace: "{{ lookup('vars', 'broker_instance_multi_namespace', default=false) | bool }}"
+  resources:
+    limits:
+      cpu: "{{ lookup('vars', 'broker_instance_resources_cpu_limit') | default('200m') }}"
+      memory: "{{ lookup('vars', 'broker_instance_resources_memory_limit') | default('256Mi') }}"
+      ephemeralStorage: "{{ lookup('vars', 'broker_instance_resources_ephemeral_stg_limit') | default('500Mi') }}"
+    requests:
+      cpu: "{{ lookup('vars', 'broker_instance_requests_cpu_limit') | default('200m') }}"
+      memory: "{{ lookup('vars', 'broker_instance_requests_memory_limit') | default('256i') }}"
+      ephemeralStorage: "{{ lookup('vars', 'broker_instance_requests_ephemeral_stg_limit') | default('500Mi') }}"
+  storage:
+    configure: "{{ lookup('vars', 'broker_instance_storage_configure') | bool }}"
+    enabled: "{{ lookup('vars', 'broker_instance_storage_enabled') | bool }}"
+    size: "{{ lookup('vars', 'pvc_storage') }}"
+    storageClassName: "{{ hostvars[current_ocphost].pvc_storage_class_name |
+     default(lookup('vars', 'pvc_storage_class_name'), true) }}" # "{{ lookup('vars', 'pvc_storage_class_name') }}"
+    volumeMode: "{{ lookup('vars', 'pvc_volume_mode') }}"
+    accessModes: "{{ lookup('vars', 'pvc_access_mode') }}"
+    accessMode: "{{ lookup('vars', 'pvc_access_mode') }}"
+    pvc: "{{ lookup('vars', 'pvc_name') }}"
+
+# INSECURE ROUTE (Route) Defaults and Constants
+route:
+  name: "{{ lookup('vars', 'route_name') }}"
+  apiVersion: "{{ lookup('vars', 'route_api_version') }}"
+  toKind: "{{ lookup('vars', 'route_to_kind') }}"
+  toName: "{{ lookup('vars', 'route_to_name') }}"
+  targetPort: "{{ lookup('vars', 'route_target_port') }}"
+  tlsTermination: "{{ lookup('vars', 'route_tls_termination') }}"
+  tlsInsecureEdgeTerminationPolicy: "{{ lookup('vars', 'route_tls_insecure_edge_termination_policy') }}"
+  wildcardPolicy: "{{ lookup('vars', 'route_wildcard_policy') }}"
+  weight: "{{ lookup('vars', 'route_weight') | int }}"

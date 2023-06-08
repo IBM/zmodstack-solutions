@@ -1,0 +1,17 @@
+- name: "Retrieve sub-operator CR {{ oelcpp_instance.kind }}: '{{ oelcpp_instance.name }}'"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: "{{ oelcpp_instance.kind }}"
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ oelcpp_instance.name }}"
+    api_version: "{{ oelcpp_instance.apiVersion }}"
+  register: oelcpp_instance_info
+  until: "oelcpp_instance_info.resources is defined and oelcpp_instance_info.resources[0].status.phase !='Running'"
+  retries: "{{ seaa_verify_retries | int }}" # 30
+  delay: "{{ seaa_verify_delay | int }}" # 10
+
+- name: "Verify sub-operator CR {{ oelcpp_instance.kind }}: '{{ oelcpp_instance.name }}'"
+  ansible.builtin.assert:
+    that:
+      - oelcpp_instance_info.resources[0].status.phase == "Succeeded"
+  when: info_only is undefined

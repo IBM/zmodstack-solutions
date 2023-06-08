@@ -1,0 +1,79 @@
+- name: "Create sub-operator CR {{ validate_oelcpp.kind }}: '{{ validate_oelcpp.name }}' in project '{{ project_namespace.name }} \
+    ' on '{{ ocp_cluster.hostname }}'"
+  when: seaa_automation_strategy == "inline"
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ project_namespace.name }}"
+    api_key: "{{ ocp_cluster.auth_token }}"
+    definition:
+      kind: "{{ validate_oelcpp.kind }}"
+      apiVersion: "{{ validate_oelcpp.apiVersion }}"
+      metadata:
+        name: "{{ validate_oelcpp.name }}"
+      spec:
+        product_cr_name: "{{ validate_oelcpp.productCRName }}"
+        zosendpoint: "{{ validate_oelcpp.zosEndpoint }}"
+
+- name: Create validateOelcppInstance with YAML file
+  when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+  block:
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/operators/instances/validate-oelcpp-instance.yaml"
+        destination_file: "val-{{ oc_product.short_name }}-{{ product_filename }}_Instance.yaml"
+        is_zos_resource: true
+        zos_endpoint: "{{ endpoint }}"
+
+    # Capture start time when seaa_capture_deployment_wait_time flag set
+    - name: Get timestamp from the system
+      when:
+        - seaa_capture_deployment_wait_time | bool
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.shell: "echo $(($(date +'%s * 1000 + %-N / 1000000')))"
+      register: start_tstamp_ns
+      no_log: "{{ not seaa_automation.debug }}"
+      changed_when: start_tstamp_ns != 0
+
+    - name: "Create validateOelcppInstance with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/instances/validate-oelcpp-instance.yaml') | from_yaml }}"
+
+- name: "Wait for installation of sub-operator CR {{ validate_oelcpp.kind }}: '{{ validate_oelcpp.name }}' on '{{ ocp_cluster.hostname }}'"
+  when: seaa_automation_strategy != "generate_yaml"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: "{{ validate_oelcpp.kind }}"
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ validate_oelcpp.name }}"
+    api_version: "{{ validate_oelcpp.apiVersion }}"
+  register: validate_oelcpp_info
+  until: "validate_oelcpp_info.resources is defined and
+          validate_oelcpp_info.resources | length > 0 and
+          'status' in validate_oelcpp_info.resources[0] and
+          (validate_oelcpp_info.resources[0].status.phase == 'Succeeded' or validate_oelcpp_info.resources[0].status.phase == 'Failed')"
+  failed_when: "'status' in validate_oelcpp_info.resources[0] and
+                validate_oelcpp_info.resources[0].status.phase != 'Succeeded'"
+  retries: "{{ seaa_deploy_retries | int }}" # 120
+  delay: "{{ seaa_deploy_delay | int }}" # 10
+
+- name: Capture Deploy Wait time
+  when:
+    - seaa_automation_strategy != "deploy_yaml" or seaa_automation_strategy != "inline"
+    - seaa_capture_deployment_wait_time | bool and start_tstamp_ns is defined
+  block:
+    - name: Capture wait time and add to deploy script
+      ansible.builtin.include_role:
+        name: zos_dev_envs
+        tasks_from: capture_deploy_time
+      vars:
+        resource_kind: "{{ validate_oelcpp.kind }}"
+        _script_command_comment: "Wait for '{{ validate_oelcpp.name }}' '{{ validate_oelcpp.kind }}' {{ deploy_type }}ment"
+        _deployment_file: "{{ seaa_yaml_single_deployment_file }}"
+        _deploy_name: "{{ validate_oelcpp.name }}"
+        _deploy_file: "{{ oc_product.short_name }}-{{ product_filename }}_Instance.yaml"

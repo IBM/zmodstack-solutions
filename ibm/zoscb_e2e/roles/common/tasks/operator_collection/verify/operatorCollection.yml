@@ -1,0 +1,51 @@
+- name: Set OC verison fact
+  ansible.builtin.set_fact:
+    oc_version: "{{ oc_product.oc_version }}"
+  when: oc_product.import_mode == "galaxy"
+
+- name: "Info Only Retrieve imported operator collection: '{{ oc_product.name }}.zpm.{{ oc_version }}'"
+  when: info_only is defined
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: OperatorCollection
+    namespace: "{{ project_namespace.name }}"
+    api_version: "{{ oc_product.apiVersion }}"
+    name: "{{ oc_product.name }}.zpm.{{ oc_version }}"
+    label_selectors:
+      - "instance-name = {{ broker_instance.name }}"
+      - "name = {{ oc_product.name }}"
+  register: oc_info_only
+
+- name: Debug resource
+  when: info_only is defined and seaa_automation.debug | bool
+  ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/debug_resource.yml"
+  vars:
+    resource_variable: "{{ oc_info_only }}"
+
+- name: "Retrieve imported operator collection: '{{ oc_product.name }}.zpm.{{ oc_version }}'"
+  when: info_only is undefined
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: OperatorCollection
+    namespace: "{{ project_namespace.name }}"
+    api_version: "{{ oc_product.apiVersion }}"
+    name: "{{ oc_product.name }}.zpm.{{ oc_version }}"
+    label_selectors:
+      - "instance-name = {{ broker_instance.name }}"
+      - "name = {{ oc_product.name }}"
+  register: oc_info
+  until:
+    - oc_info.resources is defined
+    - (oc_info.resources[0].status is defined and oc_info.resources[0].status.config.collectionPath != "") or
+      (oc_info.resources[0].spec is defined and oc_info.resources[0].spec.config.collectionPath != "")
+  retries: "{{ seaa_verify_retries | int }}" # 30
+  delay: "{{ seaa_verify_delay | int }}" # 10
+
+- name: "Verify imported operator collection: '{{ oc_product.name }}.zpm.{{ oc_version }}'"
+  when: info_only is undefined
+  ansible.builtin.assert:
+    that:
+      - "'{{ oc_product.finalizers[0] }}' in oc_info.resources[0].metadata.finalizers"
+      - oc_info.resources[0].metadata.labels["instance-name"] == "{{ broker_instance.name }}"
+      - (oc_info.resources[0].status is defined and oc_info.resources[0].status.config.collectionPath != "") or
+        (oc_info.resources[0].spec is defined and oc_info.resources[0].spec.config.collectionPath != "")
