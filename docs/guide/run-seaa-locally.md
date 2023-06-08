@@ -21,7 +21,7 @@ Review [sample-inventory.yaml](/ibm/seaa/ansible/playbooks/inventory/sample-inve
 -->
 ---
 ## Run playbook script for deploying Open Enterprise Languages (OEL) development environments-aaS
-'CD' to the **[run_playbooks](scripts/run_playbooks)** directory in cloned repo and run one or more of the following scenarios with 'default' configuration values using the commands below:
+'CD' to the **[run_playbooks](/ibm/seaa/scripts/run_playbooks)** directory in cloned repo and run one or more of the following scenarios with 'default' configuration values using the commands below:
 
   - #### Deploy **z/OS Cloud Broker** and **z/OS Package Manager** - ONLY:<br>
     ```
