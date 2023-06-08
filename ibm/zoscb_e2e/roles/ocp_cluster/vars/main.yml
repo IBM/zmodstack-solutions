@@ -23,7 +23,7 @@ project_namespace:
   requester: "{{ lookup('vars', 'project_requesting_user') |
                  default(hostvars[current_ocphost].ansible_user, true) |
                  default(ansible_user, true) }}"
-  name: "{{ this_project_name | default(lookup('vars', 'namespace_name'), true) }}"
+  name: "{{ this_project_name }}"
 
 # PVC (PersistentVolumeClaim) - TODO:DOC -  Defaults if Null -> Inventory Vars -> Constants?
 persistent_volume_claim:

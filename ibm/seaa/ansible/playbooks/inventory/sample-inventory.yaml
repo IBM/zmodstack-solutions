@@ -41,7 +41,7 @@ all:
         # lowercase RFC 1123 label must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character
         # https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
         # Note: by default these project(s) will be created, if you want to use an existing project, set 'seaa_deploy_resource_ifpresent' variable to false
-        namespace_names: # - <OCP project to deploy>
+        project_names: # - <OCP project to deploy>
 
       children:
         # **************************************************************************

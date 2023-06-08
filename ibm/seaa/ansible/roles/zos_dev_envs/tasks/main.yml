@@ -107,7 +107,7 @@
     - name: Deploy z/OS Cloud and Modernization Stack Components
       ansible.builtin.include_tasks: "_deploy.yml"
       with_items:
-        - "{{ hostvars[current_ocphost].namespace_names }}"
+        - "{{ hostvars[current_ocphost].project_names }}"
       loop_control:
         loop_var: current_namespace
       tags: always
@@ -126,7 +126,7 @@
     - name: Verifying z/OS Cloud and Modernization Stack Components
       ansible.builtin.include_tasks: "verify.yml"
       with_items:
-        - "{{ hostvars[current_ocphost].namespace_names }}"
+        - "{{ hostvars[current_ocphost].project_names }}"
       loop_control:
         loop_var: current_namespace
       tags: always
@@ -154,7 +154,7 @@
     - name: Undeploy z/OS Cloud and Modernization Stack Components
       ansible.builtin.include_tasks: "undeploy.yml"
       with_items:
-        - "{{ hostvars[current_ocphost].namespace_names }}"
+        - "{{ hostvars[current_ocphost].project_names }}"
       loop_control:
         loop_var: current_namespace
       tags: always
