@@ -1,0 +1,12 @@
+#jinja2: lstrip_blocks: True
+---
+kind: "{{ validate_zoau.kind }}"
+apiVersion: "{{ validate_zoau.apiVersion }}"
+metadata:
+  name: "{{ validate_zoau.name }}"
+spec:
+  product_cr_name: "{{ validate_zoau.productCRName }}"
+  zosendpoint: "{{ validate_zoau.zosEndpoint }}"
+  {% if oc_product.credential_type == "personal" %}
+  credential: "ssh-key-{{ endpoint.username }}-{{ endpoint.name }}"
+  {% endif %}

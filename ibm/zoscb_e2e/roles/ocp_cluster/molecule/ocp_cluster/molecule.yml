@@ -1,0 +1,92 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    collections-path: "~/.ansible/collections/"
+    # collections-path: "/runner/tekton/.ansible/collections/"
+driver:
+  name: delegated
+  options:
+    managed: True
+    ansible_connection_options: {}
+lint: |
+  set -e
+  ansible-lint
+platforms:
+- name: Ubuntu
+  groups:
+  - k8s
+provisioner:
+  name: ansible
+  env:
+    OCP_CLUSTER_HOSTNAME: ${OCP_CLUSTER_HOSTNAME:-"<host_name>"}
+    OCP_CLUSTER_PORT: ${OCP_CLUSTER_PORT:-6443}
+    OCP_CLUSTER_AUTH_TOKEN: ${OCP_CLUSTER_AUTH_TOKEN:-"default-notoken"}
+
+    ZPM_REGISTRY_HOSTNAME: ${ZPM_REGISTRY_HOSTNAME:-"<registry_host_name>"}
+    ZPM_REGISTRY_USERNAME: ${ZPM_REGISTRY_USERNAME:-"default-nouser"}
+    ZPM_REGISTRY_API_TOKEN: ${ZPM_REGISTRY_API_TOKEN:-"default-notoken"}
+
+    NAMESPACE_NAME: ${NAMESPACE_NAME:-"default-zoscb-e2e"}
+    NAMESPACE_API_VERSION: ${NAMESPACE_API_VERSION:-"project.openshift.io/v1"}
+
+    PVC_NAME: ${PVC_NAME:-"zoscloudbroker-pvc"}
+    PVC_API_VERSION: ${PVC_API_VERSION:-"v1"}
+    PVC_ACCESS_MODE: ${PVC_ACCESS_MODE:-"ReadWriteMany"}
+    PVC_STORAGE: ${PVC_STORAGE:-"5Gi"}
+    PVC_VOLUME_MODE: ${PVC_VOLUME_MODE:-"Filesystem"}
+    PVC_STORAGE_CLASS_NAME: ${PVC_STORAGE_CLASS_NAME:-"rook-cephfs"}
+
+    OPERATOR_GROUP_NAME: ${OPERATOR_GROUP_NAME:-"tekton"}
+    OPERATOR_GROUP_API_VERSION: ${OPERATOR_GROUP_API_VERSION:-"operators.coreos.com/v1"}
+
+    BROKER_SUBSCRIPTION_NAME: ${BROKER_SUBSCRIPTION_NAME:-"ibm-zoscb"}
+    BROKER_SUBSCRIPTION_VERSION: ${BROKER_SUBSCRIPTION_VERSION:-"2.1.0"}
+    BROKER_SUBSCRIPTION_API_VERSION: ${BROKER_SUBSCRIPTION_API_VERSION:-"operators.coreos.com/v1alpha1"}
+    BROKER_SUBSCRIPTION_CHANNEL: ${BROKER_SUBSCRIPTION_CHANNEL:-"v2.1"}
+    BROKER_SUBSCRIPTION_INSTALL_PLAN_APPROVAL: ${BROKER_SUBSCRIPTION_INSTALL_PLAN_APPROVAL:-"Automatic"}
+    BROKER_SUBSCRIPTION_SOURCE: ${BROKER_SUBSCRIPTION_SOURCE:-"ibm-operator-catalog"}
+    BROKER_SUBSCRIPTION_SOURCE_NAMESPACE: ${BROKER_SUBSCRIPTION_SOURCE_NAMESPACE:-"openshift-marketplace"}
+
+    BROKER_INSTANCE_NAME: ${BROKER_INSTANCE_NAME:-"zoscloudbroker"}
+    BROKER_INSTANCE_KIND: ${BROKER_INSTANCE_KIND:-"ZosCloudBroker"}
+    BROKER_INSTANCE_API_VERSION: ${BROKER_INSTANCE_API_VERSION:-"zoscb.ibm.com/v2beta1"}
+    BROKER_INSTANCE_LICENSE_ACCEPT: ${BROKER_INSTANCE_LICENSE_ACCEPT:-true}
+    BROKER_INSTANCE_LOG_LEVEL: ${BROKER_INSTANCE_LOG_LEVEL:-"debug"}
+    BROKER_INSTANCE_RESOURCES_CPU_LIMIT: ${BROKER_INSTANCE_RESOURCES_CPU_LIMIT:-"200m"}
+    BROKER_INSTANCE_RESOURCES_MEMORY_LIMIT: ${BROKER_INSTANCE_RESOURCES_MEMORY_LIMIT:-"256Mi"}
+    BROKER_INSTANCE_REQUESTS_CPU_LIMIT: ${BROKER_INSTANCE_REQUESTS_CPU_LIMIT:-"100m"}
+    BROKER_INSTANCE_REQUESTS_MEMORY_LIMIT: ${BROKER_INSTANCE_REQUESTS_MEMORY_LIMIT:-"128Mi"}
+    BROKER_INSTANCE_STORAGE_CONFIGURE: ${BROKER_INSTANCE_STORAGE_CONFIGURE:-true}
+    BROKER_INSTANCE_STORAGE_ENABLED: ${BROKER_INSTANCE_STORAGE_ENABLED:-false}
+    BROKER_INSTANCE_STORAGE_SIZE: ${BROKER_INSTANCE_STORAGE_SIZE:-"5Gi"}
+    BROKER_INSTANCE_STORAGE_CLASS_NAME: ${BROKER_INSTANCE_STORAGE_CLASS_NAME:-""}
+    BROKER_INSTANCE_STORAGE_VOLUME_MODE: ${BROKER_INSTANCE_STORAGE_VOLUME_MODE:-"Filesystem"}
+
+    ROUTE_NAME: ${ROUTE_NAME:-"e2e-automation-route"}
+    ROUTE_API_VERSION: ${ROUTE_API_VERSION:-"route.openshift.io/v1"}
+    ROUTE_TO_KIND: ${ROUTE_TO_KIND:-"Service"}
+    ROUTE_TO_NAME: ${ROUTE_TO_NAME:-"ibm-zoscb-ui-zoscloudbroker"}
+    ROUTE_TARGET_PORT: ${ROUTE_TARGET_PORT:-"ui-port"}
+    ROUTE_TLS_TERMINATION: ${ROUTE_TLS_TERMINATION:-"passthrough"}
+    ROUTE_TLS_INSECURE_EDGE_TERMINATION_POLICY: ${ROUTE_TLS_INSECURE_EDGE_TERMINATION_POLICY:-"Redirect"}
+    ROUTE_WILDCARD_POLICY: ${ROUTE_WILDCARD_POLICY:-"None"}
+    ROUTE_WEIGHT: ${ROUTE_WEIGHT:-100}
+verifier:
+  name: ansible
+scenario:
+  name: ocp_cluster
+  test_sequence:
+    - dependency
+    - lint
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - side_effect
+    - verify
+    - cleanup
+    - destroy

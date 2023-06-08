@@ -1,0 +1,5 @@
+---
+kind: ClusterServiceVersion
+apiVersion: "{{ broker_subscription.apiVersion }}"
+metadata:
+  name: "{{ broker_subscription.name }}.v{{ broker_subscription.version }}"

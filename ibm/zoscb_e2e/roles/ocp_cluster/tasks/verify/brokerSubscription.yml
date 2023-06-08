@@ -1,0 +1,38 @@
+- name: "Info ONLY Retrieve broker subscription: '{{ broker_subscription.name }}' in '{{ project_namespace.name }}\
+    ' on '{{ ocp_cluster.hostname }}'"
+  when: info_only is defined
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: Subscription
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ broker_subscription.name }}"
+    api_version: "{{ broker_subscription.apiVersion }}"
+  register: broker_subscription_info_only
+
+    # ansible.builtin.set_fact:
+    #     broker_subscription_info_only: "{{ broker_subscription_info }}"
+
+- name: "Retrieve broker subscription: '{{ broker_subscription.name }}' on '{{ ocp_cluster.hostname }}'"
+  when: info_only is undefined
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: Subscription
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ broker_subscription.name }}"
+    api_version: "{{ broker_subscription.apiVersion }}"
+  register: broker_subscription_info
+  until:
+    - "broker_subscription_info.resources is defined and broker_subscription_info.resources | length > 0"
+    - "'state' in broker_subscription_info.resources[0].status and broker_subscription_info.resources[0].status.state == 'AtLatestKnown'"
+  retries: "{{ seaa_verify_retries | int }}" # 30
+  delay: "{{ seaa_verify_delay | int }}" # 10
+
+- name: "Verify broker subscription: '{{ broker_subscription.name }}'"
+  when: info_only is undefined
+  ansible.builtin.assert:
+    that:
+      - broker_subscription_info.resources[0].metadata.creationTimestamp != ""
+      - broker_subscription_info.resources[0].status.installplan.kind == "InstallPlan"
+      - broker_subscription_info.resources[0].status.installplan.name != ""
+      - broker_subscription_info.resources[0].status.state == "AtLatestKnown"
+      - broker_subscription_info.resources[0].status.conditions[0].reason == "AllCatalogSourcesHealthy"

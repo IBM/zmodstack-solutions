@@ -1,0 +1,5 @@
+---
+# Flag to set _is_active flag for ocphost or zosendpoint for all inventories
+# Setting this value here tkes precendent of values set for all or group variables set in inventory file
+# Can be overidden for a specific host in the inventory
+# _is_active: false

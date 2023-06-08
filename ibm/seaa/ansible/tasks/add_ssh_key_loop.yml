@@ -1,0 +1,16 @@
+---
+- name: Direct Deploy SSH Key for Yaml Sub-Operator Collections
+  when: run_task_direct is defined and run_task_direct
+  block:
+    - name: Set the project name
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_the_project_name.yml"
+
+    - name: Include Manage Secret task from OCP role
+      when: hostvars[current_zosendpoint]._is_active
+      ansible.builtin.include_role:
+        name: openshift_cluster
+        tasks_from: manage_secrets
+      with_items:
+        - "{{ groups['zosendpoints'] }}"
+      loop_control:
+        loop_var: current_zosendpoint

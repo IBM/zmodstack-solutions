@@ -1,0 +1,16 @@
+#jinja2: lstrip_blocks: True
+---
+kind: PersistentVolumeClaim
+apiVersion: "{{ persistent_volume_claim.apiVersion }}"
+metadata:
+  name: "{{ persistent_volume_claim.name }}"
+spec:
+  accessModes:
+  {% for accessMode in persistent_volume_claim.accessModes %}
+    - "{{ accessMode }}"
+  {% endfor %}
+  resources:
+    requests:
+      storage: "{{ persistent_volume_claim.storage }}"
+  volumeMode: "{{ persistent_volume_claim.volumeMode }}"
+  storageClassName: "{{ persistent_volume_claim.storageClassName }}"

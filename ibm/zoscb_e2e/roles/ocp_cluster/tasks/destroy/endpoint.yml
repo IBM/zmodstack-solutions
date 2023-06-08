@@ -1,0 +1,40 @@
+- name: "Delete z/OS endpoint: '{{ endpoint.name }}' from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+  when: seaa_automation_strategy == "inline"
+  kubernetes.core.k8s:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    state: absent
+    namespace: "{{ project_namespace.name }}"
+    kind: "{{ endpoint.kind }}" # ZosEndpoint
+    name: "{{ endpoint.name }}"
+    api_version: "{{ endpoint.apiVersion }}"
+    wait: "{{ seaa_undeploy_wait | bool }}" # yes
+    wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}"  # 600
+    continue_on_error: "{{ seaa_undeploy_continue_on_error | bool }}"
+
+- name: Delete endpoint with YAML file
+  when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+  block:
+
+    - name: Include task to generate yaml file for zos endpoint
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/zoscb/zos-endpoint.yaml"
+        destination_file: "{{ endpoint.name }}.yaml"
+        is_zos_endpoint: true
+
+    - name: "Delete endpoint {{ endpoint.name }} with Native YAML API from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: absent
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/zoscb/zos-endpoint.yaml') | from_yaml }}"
+
+    - name: Check for deletion of z/OS Endpoint
+      ansible.builtin.pause:
+        prompt: "Delete YAML for ZosEndpoint resource, press enter to continue ...:"
+      when:
+        - seaa_automation.prompt_during_automation | bool
+        - seaa_automation.track_resources | bool
+

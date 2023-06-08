@@ -1,0 +1,219 @@
+---
+# Called By generate_cmd and generate_yaml task to add information to generated readme
+- name: Set generate readme file directories and variables
+  ansible.builtin.set_fact:
+    dest_readme_file: "{{ dest }}"
+    source_readme_dir: "{{ src }}"
+    deploy_type: "{{ seaa_deploy_strategy }}"
+    add_command: "{{ add_command_to_readme | default(false, true) }}"
+    _deploy_name: "{{ deploy_name | default(none) }} "
+    _deploy_kind: "{{ deploy_kind | default(none) }}"
+    _deploy_file: "{{ deploy_file | default(none) }}"
+    _timelapse: "{{ timelapse | default(0.0) }}"
+    _append_to_previous_step: "{{ append_to_previous_step | default(false, true) }}"
+    _readme_has_started: "{{ readme_has_started | default(false, true) }}"
+
+- name: "Query resource Name from '{{ resource_yaml_file }}' yaml file"
+  ansible.builtin.shell: "set -o pipefail && yq e '.metadata.name' {{ resource_yaml_file }} | head -n 1"
+  when: not add_command
+  register: name_output
+  changed_when: name_output.rc == 0
+
+- name: "Query resource Kind from '{{ resource_yaml_file }}' yaml file"
+  ansible.builtin.shell: "set -o pipefail && yq e '.kind' {{ resource_yaml_file }} | head -n 1"
+  when: not add_command
+  register: kind_output
+  changed_when: kind_output.rc == 0
+
+- name: Set resource Kind
+  when: not add_command
+  ansible.builtin.set_fact:
+    _deploy_name: "{{ name_output.stdout }}"
+    _deploy_kind: "{{ kind_output.stdout }}"
+
+- name: Set stats of readme file.
+  ansible.builtin.stat:
+    path: "{{ dest_readme_file }}"
+  register: readme_outfile
+
+- name: Get step count if readme file exist and should append last step count from previous deployment
+  when:
+    - readme_outfile.stat.exists
+    - seaa_append_to_deployment_script | bool
+    - not _readme_has_started
+  block:
+    - name: Retrive content of deployment readme
+      ansible.builtin.slurp:
+        src: "{{ dest_readme_file }}"
+      register: readme_file
+
+    - name: Set last step line
+      ansible.builtin.set_fact:
+        lastline: "{{ readme_file['content'] | b64decode | regex_findall('- \\*\\*Step.*') | last }}"
+
+    - name: Set step count based on last step count number
+      when: lastline is defined and lastline | length > 0
+      block:
+        - name: Set last step line
+          ansible.builtin.set_fact:
+            lastline: "{{ readme_file['content'] | b64decode | regex_findall('- \\*\\*Step.*') | last }}"
+
+        - name: Set last_count
+          ansible.builtin.set_fact:
+            last_count: "{{ lastline | regex_search('- \\*\\*Step ([0-9]+)', '\\1') }}"
+
+        - name: Add step count starting from last_count and set readme has started flag
+          ansible.builtin.set_fact:
+            readme_step_count: "{{ last_count[0] | int }}"
+            _readme_has_started: true
+            readme_has_started: true
+
+        #  Update cache with new namespace for broker
+        - name: Update cache with new namespace and sticky facts for later caching
+          ansible.builtin.set_fact:
+            ocp_cluster_cache:
+              "{{ ocp_cluster_cache | update_cache_for_generating_files(current_ocphost, this_project_name, readme_step_count, 'readme_has_started') }}"
+            sticky_project_name: "{{ this_project_name }}"
+            sticky_ocphost: "{{ current_ocphost }}"
+          when: ocp_cluster_cache is defined and ocp_cluster_cache != None
+  rescue:
+    # TODO add error stack message
+    - name: Rescue if can't find last count and start count over
+      ansible.builtin.set_fact:
+        _readme_has_started: true
+        readme_has_started: true
+        readme_step_count: 0
+
+- name: Get step count from cache if already started cuurrently generating readme and not appending from previous deploy script
+  when:
+    - _readme_has_started
+    - not seaa_append_to_deployment_script | bool
+    - readme_step_count == 0
+  block:
+
+    # Check ocp_cluster_cache dictionary for existing token for current ocp host
+    - name: Check ocp_cluster_cache dictionary for existing token for current ocp host
+      ansible.builtin.set_fact:
+        query_readme_has_started: >-
+          {{ ocp_cluster_cache
+            | json_query(jmespath)
+          }}
+      when:
+        - ocp_cluster_cache is defined and ocp_cluster_cache != None
+      vars:
+        jmespath: "{{ jmesq_readme_started }}"
+
+    - name: Set _readme_has_started fact from cache
+      ansible.builtin.set_fact:
+        readme_step_count: "{{ query_readme_has_started[0] | int }}"
+      when:
+        - query_readme_has_started | type_debug != "NoneType"
+        - query_readme_has_started is not none
+        - query_readme_has_started | length > 0
+
+- name: Generate readme file
+  when: not _readme_has_started
+  block:
+
+    - name: Delete readme file if it previously exist
+      failed_when: false
+      ansible.builtin.file:
+        state: absent
+        path: "{{ dest_readme_file }}"
+
+    - name: Get timestamp from the controller
+      ansible.builtin.command: "date +%Y-%m-%d-%H:%M:%S"
+      register: tstamp
+      changed_when: tstamp.rc == 0
+
+    - name: Set deploy readme start time stamp
+      ansible.builtin.set_fact:
+        start_time_stamp: "{{ tstamp.stdout }}"
+
+    - name: Set stats of '{{ dest_readme_file }}' Script file.
+      ansible.builtin.stat:
+        path: "{{ dest_readme_file | dirname }}"
+      register: readme_outfile
+      no_log: "{{ nolog }}"
+
+    - name: Make sure parent directory for {{ dest_readme_file }} exists
+      ansible.builtin.file:
+        path: "{{ dest_readme_file | dirname }}"
+        state: directory
+        mode: '0755'
+      when: not readme_outfile.stat.exists
+
+    - name: Generate readme file from jinja2 template
+      ansible.builtin.template:
+        src: "{{ source_readme_dir }}"
+        dest: "{{ dest_readme_file }}"
+        force: true
+        mode: '0755'
+
+    - name: Set readme step count to zero
+      ansible.builtin.set_fact:
+        readme_step_count: 0
+
+    #  Update cache with new namespace for broker
+    - name: Update cache with new namespace and sticky facts for later caching
+      ansible.builtin.set_fact:
+        ocp_cluster_cache: "{{ ocp_cluster_cache | update_cache_for_generating_files(current_ocphost, this_project_name, readme_step_count, \
+          'readme_has_started') }}"
+        sticky_project_name: "{{ this_project_name }}"
+        sticky_ocphost: "{{ current_ocphost }}"
+      when: ocp_cluster_cache is defined and ocp_cluster_cache != None
+
+    - name: Set fact generated readme has started
+      ansible.builtin.set_fact:
+        _readme_has_started: true
+        readme_has_started: true
+
+- name: Add line to readme file
+  when:
+    - _readme_has_started
+    - not _append_to_previous_step
+  block:
+    # This is how caching of previous step_count is handled with this "stick:" facts
+    - name: Add step count
+      ansible.builtin.set_fact:
+        readme_step_count: "{{ readme_step_count + 1 }}"
+        sticky_project_name: "{{ this_project_name }}"
+        sticky_ocphost: "{{ current_ocphost }}"
+
+    - name: "Set README LINE"
+      when: not add_command
+      ansible.builtin.set_fact:
+        readme_line: "- **Step {{ readme_step_count }}**: {{ deploy_type | capitalize }} '{{ _deploy_kind }}' - '[{{ _deploy_name }}]({{ _deploy_file }})'"
+
+    - name: "Set README LINE"
+      when: add_command
+      ansible.builtin.set_fact:
+        readme_line: "- **Step {{ readme_step_count }}**: {{ deploy_type | capitalize }} {{ _deploy_name }}"
+
+    - name: Add Comment and line to readme file
+      block:
+        - name: "Append line to deployment readme file"
+          ansible.builtin.lineinfile:
+            path: "{{ dest_readme_file }}"
+            line: "{{ readme_line }}"
+            insertbefore: "^## End Generated *"
+          register: line_in_output
+
+- name: Append wait time to previous step
+  when:
+    - _readme_has_started
+    - _append_to_previous_step
+    - _timelapse | float > 0.0
+  block:
+    - name: "Set README LINE"
+      ansible.builtin.set_fact:
+        readme_line: "{{'(wait '~_timelapse~' seconds)'}}"
+
+    - name: "Append line to previous step in deployment readme file"
+      ansible.builtin.lineinfile:
+        path: "{{ dest_readme_file }}"
+        backrefs: true
+        regexp: "{{ '^(- \\*\\*Step '~readme_step_count~'.*)' }}"
+        line: '\1 {{ readme_line }}'
+        # backup: true
+      register: line_in_append

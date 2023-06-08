@@ -1,0 +1,6 @@
+---
+# Array of namespaces
+namespace_names:
+
+# Writable prefix on USS directory z/OS Endpoint for ZPM to install zproducts
+zpm_install_dir_prefix:

@@ -1,0 +1,52 @@
+---
+# Define ZOS Broker E2E role directory
+zoscb_e2e_roles_directory: "{{ seaa_ansible_directory~'/../../zoscb_e2e/roles' }}"
+
+# Define ZOS Broker E2E task parent directory
+zoscb_e2e_task_directory: "{{ zoscb_e2e_roles_directory }}/common/tasks"
+
+# OCP task directory
+ocp_task_dir: "{{ zoscb_e2e_roles_directory }}/ocp_cluster/tasks"
+
+# IBM Open Enterprize Languages task directories
+go_cr_task_dir: "{{ zoscb_e2e_roles_directory }}/go/tasks/custom_resource"
+java_cr_task_dir: "{{ zoscb_e2e_roles_directory }}/java/tasks/custom_resource"
+nodejs_cr_task_dir: "{{ zoscb_e2e_roles_directory }}/nodejs/tasks/custom_resource"
+oelcpp_cr_task_dir: "{{ zoscb_e2e_roles_directory }}/oelcpp/tasks/custom_resource"
+python_cr_task_dir: "{{ zoscb_e2e_roles_directory }}/python/tasks/custom_resource"
+zoau_cr_task_dir: "{{ zoscb_e2e_roles_directory }}/zoau/tasks/custom_resource"
+zpm_cr_task_dir: "{{ zoscb_e2e_roles_directory }}/zpm/tasks/custom_resource"
+
+# zOpen Tools Task directories
+
+# **************************************************************************
+
+# Variable to check if endpoint variables have been loaded
+endpoint_vars_loaded: false
+
+# Variable to check if ocp_cluster variables have been loaded
+ocp_cluster_vars_loaded: false
+
+# Variables to check if zProduct variables have been loaded
+go_vars_loaded: false
+java_vars_loaded: false
+nodejs_vars_loaded: false
+oelcpp_vars_loaded: false
+python_vars_loaded: false
+zoau_vars_loaded: false
+zpm_vars_loaded: false
+
+# Variables for Suboperator domain loaded
+subop_vars_loaded: false
+
+# Name of the project used in the current poject iteration
+this_project_name:
+
+# In mem cache for automation status
+ocp_cluster_cache:
+
+# Flag to determine if Broker is deployed
+zoscb_deployed: false
+
+# Flag to determine if ZPM is deployed
+zpm_deployed: false

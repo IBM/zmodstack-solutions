@@ -1,0 +1,61 @@
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+driver:
+  name: delegated
+  options:
+    managed: True
+    ansible_connection_options: {}
+lint: |
+  set -e
+  ansible-lint
+platforms:
+- name: Ubuntu
+  groups:
+  - k8s
+provisioner:
+  name: ansible
+  env:
+    OCP_CLUSTER_HOSTNAME: ${OCP_CLUSTER_HOSTNAME:-"<host_name>"}
+    OCP_CLUSTER_PORT: ${OCP_CLUSTER_PORT:-6443}
+    OCP_CLUSTER_AUTH_TOKEN: ${OCP_CLUSTER_AUTH_TOKEN:-"default-notoken"}
+
+    NAMESPACE_NAME: ${NAMESPACE_NAME:-"default-zoscb-e2e"}
+
+    ROUTE_NAME: ${ROUTE_NAME:-"e2e-automation-route"}
+
+    OC_PRODUCT_NAME: ${OC_PRODUCT_NAME:-"zos-java"}
+    OC_PRODUCT_API_VERSION: ${OC_PRODUCT_API_VERSION:-"zoscb.ibm.com/v2beta1"}
+    OC_PRODUCT_FINALIZER: ${OC_PRODUCT_FINALIZER:-"operatorcollections.zoscb.ibm.com/finalizer"}
+
+    SUBOP_CONFIG_API_VERSION: ${SUBOP_CONFIG_API_VERSION:-"zoscb.ibm.com/v2beta1"}
+    SUBOP_CONFIG_FINALIZER: ${SUBOP_CONFIG_FINALIZER:-"suboperatorconfigs.zoscb.ibm.com/finalizer"}
+
+    JAVA_INSTANCE_NAME: ${JAVA_INSTANCE_NAME:-"example-java"}
+    JAVA_INSTANCE_KIND: ${JAVA_INSTANCE_KIND:-"JavaInstance"}
+    JAVA_INSTANCE_API_VERSION: ${JAVA_INSTANCE_API_VERSION:-"zos-java.zpm.zoscb.ibm.com/v0minor1patch13"}
+    JAVA_INSTANCE_FINALIZER: ${JAVA_INSTANCE_FINALIZER:-"zos-java.zpm.zoscb.ibm.com/finalizer"}
+    JAVA_INSTANCE_LICENSE_ACCEPT: ${JAVA_INSTANCE_LICENSE_ACCEPT:-true}
+    JAVA_INSTANCE_PRODUCT_VERSION: ${JAVA_INSTANCE_PRODUCT_VERSION:-"8.0.7.0"}
+
+    VALIDATE_JAVA_NAME: ${VALIDATE_JAVA_NAME:-"example-validate-java"}
+    VALIDATE_JAVA_KIND: ${VALIDATE_JAVA_KIND:-"ValidateJava"}
+    VALIDATE_JAVA_API_VERSION: ${VALIDATE_JAVA_API_VERSION:-"zos-java.zpm.zoscb.ibm.com/v0minor1patch13"}
+    VALIDATE_JAVA_FINALIZER: ${VALIDATE_JAVA_FINALIZER:-"zos-java.zpm.zoscb.ibm.com/finalizer"}
+verifier:
+  name: ansible
+scenario:
+  name: java
+  test_sequence:
+    - dependency
+    - lint
+    - syntax
+    - create
+    - prepare
+    - converge
+    - side_effect
+    - verify
+    - cleanup
+    - destroy

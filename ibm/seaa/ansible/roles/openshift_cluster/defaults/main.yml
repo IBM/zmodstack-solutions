@@ -1,0 +1,8 @@
+---
+openshift_host:
+openshift_cluster_username:
+openshift_cluster_password:
+openshift_token:
+validate_openshift_certs: false
+openshift_cert:
+openshift_auth_results:

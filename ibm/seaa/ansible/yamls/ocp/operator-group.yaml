@@ -1,0 +1,9 @@
+#jinja2: lstrip_blocks: True
+---
+kind: OperatorGroup
+apiVersion: "{{ operator_group.apiVersion }}"
+metadata:
+  name: "{{ operator_group.name }}"
+spec:
+  targetNamespaces:
+    - "{{ project_namespace.name }}"

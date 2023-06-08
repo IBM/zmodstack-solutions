@@ -1,0 +1,67 @@
+- name: "Delete broker instance: '{{ broker_instance.name }}' from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+  when: seaa_automation_strategy == "inline"
+  kubernetes.core.k8s:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    state: absent
+    namespace: "{{ project_namespace.name }}"
+    kind: "{{ broker_instance.kind }}"
+    name: "{{ broker_instance.name }}"
+    api_version: "{{ broker_instance.apiVersion }}"
+    wait: "{{ seaa_undeploy_wait | bool }}" # yes
+    wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}" # 600
+    continue_on_error: "{{ seaa_undeploy_continue_on_error | bool }}"
+
+
+- name: Delete brokerInstance with YAML file
+  when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+  block:
+
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/zoscb/broker-instance.yaml"
+        destination_file: "broker-instance.yaml"
+        is_ocp_resource: true
+
+    - name: "Delete brokerInstance with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: absent
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/zoscb/broker-instance.yaml') | from_yaml }}"
+        wait: "{{ seaa_undeploy_wait | bool }}" # yes
+        wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}" # 600
+        continue_on_error: "{{ seaa_undeploy_continue_on_error | bool }}"
+
+    - name: Check for deletion of Broker Instance
+      ansible.builtin.pause:
+        prompt: "Delete YAML for brokerInstance resource, press enter to continue ...:"
+      when:
+        - seaa_automation.prompt_during_automation | bool
+        - seaa_automation.track_resources | bool
+
+- name: Delete Broker openshift-marketplace resources
+  when:
+    - seaa_automation_strategy != "generate_yaml"
+  block:
+
+    - name: Set fact on Broker instance name
+      ansible.builtin.set_fact:
+        zoscb_openshift_marketplace_resource_name: "ibm-zoscb-registry-{{ broker_instance.name }}-{{ project_namespace.name }}"
+
+    - name: Delete Broker openshift-marketplace resources
+      ansible.builtin.shell: |
+        oc login --token={{ ocp_cluster.auth_token }} \
+        --server=https://{{ ocp_cluster.hostname }}:{{ ocp_cluster.port }} \
+        {{ "--insecure-skip-tls-verify" if not config_var_cluster_validate_certs | bool else '--certificate-authority='~config_var_cluster_cacert }} &&
+        oc delete CatalogSource "{{ zoscb_openshift_marketplace_resource_name }}" -n openshift-marketplace --ignore-not-found &&
+        oc delete Deployment "{{ zoscb_openshift_marketplace_resource_name }}" -n openshift-marketplace --ignore-not-found &&
+        oc delete svc "{{ zoscb_openshift_marketplace_resource_name }}" -n openshift-marketplace --ignore-not-found &&
+        oc delete sa "{{ zoscb_openshift_marketplace_resource_name }}" -n openshift-marketplace --ignore-not-found
+      args:
+        executable: /bin/bash
+      register: undeploy_resources
+      changed_when: undeploy_resources.rc == 0
+      no_log: "{{ seaa_security_secure_log | default(true) | bool }}"

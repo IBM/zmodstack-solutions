@@ -1,0 +1,14 @@
+#jinja2: lstrip_blocks: True
+---
+kind: "{{ zos_package_manager_diagnostics.kind }}"
+apiVersion: "{{ zos_package_manager_diagnostics.apiVersion }}"
+metadata:
+  name: "{{ zos_package_manager_diagnostics.name }}"
+spec:
+  product_cr_name: "{{ zos_package_manager_diagnostics.productCRName }}"
+  zosendpoint: "{{ zos_package_manager_diagnostics.zosEndpoint }}"
+  {% if oc_product.credential_type == "personal" %}
+  credential: "ssh-key-{{ endpoint.username }}-{{ endpoint.name }}"
+  {% endif %}
+
+

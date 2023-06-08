@@ -1,0 +1,182 @@
+---
+# Called By generate_cmd and generate_yaml task to add information to generated readme
+- name: Set generate script file directories and variables
+  ansible.builtin.set_fact:
+    dest_script_file: "{{ dest }}"
+    source_script_dir: "{{ src }}"
+    _add_line: "{{ add_line }}"
+    _resource_yaml_file: "{{ resource_yaml_file | default(none, true) }}"
+    _add_command: "{{ add_command_to_script | default(false, true) }}"
+    _line_comment: "{{ add_command_comment | default('', true) }}"
+    deploy_type: "{{ seaa_deploy_strategy }}"
+    bash_bin: "#!/bin/bash"
+    nolog: false
+    _script_has_started: "{{ script_has_started | default(false, true) }}"
+
+# Set variables for adding commands or function calls to script
+- name: Set up block for GENERATING Script
+  no_log: "{{ nolog }}"
+  block:
+    - name: "Set deploy function for function call"
+      when: not _add_command
+      ansible.builtin.set_fact:
+        deploy_function_name: "{{ seaa_deploy_strategy }}ResourceFromFile"
+
+    - name: Set comment for Command
+      when:
+        - _add_command
+        - _line_comment is defined and _line_comment != ''
+      ansible.builtin.set_fact:
+        _line_comment: "# {{ _line_comment | trim }}"
+
+    - name: "Query resource Name from yaml file"
+      ansible.builtin.shell: "set -o pipefail && yq e '.metadata.name' {{ _resource_yaml_file }} | head -n 1"
+      when: not _add_command
+      register: name_output
+      changed_when: name_output.rc == 0
+
+    - name: "Query resource Kind from yaml file"
+      ansible.builtin.shell: "set -o pipefail && yq e '.kind' {{ _resource_yaml_file }} | head -n 1"
+      when: not _add_command
+      register: kind_output
+      changed_when: kind_output.rc == 0
+
+    - name: Set facts for name, kind comment for function call
+      when: not _add_command
+      ansible.builtin.set_fact:
+        resource_name: "{{ name_output.stdout }}"
+        resource_kind: "{{ kind_output.stdout }}"
+        _line_comment: "# {{ deploy_type | capitalize }} '{{ kind_output.stdout }}' - '{{ name_output.stdout }}'"
+
+    - name: Set stats of script file.
+      ansible.builtin.stat:
+        path: "{{ dest_script_file }}"
+      register: script_outfile
+
+- name: Check if deploy script exist and if it should be appended to
+  ansible.builtin.set_fact:
+    _script_has_started: true
+    script_has_started: true
+  when:
+    - script_outfile.stat.exists
+    - seaa_append_to_deployment_script | bool
+
+- name: Check if already started generating Script
+  when:
+    - not _script_has_started
+  block:
+
+    # Check ocp_cluster_cache dictionary for existing token for current ocp host
+    - name: Check ocp_cluster_cache dictionary for existing token for current ocp host
+      ansible.builtin.set_fact:
+        query_script_has_started: >-
+          {{ ocp_cluster_cache
+            | json_query(jmespath)
+          }}
+      when:
+        - ocp_cluster_cache is defined and ocp_cluster_cache != None
+      vars:
+        jmespath: "{{ jmesq_script_started }}"
+
+    - name: Set _script_has_started fact from cache
+      ansible.builtin.set_fact:
+        _script_has_started: true
+        script_has_started: true
+      when:
+        - query_script_has_started | type_debug != "NoneType"
+        - query_script_has_started is not none
+        - query_script_has_started | length > 0
+
+
+# Create new script file
+- name: Block to Generate script file
+  when: not _script_has_started
+  block:
+    - name: Delete script file {{ dest_script_file }} if it previously exist
+      failed_when: false
+      ansible.builtin.file:
+        state: absent
+        path: "{{ dest_script_file }}"
+      no_log: "{{ nolog }}"
+
+    - name: Get timestamp from the system
+      ansible.builtin.command: "date +%Y-%m-%d-%H:%M:%S"
+      register: tstamp
+      changed_when: tstamp.rc == 0
+      no_log: "{{ nolog }}"
+
+    - name: Set {{ deploy_type }} script start timestamp
+      ansible.builtin.set_fact:
+        start_time_stamp: "{{ tstamp.stdout }}"
+      no_log: "{{ nolog }}"
+
+    - name: Set stats of {{ deploy_type }} script file.
+      ansible.builtin.stat:
+        path: "{{ dest_script_file | dirname }}"
+      register: script_outfile
+      no_log: "{{ nolog }}"
+
+    - name: Make sure parent directory {{ dest_script_file | dirname }} exists
+      ansible.builtin.file:
+        path: "{{ dest_script_file | dirname }}"
+        state: directory
+        mode: '0755'
+      when: not script_outfile.stat.exists
+
+    - name: Generate script file from template
+      ansible.builtin.template:
+        src: "{{ source_script_dir }}"
+        dest: "{{ dest_script_file }}"
+        force: true
+        mode: '0755'
+      no_log: "{{ nolog }}"
+
+    #  Update cache with new namespace for broker
+    - name: Update cache with new namespace {{ this_project_name }} on {{ current_ocphost }}
+      ansible.builtin.set_fact:
+        ocp_cluster_cache: "{{ ocp_cluster_cache | update_cache_for_generating_files(current_ocphost, this_project_name, 0, 'script_has_started') }}"
+      when: ocp_cluster_cache is defined and ocp_cluster_cache != None
+
+    - name: Set fact generated script has started
+      ansible.builtin.set_fact:
+        _script_has_started: true
+        script_has_started: true
+
+- name: Block to add Comment and line to script file
+  when: _script_has_started
+  block:
+    - name: "Append comment to deployment script file"
+      when: _line_comment is defined and _line_comment != ''
+      ansible.builtin.lineinfile:
+        path: "{{ dest_script_file }}"
+        line: "{{ _line_comment }}"
+
+    - name: Add Comment and line to script file
+      when: not _add_command
+      block:
+        - name: "Append line to {{ deploy_type }}ment script file"
+          ansible.builtin.lineinfile:
+            path: "{{ dest_script_file }}"
+            line: "{{ deploy_function_name }} {{ _add_line }}"
+          register: line_in_output
+
+        - name: "Add blank line to end of script file"
+          ansible.builtin.shell: "echo >> {{ dest_script_file }}"
+          register: echo_output
+          changed_when: echo_output.rc == 0
+          when: line_in_output.msg == "line added"
+
+    - name: Add Command line to script file
+      when: _add_command
+      block:
+        - name: "Append command to {{ deploy_type }}ment script file"
+          ansible.builtin.lineinfile:
+            path: "{{ dest_script_file }}"
+            line: "{{ _add_line }}"
+          register: line_in_output
+
+        - name: "Add blank line to end of script file"
+          ansible.builtin.shell: "echo >> {{ dest_script_file }}"
+          register: echo_output
+          changed_when: echo_output.rc == 0
+          when: line_in_output.msg == "line added"

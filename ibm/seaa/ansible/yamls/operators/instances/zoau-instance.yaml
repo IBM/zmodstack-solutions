@@ -1,0 +1,20 @@
+#jinja2: lstrip_blocks: True
+---
+kind: "{{ zoau_instance.kind }}"
+apiVersion: {{ zoau_instance.apiVersion }}
+metadata:
+  name: "{{ zoau_instance.name }}"
+spec:
+{% if zoau_instance.licenseAccept == true %}
+  accept: true
+{% else %}
+  accept: false
+{% endif %}
+{% if zpm_consolidated_operator | bool == true %}
+  product_name: {{ oc_product.code_name }}
+{% endif %}
+  product_ver: "{{ zoau_instance.productVersion }}"
+  zosendpoint: "{{ zoau_instance.zosEndpoint }}"
+{% if oc_product.credential_type == "personal" %}
+  credential: "ssh-key-{{ endpoint.username }}-{{ endpoint.name }}"
+{% endif %}

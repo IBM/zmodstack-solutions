@@ -1,0 +1,64 @@
+#jinja2: lstrip_blocks: True
+---
+kind: "{{ endpoint.kind }}"  # ZosEndpoint
+apiVersion: "{{ endpoint.apiVersion }}"
+metadata:
+  name: "{{ endpoint.name }}"
+  finalizers:
+    {% for finalizer in endpoint.finalizers %}
+    - "{{ finalizer }}"
+    {% endfor %}
+  labels:
+    instance-name: "{{ broker_instance.name }}"
+spec:
+  host: "{{ endpoint.hostname }}"
+  port: {{ endpoint.port | int }}
+{% if aendpoint.type is defined and endpoint.type != "" %}  
+  endpointType: "{{ endpoint.type }}"
+{% endif %}
+  variables:
+{% if zpm_registry.host is defined and zpm_registry.host != "" %}
+    - name: zpm_registry_host
+      type: string
+      value: "{{ zpm_registry.host }}"
+{% endif %}
+{% if zpm_registry.user is defined and zpm_registry.user != "" %}
+    - name: zpm_registry_user
+      type: string
+      value: "{{ zpm_registry.user }}"
+{% endif %}
+{% if zpm_registry.password is defined and zpm_registry.password != "" %}
+    - name: zpm_registry_password
+      type: string
+      sensitive: {{ seaa_encrypt_sensitive_endpoint_vars }}
+      value: >-
+        {{ registry_password | safe | indent(width=8) }}
+{% endif %}
+{% if seaa_copy_zpm_dir_params_to_endpoint is defined and seaa_copy_zpm_dir_params_to_endpoint == true %}
+  {% if endpoint.zpm_installation_dir is defined and endpoint.zpm_installation_dir != "" %}
+    - name: zpm_installation_dir
+      type: string
+      value: "{{ endpoint.zpm_installation_dir }}"
+  {% endif %}
+  {% if endpoint.zpm_state_dir is defined and endpoint.zpm_state_dir != "" %}
+    - name: zpm_state_dir
+      type: string
+      value: "{{ endpoint.zpm_state_dir }}"
+  {% endif %}
+{% endif %}
+{% if endpoint.zpm_bash_dir is defined and endpoint.zpm_bash_dir != "" %}
+    - name: zpm_bash_dir
+      type: string
+      value: "{{ endpoint.zpm_bash_dir }}"
+{% endif %}
+{% if endpoint.zpm_le_install_hlq is defined and endpoint.zpm_le_install_hlq != "" %}
+    - name: zpm_le_install_hlq
+      type: string
+      value: "{{ endpoint.zpm_le_install_hlq }}"
+{% endif %}
+{% if endpoint.zpm_cbc_install_hlq is defined and endpoint.zpm_cbc_install_hlq != "" %}
+    - name: zpm_cbc_install_hlq
+      type: string
+      value: "{{ endpoint.zpm_cbc_install_hlq }}"
+{% endif %}
+

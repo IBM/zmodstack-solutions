@@ -1,0 +1,90 @@
+---
+# Include ansible variables for product sub-operator being installed
+- name: Include Python vars
+  ansible.builtin.include_vars:
+    file: "{{ zoscb_e2e_roles_directory }}/python/vars/main.yml"
+  when: not python_vars_loaded
+
+- name: Set python_vars_loaded flag
+  ansible.builtin.set_fact:
+    python_vars_loaded: true
+  when: not python_vars_loaded
+
+# Include sub operator role
+- name: "Include role: 'python'"
+  ansible.builtin.include_role:
+    name: "python"
+
+- name: Deploy Operator Collection and SubOperator
+  when:
+    - not zpm_consolidated_operator | bool
+  block:
+
+    # FIND OPERATOR COLLECTION TAR.GZ FILE LOCALLY
+    - name: Find upload file
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/findFile.yml"
+      when: oc_product.import_mode == 'upload'
+
+    # ADD Secret for OC and Endpoint
+    - name: Manage Secret for OC
+      when:
+        - hostvars[current_zosendpoint]._is_active
+        - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+      ansible.builtin.include_role:
+        name: openshift_cluster
+        tasks_from: manage_secrets
+      vars:
+        resource_kind: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
+        cred_type: "{{ oc_product.credential_type }}"
+      with_items:
+        - "{{ groups['zosendpoints'] }}"
+      loop_control:
+        loop_var: current_zosendpoint
+
+    # IMPORT OPERATOR COLLECTION
+    - name: Create operatorCollection
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/create/operatorCollection.yml"
+      when: seaa_deploy_operator_collections | bool
+
+    # CREATE SUB-OPERATOR CONFIG (MAP TO ENDPOINT)
+    - name: Create subOperatorConfig
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/create/subOperatorConfig.yml"
+      when:
+        - seaa_automation_strategy == "inline"
+        - hostvars[current_zosendpoint]._is_active
+        - seaa_deploy_suboperator | bool
+      with_items:
+        - "{{ groups['zosendpoints'] }}"
+      loop_control:
+        loop_var: current_zosendpoint
+
+    # CREATE SUB-OPERATOR CONFIG
+    - name: Create subOperatorConfig with yaml
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/create/subOperatorConfig.yml"
+      when:
+        - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+        - seaa_deploy_suboperator | bool
+        - (zpm_subop_deploy_verified is undefined or not zpm_subop_deploy_verified)
+
+# CREATE PYTHON INSTANCE
+- name: Create pythonInstance
+  ansible.builtin.include_tasks: "{{ python_cr_task_dir }}/install/pythonInstance.yml"
+  when:
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_software_instances | bool
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint
+
+# CREATE PYTHON VALIDATION INSTANCE
+- name: Create validatePython instance
+  ansible.builtin.include_tasks: "{{ python_cr_task_dir }}/install/validatePython.yml"
+  when:
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_validate_crs | bool
+    - sub_operator_python_create_validate_cr | bool
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint

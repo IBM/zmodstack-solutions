@@ -1,0 +1,212 @@
+---
+- name: "Check for availability of operator collection:"
+  when: seaa_automation_strategy != "generate_yaml"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: OperatorCollection
+    namespace: "{{ project_namespace.name }}"
+    api_version: "{{ oc_product.apiVersion }}" # zoscb.ibm.com/v2beta1
+    name: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
+    wait: false
+  register: oc_info
+
+- name: Create operator collection with INLINE
+  when: seaa_automation_strategy == "inline" and oc_product.skipVerify | bool # rest
+  block:
+    - name: Set Broker Instance Url
+      ansible.builtin.set_fact:
+        broker_application_url: "https://{{ route.name }}-{{ project_namespace.name }}.apps.{{ ocp_cluster.hostname | replace('api.', '') }}"
+
+    - name: Set galaxy download uri for {{ oc_product.name }}
+      ansible.builtin.set_fact:
+        oc_download_uri: "{{ oc_product.import_url }}/download/ibm-{{ oc_product.name | replace('-', '_') }}_operator-{{ oc_product.oc_version }}.tar.gz"
+      when: oc_product.name != sub_operators.zpm.name and oc_product.import_mode == 'galaxy' # NOT 'zos-package-manager'
+
+    - name: Set galaxy download uri for {{ oc_product.name }}
+      ansible.builtin.set_fact:
+        oc_download_uri: "{{ oc_product.import_url }}/download/ibm-{{ oc_product.name | replace('-', '_') }}-{{ oc_product.oc_version }}.tar.gz"
+      when: oc_product.name == sub_operators.zpm.name and oc_product.import_mode == 'galaxy' # 'zos-package-manager'
+
+    - name: Debug Operator collection before import
+      when:
+        - seaa_automation.debug | bool
+      block:
+        - name: Debug var broker_application_url
+          ansible.builtin.debug:
+            var: broker_application_url
+        - name: Debug var oc_product
+          ansible.builtin.debug:
+            var: oc_product
+        - name: Debug var oc_download_uri
+          ansible.builtin.debug:
+            var: oc_download_uri
+        - name: Waiting for user response
+          ansible.builtin.pause:
+            prompt: Check Operator Collection parameters before importing, press enter to continue ...
+          when:
+            - seaa_automation.prompt_during_automation | bool
+
+    - name: Import Operator from Galaxy
+      block:
+        - name: "Import Unsigned operator collection from uri: '{{ oc_download_uri }}' to '{{ broker_application_url }}'"
+          when: oc_product.import_mode == 'galaxy' and (oc_product.skipVerify | bool)
+          ansible.builtin.shell: |
+            curl -k --location --request DELETE '{{ broker_application_url }}/api/collections/{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}' \
+              --header 'x-csrf-token: {{ ocp_host_x_csrf_token }}' \
+              --cookie '_gorilla_csrf={{ ocp_gorilla_csrf_cookie }}'; \
+            curl -k --location --request POST '{{ broker_application_url }}/api/collections/import' \
+              --header 'x-csrf-token: {{ ocp_host_x_csrf_token }}' \
+              --cookie '_gorilla_csrf={{ ocp_gorilla_csrf_cookie }}' \
+              --form 'skipVerify="{{ oc_product.skipVerify }}"' \
+              --form 'uri="{{ oc_download_uri }}"'
+          register: upload_collection_output
+          until: "upload_collection_output.rc == 0 and 'File operator-config uploaded successfully' in upload_collection_output.stdout"
+          # failed_when: upload_collection_output.stderr != ''
+          retries: 5
+          delay: 30
+          changed_when: upload_collection_output != 0
+
+    - name: Upload Operator from file
+      block:
+        - name: "Import operator collection using the tar.gz file: '{{ oc_filename }}' to '{{ broker_application_url }}'"
+          when: oc_product.import_mode == 'upload' and not (oc_product.skipVerify | bool)
+          ansible.builtin.shell: |
+            curl -k --location --request DELETE '{{ broker_application_url }}/api/collections/{{ oc_product.name }}.zpm.{{ oc_version }}' \
+              --header 'x-csrf-token: {{ ocp_host_x_csrf_token }}' \
+              --cookie '_gorilla_csrf={{ ocp_gorilla_csrf_cookie }}'; \
+            curl -k --location --request POST '{{ broker_application_url }}/api/collections/import' \
+              --header 'x-csrf-token: {{ ocp_host_x_csrf_token }}' \
+              --cookie '_gorilla_csrf={{ ocp_gorilla_csrf_cookie }}' \
+              --form 'signatureFile=@"{{ oc_product.signatureFile }}"' \
+              --form 'publicKey=@"{{ oc_product.publicKey }}"' \
+              --form 'skipVerify="{{ oc_product.skipVerify }}"' \
+              --form 'uploadFile=@"{{ zoscb_e2e_roles_directory | get_expanded_dir }}/{{ oc_product.short_name }}/oc_file/{{ oc_filename }}"'
+          register: upload_collection_output
+          until: "upload_collection_output.rc == 0 and 'File operator-config uploaded successfully' in upload_collection_output.stdout"
+          retries: 10
+          delay: 30
+          changed_when: upload_collection_output != 0
+
+- name: Create operator collection with YAML
+  when:
+    - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+    - not oc_product.import_mode == 'upload'
+  block:
+    - name: Set zProduct Operator name
+      when: oc_product.name != sub_operators.zpm.name
+      ansible.builtin.set_fact:
+        operator_name: ibm-{{ oc_product.name | replace('-', '_') }}_operator-{{ oc_product.oc_version }}
+
+    - name: Set ZPM operator name
+      when: oc_product.name == sub_operators.zpm.name
+      ansible.builtin.set_fact:
+        operator_name: ibm-{{ oc_product.name | replace('-', '_') }}-{{ oc_product.oc_version }}
+
+    - name: Deploy Operator Collection
+      block:
+        - name: Set uri for Galaxy Unsigned Collection {{ oc_product.name }}
+          when: oc_product.import_mode == 'galaxy'
+          ansible.builtin.set_fact:
+            oc_download_uri: "{{ oc_product.import_url }}/download/{{ operator_name }}.tar.gz"
+        # TODO Assert Amsible Error when  oc_product.import_mode != galaxy
+
+    - name: Deploy Signed Operator Collection
+      when: not oc_product.skipVerify | bool
+      block:
+        - name: Set uri for Galaxy Signed Collection {{ oc_product.name }}
+          ansible.builtin.set_fact:
+            oc_signature_uri: "{{ oc_product.signatureFile }}"
+
+        - name: Deploy signature file for OC
+          ansible.builtin.include_role:
+            name: openshift_cluster
+            tasks_from: manage_signature
+          vars:
+            iscleanup: false
+
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+        - seaa_deploy_strategy != "testing"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/operators/operator-collection.yaml"
+        destination_file: "{{ oc_product.short_name }}-{{ oc_product.oc_version }}_oc.yaml"
+        is_operator_collection: true
+
+    # Capture start time when seaa_capture_deployment_wait_time flag set
+    - name: Get timestamp from the system
+      when:
+        - seaa_capture_deployment_wait_time | bool
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.shell: "echo $(($(date +'%s * 1000 + %-N / 1000000')))"
+      register: start_tstamp_ns
+      no_log: "{{ not seaa_automation.debug }}"
+      changed_when: start_tstamp_ns != 0
+
+    - name: "Deploy Operator Collection {{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }} \
+       with Native YAML API from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/operator-collection.yaml') | from_yaml }}"
+      register: oc_output
+      until: "oc_output.failed == false"
+      failed_when: oc_output.failed == true
+      retries: 5
+      delay: 30
+
+    - name: "Ensure successful installation of {{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }} Operator Collection"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s_info:
+        api_key: "{{ ocp_cluster.auth_token }}"
+        kind: OperatorCollection
+        namespace: "{{ project_namespace.name }}"
+        api_version: "{{ oc_product.apiVersion }}"
+        label_selectors:
+          - "instance-name = {{ broker_instance.name }}"
+          - "operator-domain = {{ oc_product.domain }}"
+          - "operator-name = {{ oc_product.name }}"
+          - "operator-version = {{ oc_product.oc_version }}"
+      register: deploy_collection_output
+      until:
+        - deploy_collection_output.resources is defined and deploy_collection_output.resources | length > 0
+        - "'status' in deploy_collection_output.resources[0]"
+        - deploy_collection_output.resources[0].status.phase is defined
+        - deploy_collection_output.resources[0].status.phase == 'Successful' or deploy_collection_output.resources[0].status.phase == 'Failed'
+      failed_when: "'status' in deploy_collection_output.resources[0] and
+                    deploy_collection_output.resources[0].status.phase != 'Successful'"
+      retries: "{{ seaa_deploy_retries | int }}" # 120
+      delay: "{{ seaa_deploy_delay | int }}" # 10
+
+    # Block to capture wait time to add to deploy script
+    - name: Capture Deploy Wait time
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+        - seaa_capture_deployment_wait_time | bool and start_tstamp_ns is defined
+      block:
+        - name: Capture wait time and add to deploy script
+          ansible.builtin.include_role:
+            name: zos_dev_envs
+            tasks_from: capture_deploy_time
+          vars:
+            resource_kind: OperatorCollection
+            _script_command_comment: "Wait for '{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}' \
+              'OperatorCollection' {{ deploy_type }}ment "
+            _deployment_file: "{{ seaa_yaml_single_deployment_file }}"
+            _deploy_name: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
+            _deploy_file: "{{ oc_product.short_name }}-{{ oc_product.oc_version }}_oc.yaml"
+
+    - name: Prompt to manually check operator collection
+      when:
+        - seaa_automation.debug | bool
+      block:
+        - name: Prompt to manually check operator collection '"{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}"' is installed and ready.
+          ansible.builtin.pause:
+            prompt: "Check to make sure '{{ oc_product.name }}' operator has installed, press enter to continue ..."
+          when: seaa_automation.prompt_during_automation | bool
+
+# TODO:
+# - name: Fail for invalid Automation configurationn Upload import not supported for YAML operator collection with YAML and upload
+#   when: seaa_automation_strategy == "generate_deploy_yaml" and not oc_product.import_mode == 'upload'

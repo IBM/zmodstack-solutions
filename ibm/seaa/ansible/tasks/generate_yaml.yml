@@ -1,0 +1,115 @@
+---
+- name: Include initialization task for generating files
+  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/gen_init.yml"
+
+
+- name: Set generate YAML output directories and variables
+  ansible.builtin.set_fact:
+    yaml_dir: "{{ _seaa_yaml_output_dir }}"
+    _seaa_yaml_secrets_dir: "{{ seaa_yaml_secrets_output_dir | default( _seaa_yaml_output_dir~'/_secrets' , true ) }}"
+    yaml_file: "{{ destination_file }}"
+    yaml_tmp_output: ".output"
+    script_file_name: "_{{ seaa_deploy_strategy }}.sh" # on undeploy - _undeploy.sh
+    script_file_location: "{{ _seaa_yaml_output_dir }}"
+    _destination_file: "{{ destination_file }}"
+    subops: "suboperator_mappings"
+    operatorc: "operator_collections"
+    zresource: "zos_resources"
+    zosendpoint_string: "zos_endpoints"
+    deploy_type: "{{ seaa_deploy_strategy }}"
+    deploy_src_file: "deploy_script_template.j2"
+    readme_src_file: "deploy_readme_template.md"
+    readme_file_name: "{{ 'README.md' if seaa_deploy_strategy == 'deploy' else 'READMEU.md' }}" # "README"
+    clean_tmp: true
+    nolog: true
+
+
+- name: Set SubOP directories for YAML being generated
+  when:
+    - is_suboperator_config is defined and is_suboperator_config
+  ansible.builtin.set_fact:
+    yaml_dir: "{{ yaml_dir }}/{{ subops }}"
+    _destination_file: "{{ ( yaml_dir ~'/'~ subops ) | get_relative_dir( yaml_dir ) }}/{{ _destination_file }}"
+
+- name: Set Directories for YAML being generated
+  when:
+    - is_operator_collection is defined and is_operator_collection
+  ansible.builtin.set_fact:
+    yaml_dir: "{{ yaml_dir }}/{{ operatorc }}"
+    _destination_file: "{{ ( yaml_dir ~'/'~ operatorc ) | get_relative_dir( yaml_dir ) }}/{{ _destination_file }}"
+
+- name: Set Directories for YAML being generated
+  when:
+    - is_zos_endpoint is defined and is_zos_endpoint
+  ansible.builtin.set_fact:
+    yaml_dir: "{{ yaml_dir }}/{{ zosendpoint_string }}"
+    _destination_file: "{{ ( yaml_dir ~'/'~ zosendpoint_string )| get_relative_dir( yaml_dir ) }}/{{ _destination_file }}"
+
+- name: Set Directories for YAML being generated
+  when:
+    - is_zos_resource is defined and is_zos_resource
+    - zos_endpoint is defined
+  ansible.builtin.set_fact:
+    yaml_dir: "{{ yaml_dir }}/{{ zresource }}/{{ zos_endpoint.name }}"
+    tmp_dir: "{{ yaml_dir }}/.tmp/{{ zresource }}/{{ zos_endpoint.name }}"
+    _destination_file: "{{ ( yaml_dir ~'/'~ zresource )| get_relative_dir( yaml_dir ) }}/{{ zos_endpoint.name }}/{{ _destination_file }}"
+
+- name: Set Directories for YAML being generated
+  when:
+    - is_secret is defined and is_secret
+    - is_encrypted is undefined or not is_encrypted
+  ansible.builtin.set_fact:
+    yaml_dir: "{{ _seaa_yaml_secrets_dir }}"
+    _destination_file: "{{ _seaa_yaml_secrets_dir | get_relative_dir(yaml_dir) }}/{{ _destination_file }}"
+
+- name: Generate YAML file
+  when:
+    - deploy_type == "deploy" or deploy_type == "undeploy"
+  block:
+    - name: Set stats of '{{ yaml_file }}' YAML file.
+      ansible.builtin.stat:
+        path: "{{ yaml_dir }}/{{ yaml_file }}"
+      register: yaml_outfile
+      no_log: "{{ nolog }}"
+
+    - name: Make sure parent directory for {{ yaml_dir }}/{{ yaml_file }} exists
+      ansible.builtin.file:
+        path: "{{ yaml_dir }}"
+        state: directory
+        mode: '0755'
+      register: create_new_yaml_dir
+      when: not yaml_outfile.stat.exists
+
+    - name: Delete '{{ yaml_file }}'' YAML file if it already exist
+      when:
+        - yaml_outfile.stat.exists and deploy_type == "deploy"
+      failed_when: false
+      ansible.builtin.file:
+        state: absent
+        path: "{{ yaml_dir }}/{{ yaml_file }}"
+
+    - name: Generate '{{ yaml_file }}' YAML file from jinja2 template
+      when:
+        - (deploy_type == "deploy") or
+          (not yaml_outfile.stat.exists and deploy_type == "undeploy")
+      ansible.builtin.template:
+        src: "{{ src }}"
+        dest: "{{ yaml_dir }}/{{ yaml_file }}"
+        force: true
+        mode: '0655'
+
+    - name: Include task to generate script file
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/_generate_script.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/{{ deploy_src_file }}"
+        dest: "{{ script_file_location }}/{{ script_file_name }}"
+        add_line: "$basedir/{{ _destination_file }}"
+        resource_yaml_file: "{{ yaml_dir }}/{{ yaml_file }}"
+
+    - name: Include task to generate README file
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/_generate_readme.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/{{ readme_src_file }}"
+        dest: "{{ script_file_location }}/{{ readme_file_name }}"
+        resource_yaml_file: "{{ yaml_dir }}/{{ yaml_file }}"
+        deploy_file: "{{ _destination_file }}"

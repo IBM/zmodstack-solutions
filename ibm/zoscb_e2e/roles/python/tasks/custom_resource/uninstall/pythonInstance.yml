@@ -1,0 +1,48 @@
+- name: "Check for availability of operator collection:"
+  when: seaa_automation_strategy != "generate_yaml"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    namespace: "{{ project_namespace.name }}"
+    kind: "{{ python_instance.kind }}"
+    name: "{{ python_instance.name }}"
+    api_version: "{{ python_instance.apiVersion }}"
+    wait: false
+  register: check_k8s_info
+
+- name: "Delete sub-operator CR {{ python_instance.kind }}: '{{ python_instance.name }}' from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+  when:
+    - seaa_automation_strategy == "inline"
+    - check_k8s_info is defined and check_k8s_info not none and check_k8s_info.api_found
+  kubernetes.core.k8s:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    state: absent
+    namespace: "{{ project_namespace.name }}"
+    kind: "{{ python_instance.kind }}"
+    name: "{{ python_instance.name }}"
+    api_version: "{{ python_instance.apiVersion }}"
+    wait: "{{ seaa_undeploy_wait | bool }}" # yes
+    wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}" # 600
+    continue_on_error: "{{ seaa_undeploy_continue_on_error | bool }}"
+
+- name: Delete pythonInstance with YAML file
+  when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+  block:
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/operators/instances/python-instance.yaml"
+        destination_file: "{{ oc_product.short_name }}-{{ product_filename }}_Instance.yaml"
+        is_zos_resource: true
+        zos_endpoint: "{{ endpoint }}"
+
+    - name: "Delete pythonInstance with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: absent
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/instances/python-instance.yaml') | from_yaml }}"
+        wait: "{{ seaa_undeploy_wait | bool }}" # yes
+        wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}" # 600
+        continue_on_error: "{{ seaa_undeploy_continue_on_error | bool }}"

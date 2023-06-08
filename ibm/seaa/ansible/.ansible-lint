@@ -1,0 +1,6 @@
+---
+# .ansible-lint
+exclude_paths:
+  - yamls/*
+skip_list:
+  - name[template]

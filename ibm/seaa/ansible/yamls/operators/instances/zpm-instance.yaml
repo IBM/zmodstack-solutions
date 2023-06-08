@@ -1,0 +1,28 @@
+#jinja2: lstrip_blocks: True
+---
+kind: "{{ zos_package_manager.kind }}"
+apiVersion: "{{ zos_package_manager.apiVersion }}"
+metadata:
+  name: "{{ zos_package_manager.name }}"
+spec:
+{% if zos_package_manager.licenseAccept == true %}
+  accept: true
+{% else %}
+  accept: false
+{% endif %}
+  java_home: "{{ zos_package_manager.javaHomeDirectory }}"
+  zosendpoint: "{{ zos_package_manager.zosEndpoint }}"
+  zpm_install_path: "{{ zos_package_manager.installDirectoryPath }}"
+  zpm_products_hlq: "{{ zos_package_manager.productsHLQ }}"
+  zpm_registry_location: "{{ zpm_registry.host }}"
+  zpm_state_path: "{{ zos_package_manager.stateDirectoryPath }}"
+  {% if zos_package_manager.zpmRegistryProxyHost is defined and zos_package_manager.zpmRegistryProxyHost is not none %}
+  zpm_registry_proxy_host: "{{ zos_package_manager.zpmRegistryProxyHost }}"
+  {% endif %}
+  {% if zos_package_manager.zpmRegistryProxyPort is defined and zos_package_manager.zpmRegistryProxyPort is not none %}
+  zpm_registry_proxy_port: "{{ zos_package_manager.zpmRegistryProxyPort }}"
+  {% endif %}
+  {% if oc_product.credential_type == "personal" %}
+  credential: "ssh-key-{{ endpoint.username }}-{{ endpoint.name }}"
+  {% endif %}
+

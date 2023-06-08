@@ -1,0 +1,384 @@
+#jinja2: lstrip_blocks: True
+{{ bash_bin }}
+############################################################################################################################################
+#  (C) Copyright 2023 IBM Corp.
+############################################################################################################################################
+
+############################################################################################################################################
+#  Edit SEAA framework { deploy_type }}ment script variables as needed to {{ deploy_type }} resources
+############################################################################################################################################
+
+# Set Default Open Shift host from generated script
+export OCP_SERVER=https://{{ ocp_cluster.hostname }}:{{ ocp_cluster.port }}
+
+# Set Open Shift login token, set to None by default
+export OCP_TOKEN={{ cluster_auth_token | default('None',true) }}
+
+# Set current namespace variable
+export CURRENT_NAMESPACE="{{ project_namespace.name }}"
+
+# Variable used to determine if script will prompted for user input
+prompt={{ seaa_prompt_during_deploy_script_run | bool | lower }}
+
+# Continue script on error
+continue_on_error={{ seaa_deployment_script_continue_on_error | bool | lower }}
+
+{% if deploy_type == "deploy" %}
+# Wait specified time on deployment
+wait_for_deployment={{ seaa_capture_deployment_wait_time | bool | lower }}
+{% endif %}
+############################################################################################################################################
+#  End - Edit SEAA framework { deploy_type }}ment script variables as needed to {{ deploy_type }} resources
+############################################################################################################################################
+
+#****************************** Warning helper functions: The below functions are used with the generated {{ deploy_type }}ment script for SEAA framework, editing could affect {{ deploy_type }}ments ******************************
+# Print usage
+function printUsage {
+  echo "Usage: $(basename "$0"): "
+  echo "    --server=* Open Shift server to login to, the value has the format of 'https://<host>:<port>'"
+  echo "    --token=* API token used to connect to the Open Shift server."
+ }
+
+# Parse command line options
+function parseCommandLine {
+  for i in "$@"; do
+      case $i in
+          --server=*)
+              export OCP_SERVER=${i#*=}
+      ;;
+          --token=*)
+              export OCP_TOKEN=${i#*=}
+      ;;
+      esac
+  done
+}
+############################################################################################################################################
+# Start Script OCP Login Util
+############################################################################################################################################
+
+# Login to Open Shift server
+function loginOCP () {
+
+  # Set flag to check if logged in
+  isLoggedIn=false
+
+  # Check if is already logged in to OCP
+  oc whoami 2>/dev/null >/dev/null
+
+  # if logged in to OCP loggin verify server if provided
+  if [[ $? -eq 0 ]]; then
+    # Set logged on username
+    logged_user=$(oc whoami &2>/dev/null)
+    logged_server=$(oc whoami --show-server &2>/dev/null)
+    # Print logged in user
+    logMessage "Logged in as $logged_user on $logged_server"
+
+    # Get server values
+    logged_server_value=$(echo $logged_server | sed -e "s#^[^/]*//\([^:/]*\).*#\1#")
+    target_ocphost_value=$(echo $OCP_SERVER | sed -e "s#^[^/]*//\([^:/]*\).*#\1#")
+
+    # Verify logged into the corrct server
+    if [[ "${target_ocphost_value}" == "${logged_server_value}" ]]; then
+      isLoggedIn=true
+    else
+      logMessage "Logged into wrong host, will login to $target_ocphost_value ..."
+      # log_out=$(oc logout)
+      isLoggedIn=false
+    fi
+  fi
+
+  # if not logged int to OCP login
+  if [[ "$isLoggedIn" == "false" ]]; then
+    # Log message for login attempt
+    logMessage "Attempt to login to ${OCP_SERVER} ... "
+
+    # Check if OCP_TOKEN is set to None by default
+    if [[ "$OCP_TOKEN" == "None" ]]; then
+      # Set OCP_TOKEN to empty string if it is None
+      OCP_TOKEN=''
+    fi
+
+    # Check if ocp server and token are provided
+    if [[ ! -z "$OCP_TOKEN" && ! -z "$OCP_SERVER" ]]; then
+      # Login Open Shift
+      oc login --token=${OCP_TOKEN} --server=${OCP_SERVER}
+      if [[ $? -ne 0 ]]; then
+        logError "Unable to login to ${OCP_SERVER} "
+        exit 1
+      fi
+    else # OCP Token and Server not provided
+
+      # Check if server is empty
+      if [[ -z "$OCP_SERVER" ]]; then
+        # Read OCP server from user input
+        read -rp "Enter Open Shift server in the format of 'https://<host>:<port>': " OCP_SERVER
+      fi
+
+      # Check if token is empty
+      if [[ -z "$OCP_TOKEN" && ! -z "$OCP_SERVER" ]]; then
+        # Read OCP token from user input
+        read -rp "Enter API token for Open Shift server $OCP_SERVER: " OCP_TOKEN
+      fi
+
+      # Login Open Shift
+      oc login --token=${OCP_TOKEN} --server=${OCP_SERVER}
+      if [[ $? -ne 0 ]]; then
+        logError "Unable to login to ${OCP_SERVER} "
+        exit 1
+      fi
+    fi
+  fi
+
+  {% if deploy_type == "undeploy" %}
+  # Set project
+  oc project $CURRENT_NAMESPACE
+
+  # Check if able to set current project namespace
+  if [[ $? -ne 0 ]]; then
+    logError "Unable to set the OpenShift project "$CURRENT_NAMESPACE""
+  fi
+  {% endif %}
+}
+
+# Log errors to terminal
+function logError () {
+  echo -e "\n\033[1;31m${1}\033[00m"
+  if [[ "$continue_on_error" = false ]]; then
+    exit 1
+  fi
+}
+# Log warning to terminal
+function logWarning () {
+  echo -e "\n\033[1:33m${1}\033[00m"
+}
+# Log message t terminal
+function logMessage () {
+  echo -e "\n\033[1;34m${1}\033[00m"
+}
+
+############################################################################################################################################
+# End Script OCP Login Util
+############################################################################################################################################
+
+# Function  to prompt for input of quit script
+function promptOrQuitScript () {
+  read -p "${1}, enter [Q] to Quit." -n 1 -r
+  # Check to see if user wants to quit script
+  if [[ $REPLY =~ ^[Qq]$ ]]; then
+    # Add line after prompt
+    echo
+    # Confirm script is being quit
+    read -p "Are you sure you want to quit {{ deploy_type | capitalize }}ment script? [y/N]" -n 1 -r
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+      # Add line after prompt
+      echo
+      # Quit script with RC 2
+      exit 2
+    else
+      # Add line after prompt
+      echo
+      # Prompt again for deploying creds
+      read -p "${1}" -n 1 -r
+    fi
+  fi
+
+  # Add line after prompt
+  echo
+
+}
+{% if deploy_type == "deploy" %}
+# Log message to terminal
+function {{ deploy_type }}CredSecret () {
+  # Check if should deploy CREDS for Project  deployment
+  if [[ "$prompt" = true ]]; then
+    # Prompt for deployment or allow script to be quit
+    promptOrQuitScript "{{ deploy_type | capitalize }} and Encrypt ${6} Credential for '${2}' on '${4}' (name: '${1}', sub-operator: '${5}')? [y/N]"
+  fi
+
+  # Generate Encrypted Cread if no prompting or if user replied yes
+  if [[ "$prompt" = false || $REPLY =~ ^[Yy]$ ]]; then
+    logMessage "{{ deploy_type | capitalize }}ing ${6} 'Secret' ${1} for ${5} user '${2}' on '${4}' to ${CURRENT_NAMESPACE} ..."
+    if [[ "${7}" == "--prompt_for_passphrase" ]]; then
+      # Encrpt OCP credential with passphrase
+      zoscb-encrypt credential-secret -n ${1} -u ${2} -s ${3} -p --namespace ${CURRENT_NAMESPACE}
+    else
+      # Encrpt OCP credential
+      zoscb-encrypt credential-secret -n ${1} -u ${2} -s ${3} --namespace ${CURRENT_NAMESPACE}
+    fi
+  fi
+  # Insert ne line
+  echo -e "\n"
+}
+
+# Wait for {{ deploy_type }}ment for a specified amount of time in minutes
+function waitFor{{ deploy_type | capitalize }}ment() {
+  # Check if waiting for deployment
+  if [[ $wait_for_deployment ]]; then
+    n=$(printf "%.0f" "$1")  # set the number of iterations
+
+    # Iterate and wait one sec for total wait time
+    for ((i=1; i<=n; i++)); do
+      echo -ne  "Waiting ${1} seconds for ${2} deployment ... timer($i)\r"
+      # Sleep time
+      sleep 1
+    done
+    echo ""
+  fi
+  # Insert ne line
+  echo -e "\n"
+}
+{% endif %}
+
+# Internal function to {{ deploy_type | capitalize }} resource from file
+function _{{ deploy_type }}ResourceFromFile () {
+    # Check if should prompted for Project {{ deploy_type | capitalize }}ment
+    if [[ $KIND == "Project" ]]; then
+      logMessage "{{ deploy_type | capitalize }}ing '${KIND}' ${2} with file ${1} ... "
+      {% if deploy_type == "undeploy" %}
+      if ! oc delete -f "${1}"  2>/dev/null; then
+        logError "Error {{ deploy_type }}ing '${KIND}' with YAML file '${1}'. Please verify you are connected to Open Shift server and that the resource exist."
+      {% else %}
+      if ! oc create -f "${1}"  2>/dev/null; then
+        logError "Error {{ deploy_type }}ing '${KIND}' with YAML file '${1}'. Please verify you are connected to Open Shift server and that the resource does not exist."
+      {% endif %}
+      fi
+    else # {{ deploy_type | capitalize }} non 'Project' ocp resource
+      logMessage "{{ deploy_type | capitalize }}ing '${KIND}' with file ${1} and project ${2} ... "
+      {% if deploy_type == "undeploy" %}
+      # Check If kind is ZosCloudBroker
+      if [[ $KIND == "ZosCloudBroker" ]]; then
+        # purge Broker resources from namespace
+        purgeBrokerResources ${METANAME}
+
+        if [[ $? -ne 0 ]]; then
+          logError "Unable to purge Broker resources for '${METANAME}' in '${CURRENT_NAMESPACE}'"
+        fi
+      fi
+      if ! oc delete -f "${1}" -n "${2}"  2>/dev/null; then
+        logError "Error {{ deploy_type }}ing '${KIND}' with YAML file '${1}'. Please verify you are connected to Open Shift server and that the resource exist."
+      {% else %}
+      if ! oc create -f "${1}" -n "${2}"  2>/dev/null; then
+        logError "Error {{ deploy_type }}ing '${KIND}' with YAML file '${1}'. Please verify you are connected to Open Shift server and that the resource does not exist."
+      {% endif %}
+      fi
+    fi
+}
+
+# Deploy resource from generated YAML file
+function  {{ deploy_type }}ResourceFromFile () {
+    # Set resource file name
+    RESOURCE_FILENAME=$1
+
+    # Query yaml for resource 'kind'
+    KIND=$(yq e '.kind' $RESOURCE_FILENAME | head -n 1)
+
+    # Query yaml for resource name
+    METANAME=$(yq e '.metadata.name' $RESOURCE_FILENAME | head -n 1)
+
+    # Check if should prompted for Project {{ deploy_type }}ment
+    if [[ "$prompt" = true && $KIND == "Project" ]]; then
+      promptOrQuitScript "{{ deploy_type | capitalize }} '${METANAME}' '${KIND}'? [y/N]"
+    # Else check if should prompted for resource {{ deploy_type }}ment
+    elif [[ "$prompt" = true ]]; then
+      # Prompt for {{ deploy_type }}ment or allow script to be quit
+      promptOrQuitScript "{{ deploy_type | capitalize }} '${METANAME}' '${KIND}' in namespace '${CURRENT_NAMESPACE}'? [y/N]"
+    fi
+
+    # {{ deploy_type | capitalize }}  if no prompting or if user replied yes
+    if [[ "$prompt" = false || $REPLY =~ ^[Yy]$ ]]; then
+      {% if deploy_type == "undeploy" %}
+       # Undeploy resource
+      _undeployResourceFromFile "$RESOURCE_FILENAME" "$CURRENT_NAMESPACE"
+      {% else %}
+      # Deploy resource
+      _deployResourceFromFile "$RESOURCE_FILENAME" "$CURRENT_NAMESPACE"
+      # If kind is project set Open Shift command line to current namspace
+      if [[ $KIND == "Project" ]]; then
+        # SET project
+        oc project $CURRENT_NAMESPACE
+        if [[ $? -ne 0 ]]; then
+          logError "Unable to set the OCP project namespace"
+        fi
+      fi
+      {% endif %}
+    fi
+    # Add line to output
+    echo
+}
+
+function exportBinDir(){
+  # Base directory to look for bin directory to export
+  _basedir=${1}
+
+  # The `bin` directory
+  bin_dir=""
+
+  # Loop through parent directories until `bin` directory is found
+  while [[ -z "$bin_dir" && "$_basedir" != "/" ]]; do
+    if [[ -d "$_basedir/bin" ]]; then
+      # `bin` directory found
+      bin_dir="$_basedir/bin"
+    else
+      # `bin` directory not found, move up to the parent directory
+      _basedir="$(dirname "$_basedir")"
+    fi
+  done
+
+  # If `bin` directory was found, add it to PATH
+  if [[ -n "$bin_dir" ]]; then
+    export PATH="$bin_dir:$PATH"
+  else
+    logError "`bin` directory not found"
+    # exit 1
+  fi
+}
+
+{% if deploy_type == "undeploy" %}
+# Purge z/OS Cloud Broker instance openshift-marketplace resources
+function purgeBrokerResources() {
+
+  # Set resourceName
+  resourceName=${1}
+
+  #Get zoscb instance name
+  zoscb_instance_name=$(oc get zoscloudbroker -n ${CURRENT_NAMESPACE} -o jsonpath='{.items[0].metadata.name}')
+
+  # Delete CatalogSource, Deployment, Service, and Service Account associated with the namespace
+  echo "purge resources for 'ibm-zoscb-registry-${zoscb-instance-name}-${resourceName}' ... "
+  oc delete CatalogSource "ibm-zoscb-registry-${zoscb-instance-name}-${resourceName}" -n openshift-marketplace --ignore-not-found
+  oc delete Deployment "ibm-zoscb-registry-${zoscb-instance-name}-${resourceName}" -n openshift-marketplace --ignore-not-found
+  oc delete svc "ibm-zoscb-registry-${zoscb-instance-name}-${resourceName}" -n openshift-marketplace --ignore-not-found
+  oc delete sa "ibm-zoscb-registry-${zoscb-instance-name}-${resourceName}" -n openshift-marketplace --ignore-not-found
+
+}
+{% endif %}
+
+# Main function to run script
+function main() {
+  #Parse command line
+  parseCommandLine "$@"
+
+  # Login OCP server
+  loginOCP
+}
+
+# Set base directory to run script
+basedir="$(cd "$(dirname "$0")" >/dev/null 2>&1 && pwd -P)"
+
+# Export add local bin directory to PATH
+# exportBinDir $basedir
+
+# Run script main
+main "$@"
+
+############################################################################################################################################
+# ({{ seaa_automation_strategy | upper }}) Script Start: The below script lines were generated {{ start_time_stamp }} by the SEAA framework
+{% set extravars_masked = lookup('env', 'SEAA_MASKED_EXTRAVARS') | default('', true) %}
+{% if extravars_masked %}
+# Ansible extra-vars used to '**_{{ seaa_automation_strategy | upper }}_**' original script:
+  {% for line in extravars_masked.splitlines() %}
+#  {{ line }}
+  {% endfor %}
+{% endif %}
+############################################################################################################################################
+
