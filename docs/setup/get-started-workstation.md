@@ -43,7 +43,7 @@
     <img width="1107" alt="image" src="https://media.github.ibm.com/user/55799/files/dff4f584-0ba9-4569-addb-8b2c59e5535f">
 ---   
 ## (Optional) Install [1Password](https://1password.com/developers) CLI [tools](https://developer.1password.com/docs/cli/get-started#requirements) for integration with framework.
-   - See [password_vault](/zmodstack-solutions/ibm/seaa/ansible/roles/password_vault/README.md) role for more information.
+   - See [password_vault](/ibm/seaa/ansible/roles/password_vault/README.md) role for more information.
 
 <!-- 
 ### 1. Configure Workstation
@@ -82,4 +82,4 @@ c. Create Ansible Config file in home directory with the following content, see 
   ``` -->
 
 ---
-## Next steps [configure workstation](/zmodstack-solutions/docs/guide/configure-seaa.md) -or- [back to framework guide](/zmodstack-solutions/docs/guide/README.md)
+## Next steps [configure workstation](/docs/guide/configure-seaa.md) -or- [back to framework guide](/docs/guide/README.md)

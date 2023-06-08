@@ -7,4 +7,4 @@ Contains sample [inventory](inventory) files that need to be modified for you OC
 
 
 ---
-## [back to framework guide](/zmodstack-solutions/docs/guide/README.md)
+## [back to framework guide](/docs/guide/README.md)

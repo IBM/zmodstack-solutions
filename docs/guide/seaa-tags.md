@@ -21,4 +21,4 @@ Tags can be used to deploy/undeploy or skip deployment/undeployment of resources
  -  developer - deploy developer resources
 
 ---
-## [back to framework guide](/zmodstack-solutions/docs/guide/README.md)
+## [back to framework guide](/docs/guide/README.md)

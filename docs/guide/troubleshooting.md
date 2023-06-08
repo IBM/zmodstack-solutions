@@ -12,7 +12,5 @@
     ```
      <!-- adding dns and ip and /etc/hosts --> 
 
-<!-- ---     -->
-<!-- # Next Steps - [getting started locally](/zmodstack-solutions/docs/setup/get-started-local.md) - or - [getting started CI/CD](/zmodstack-solutions/docs/setup/get-started-cicd.md)  -->
 ---
-## [back to framework guide](/zmodstack-solutions/docs/guide/README.md)
+## [back to framework guide](/docs/guide/README.md)
