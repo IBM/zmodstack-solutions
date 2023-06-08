@@ -3,7 +3,7 @@ Follow the steps below to run the framework on your workstation.
 
 ---
 ## Review and configure default Ansible variables
-(Optional - TL;DR) review documentation for [variables](/ibm/seaa/ansible/variables/README.md) and make any changes as required to deploy desired versions or configuration.
+TL;DR - (Optional) review documentation for [variables](/ibm/seaa/ansible/variables/README.md) and make any changes as required to deploy desired language versions or configuration.
 
 ---
 ## Create default inventory
@@ -21,13 +21,13 @@ Review [sample-inventory.yaml](/ibm/seaa/ansible/playbooks/inventory/sample-inve
 -->
 ---
 ## Run playbook script for deploying Open Enterprise Languages (OEL) development environments-aaS
-'CD' to the **[run_playbooks](scripts/run_playbooks)** directory in cloned repo and run one or more of the following scenarios with 'default' configuration values using commands provided here.
+'CD' to the **[run_playbooks](scripts/run_playbooks)** directory in cloned repo and run one or more of the following scenarios with 'default' configuration values using the commands below:
 
   - #### Deploy **z/OS Cloud Broker** and **z/OS Package Manager** - ONLY:<br>
     ```
     ./run-deploy-oel-dev-env.sh
     ```
-  - #### Deploy **z/OS Cloud Broker**, **z/OS Package Manager** and **All zProduct Sub-Operators, without validating product instances**.<br>
+  - #### Deploy **z/OS Cloud Broker**, **z/OS Package Manager** and **All IBM Open Enterprise Lanquqges, without validating product instances**.<br>
     ```
     ./run-deploy-oel-dev-env.sh --tags=oel-dev --extra-vars=seaa_deploy_validate_crs=false
     ```
@@ -35,10 +35,20 @@ Review [sample-inventory.yaml](/ibm/seaa/ansible/playbooks/inventory/sample-inve
     ```
     ./run-deploy-oel-dev-env.sh --tags=python,zoau
     ```
- - #### Undeploy **z/OS Cloud Broker**, **z/OS Package Manager** and **All OEL Instances**.<br>
+ - #### Generate Native YAML and deployment script files for **z/OS Cloud Broker** and **z/OS Package Manager** Operator collection and no ZPM instance:<br>
+    ```
+    ./run-deploy-oel-dev-env.sh --extra_vars="seaa_automation_strategy=generate_yaml seaa_deploy_software_instances=false"   
+    ```
+ - #### Generate and Deploy Native YAML and deployment script files for **z/OS Cloud Broker**, **z/OS Package Manager** and **PYTHON**
+    ```
+    ./run-deploy-oel-dev-env.sh --tags=python --extra_vars="seaa_automation_strategy=generate_yaml"   
+    ```
+ 
+ - #### Undeploy **All IBM Open Enterprise Lanquqges**.<br>
     ```
     ./run-undeploy-oel-dev-env.sh --tags=oel-dev
     ```
+
 **[View available tags for run script and playbook.](/docs/guide/seaa-tags.md)**    
 
 ---
