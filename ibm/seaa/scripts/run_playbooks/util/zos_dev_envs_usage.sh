@@ -165,7 +165,10 @@ function parseCommandLine {
             --extra_vars=*|-e=*)
                 val="${i#*=}"
 
-                if [[ "${val}" == "@"* ]]; then
+                if [[ "${val}" == "@"* ]] && [[ ${#val} -eq 1 ]]; then
+                    isExtraVarsFileReference=true
+                    continue;
+                elif [[ "${val}" == "@"* ]]; then
                     isExtraVarsFileReference=true
                 fi
                 export SEAA_EXTRAVARS="${val}" # ${i#*=}
