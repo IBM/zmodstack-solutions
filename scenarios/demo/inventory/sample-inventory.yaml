@@ -1,0 +1,100 @@
+---
+################################################################################
+# Copyright (c) IBM Corporation 2022
+################################################################################
+all:
+  vars:
+    # Ansible Connection from Ansible Controller 
+    ansible_connection: local
+
+    # Path to Python interpreter on ansible controller host
+    # example: /usr/local/bin/python3.9
+    ansible_python_interpreter: # <Provide Your Controlling Host Python Location>
+
+    # !!! IMPORTANT: if this flag is not set then NOTHING will be deployed by default !!!
+    # Flag to set 'ocphosts' or 'zosendpoints' host as active default(false)
+    # Setting it here will set the value for each 'ocphosts' or 'zosendpoints' host added to this inventory file
+    # Note on _is_active flag:
+    # - can also be set for a specific host defined (this has the high precedent for host vars)
+    # - can be set in group_vars or host_vars files for multiple inventories 
+    #   (setting variables in these files have precedent over group and host vars set in this file)
+    # To verify the values used from your inventory file run 'ansible-inventory -i sample-inventory.yaml --list'
+    # in the directory of the inventory file
+    _is_active: # (true | false 'default') <Choose if inventory hosts are active by default>
+
+  children:
+    ocphosts: # IMPORTANT: this group name CANNOT be changed it is referenced in the automation
+      vars:
+        # Openshift host port
+        ansible_port: 6443 # <Change if necessary>
+
+        # Openshift host user id
+        # (Optional) Used if 1Password CLI integration is not configured to authenticate to OCP host.
+        ansible_user: # <Default OCP user id>
+
+        # Openshift auth token
+        # (Optional) Provide this token for the 'ansible_user' defined if 1Password is not configured to authenticate to the OCP host.
+        cluster_auth_token:
+
+        # Array of ocp project(s) to deploy/undeploy to ocp host
+        # OCP Project names are restricted by RFC 1123: 
+        # lowercase RFC 1123 label must consist of lower case alphanumeric characters or '-', and must start and end with an alphanumeric character
+        # https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-label-names
+        # Note: by default these project(s) will be created, if you want to use an existing project, set 'seaa_deploy_resource_ifpresent' variable to false
+        project_names: # - <OCP project to deploy>
+
+      children:
+        # **************************************************************************
+        # Openshift Clusters to deploy/undeploy stack resource
+        # **************************************************************************
+        # This can be any allowed name to group OCP host vars, see doc: 
+        # https://docs.ansible.com/ansible/latest/network/getting_started/first_inventory.html
+        ocphost_type_group: # Avoid spaces, hyphens, and preceding numbers. Group names are case sensitive.
+          hosts:
+            # This name should be any allowed name that reflects the target OCP host  
+            # subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character
+            # https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
+            ocp-cluster: # Names can typically include alphanumeric characters (a-z, A-Z, 0-9) and hyphens (-).
+              # example: api.zstack.ibm.com, see doc on getting api url 
+              # 'https://github.com/IBM/zmodstack-solutions/blob/main/docs/howto/get-ocp-api-server.md' in repo
+              ansible_host: # <OCP host api url> 
+          # # (Optional) variables for 'ocphost_type_group'
+          # vars:  
+          #   # 'pvc_storage_class_name' default 'rook-cephfs' located in <se-ansible-dir>/variables/defaults/ocp.yaml
+          #   pvc_storage_class_name: <SPECIFY PVC_STORAGE_CLASS_NAME FOR OCP HOST>
+    zosendpoints: # IMPORTANT: this group name CANNOT be changed it is referenced in the automation
+      vars:
+        # SSH port for z/OS Endpoints
+        ansible_port: 22 # <Change if necessary>
+
+        # SSH user id for z/OS Endpoint
+        ansible_user: # <z/OS user id>
+
+        # Filepath to SSH key used to connect from OCP to z/OS endpoint
+        # example: "{{ lookup('env', 'HOME') }}/.ssh/id_zstack"
+        ansible_ssh_private_key_file: # <LOCAL_PATH_TO_SSH_PRIVATE_KEY_USED_CONNECT_TO_ZOS_ENDPOINT>
+
+        # (Optional) Passphrase for SSH key used to connect from OCP to z/OS endpoint
+        ssh_passphrase: # <ADD_PASSPHRASE_FOR_SSH_KEY_TO_CONNECT_TO_ZOS_ENDPOINT_IF_SET>
+
+        # ZPM install directory not used if zpm_install_dir_prefix is provided
+        # (Optional) default '/usr/lpp/IBM/zpm' located in <se-ansible-dir>/variables/defaults/zpm.yaml
+        zpm_install_dir: # <Fully qualified location to ZPM install directory>
+
+        # ZPM state directory not used if zpm_install_dir_prefix is provided
+        # (Optional)-  default '/var/zpm' located in <se-ansible-dir>/variables/defaults/zpm.yaml
+        zpm_state_dir: # <Fully qualified location to ZPM state directory>
+
+      children:
+        # **************************************************************************
+        # z/OS Endpoint to deploy/undeploy z/OS resources
+        # **************************************************************************
+        # This can be any allowed name to group z/OS Endpoint vars, see doc: 
+        # https://docs.ansible.com/ansible/latest/network/getting_started/first_inventory.html
+        zosendpoint_type_group: # Avoid spaces, hyphens, and preceding numbers. Group names are case sensitive.
+          hosts:
+            # This name should be any allowed name that reflects the target z/OS endpoint host  
+            # subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character
+            # https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
+            zosendpoint: # This name should be changed to something that reflect the target host
+              ansible_host: # <ADD_ZOS_ENDPOINT_HOSTNAME> 
