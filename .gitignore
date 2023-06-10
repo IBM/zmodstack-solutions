@@ -1,4 +1,6 @@
-ibm/seaa/ansible/playbooks/inventory/inventory.yaml
-ibm/seaa/ansible/secrets
-.private
+.DS_Store
+__pycache__
 _seaa_
+.private
+inventory.yaml
+ibm/seaa/ansible/secrets

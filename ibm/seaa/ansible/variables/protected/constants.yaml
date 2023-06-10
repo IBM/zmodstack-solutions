@@ -70,6 +70,8 @@ zpm_diagnostics_finalizer: zospackagemanagerdiagnosticss.suboperator.zoscb.ibm.c
 
 # *******************************************************************************
 # ZPM and Sub operator constants
+# code_name = OCI name
+# short_name = Name used in automation 
 # *******************************************************************************
 sub_operators:
   zpm:
@@ -79,15 +81,15 @@ sub_operators:
   go:
     name: zos-go
     short_name: go
-    code_name: Go
+    code_name: golang # GA 2023.2.1 removed enums 
   java:
     name: zos-java
     short_name: java
     code_name: Java
   nodejs:
     name: zos-nodejs
-    short_name: nodejs
-    code_name: Node.js
+    short_name: nodejs  
+    code_name: node # GA 2023.2.1 removed enums 
   oelcpp:
     name: zos-oelcpp
     short_name: oelcpp
@@ -106,7 +108,7 @@ zpm_instance_prefix: "{{sub_operators.zpm.short_name}}"
 zpm_diagnostics_prefix: diag-{{zpm_instance_prefix}}
 
 # Prefix instance names final name will be <product_prefix>-<zosendpoint><delimeter><inventory-hostname>
-#Exanple - go-wazi-sandbox-vanilla
+#Example - go-wazi-sandbox-vanilla
 go_instance_prefix: "{{sub_operators.go.short_name}}"
 validate_go_prefix: val-{{go_instance_prefix}}
 
@@ -143,7 +145,7 @@ sub_operator_zoau_create_validate_cr: true
 
 zopentools:
 
-# Prefix instance names final name will be <tool_prefix>-<zosendpoint><delimeter><inventory-hostname>
+# Prefix instance names final name will be <tool_prefix>-<zosendpoint><delimiter><inventory-hostname>
 
 # z Open tools automation configuration used with seaa_deploy_validate_crs variable to validate tool installation
 

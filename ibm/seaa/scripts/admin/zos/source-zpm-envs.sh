@@ -157,7 +157,7 @@ main() {
 
   #set environment variables for ZPM
   export PATH="$install_dir/package-manager/bin:$PATH"
-  export zpm_state_dir="$state_dir"
+  export ZPM_STATE_DIRECTORY="$state_dir"
 
   # Check the exit code
   if zpm config set Products_dir "$install_dir"; then
