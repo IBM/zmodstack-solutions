@@ -45,7 +45,7 @@
       no_log: "{{ not seaa_automation.debug }}"
       changed_when: start_tstamp_ns != 0
 
-    - name: "Create zoauInstance with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+    - name: "Create zoauInstance '{{ zoau_instance.name }}' with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
       when: seaa_automation_strategy != "generate_yaml"
       kubernetes.core.k8s:
         state: present

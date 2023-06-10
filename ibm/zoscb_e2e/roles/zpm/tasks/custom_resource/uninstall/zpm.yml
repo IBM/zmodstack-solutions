@@ -38,7 +38,7 @@
         is_zos_resource: true
         zos_endpoint: "{{ endpoint }}"
 
-    - name: "Delete zpmInstance with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+    - name: "Delete zpmInstance '{{ zos_package_manager.name }}' with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
       when: seaa_automation_strategy != "generate_yaml"
       kubernetes.core.k8s:
         state: absent

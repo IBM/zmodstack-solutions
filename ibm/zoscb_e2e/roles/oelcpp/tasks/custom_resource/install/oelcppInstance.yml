@@ -44,7 +44,7 @@
       no_log: "{{ not seaa_automation.debug }}"
       changed_when: start_tstamp_ns != 0
 
-    - name: "Create oelcppInstance with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+    - name: "Create oelcppInstance '{{ oelcpp_instance.name }}' with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
       when: seaa_automation_strategy != "generate_yaml"
       kubernetes.core.k8s:
         state: present
