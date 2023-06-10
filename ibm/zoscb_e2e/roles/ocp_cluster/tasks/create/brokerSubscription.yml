@@ -40,7 +40,7 @@
         destination_file: "broker-subscription.yaml"
         is_ocp_resource: true
 
-    - name: "Create brokerSubscription '{{ broker_subscription.name }}' from source '{{ broker_subscription.source }}' \
+    - name: "Create brokerSubscription '{{ broker_subscription.name }}.v{{ broker_subscription.version }}' from source '{{ broker_subscription.source }}' \
        with Native YAML API in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
       when: seaa_automation_strategy != "generate_yaml"
       kubernetes.core.k8s:
