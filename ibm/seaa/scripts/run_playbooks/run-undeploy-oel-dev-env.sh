@@ -45,7 +45,7 @@ function main() {
 
     #Run playbook
     ansible-playbook "${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/playbooks/zos_dev_envs/oel/undeploy-oel-dev-env.yml" ${RUNOPTIONS} \
-     -e "${SEAA_EXTRAVARS}" --tags "${SEAA_TAGS}" --skip-tags "${SEAA_SKIPTAGS}" -e "${ev_automation_strategyr:=}"
+     -e "${SEAA_EXTRAVARS}" --tags "${SEAA_TAGS}" --skip-tags "${SEAA_SKIPTAGS}" -e "${ev_automation_strategy:=}"
 
     # Return Playbook exit code
     return $?
