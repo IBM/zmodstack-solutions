@@ -1,18 +1,3 @@
-- name: "Create sub-operator CR {{ validate_java.kind }}: '{{ validate_java.name }}' in project '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
-  when: seaa_automation_strategy == "inline"
-  kubernetes.core.k8s:
-    state: present
-    namespace: "{{ project_namespace.name }}"
-    api_key: "{{ ocp_cluster.auth_token }}"
-    definition:
-      kind: "{{ validate_java.kind }}"
-      apiVersion: "{{ validate_java.apiVersion }}"
-      metadata:
-        name: "{{ validate_java.name }}"
-      spec:
-        product_cr_name: "{{ validate_java.productCRName }}"
-        zosendpoint: "{{ validate_java.zosEndpoint }}"
-
 - name: Create validateJavaInstance with YAML file
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:
@@ -63,7 +48,7 @@
 
 - name: Capture Deploy Wait time
   when:
-    - seaa_automation_strategy != "deploy_yaml" or seaa_automation_strategy != "inline"
+    - seaa_automation_strategy != "deploy_yaml"
     - seaa_capture_deployment_wait_time | bool and start_tstamp_ns is defined
   block:
     - name: Capture wait time and add to deploy script

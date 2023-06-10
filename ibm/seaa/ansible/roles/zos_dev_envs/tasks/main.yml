@@ -14,14 +14,12 @@
             - Set 'seaa_automation_strategy' to one of the following:\
               - 'deploy_yaml' (default) - deploy or undeploy resources using native YAML API.\
               - 'generate_yaml' - generate Native YAML, script and readme files for deployment or undeployment.\
-              - 'generate_deploy_yaml' - generate Native YAML, script and readme files and deploy or undeploy resources using native YAML API.\
-              - 'inline' - (#TODO to-be - deprecated)
+              - 'generate_deploy_yaml' - generate Native YAML, script and readme files and deploy or undeploy resources using native YAML API.
             "
       when:
         - not seaa_automation_strategy == "deploy_yaml"
         - not seaa_automation_strategy == "generate_yaml"
         - not seaa_automation_strategy == "generate_deploy_yaml"
-        - not seaa_automation_strategy == "inline"
 
     - name: Fail seaa_deploy_strategy '{{ seaa_deploy_strategy }}' is not a supported value
       ansible.builtin.fail:

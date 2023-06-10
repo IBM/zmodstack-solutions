@@ -11,13 +11,6 @@
   loop_control:
     loop_var: current_zosendpoint
 
-# DELETE INSECURE ROUTE
-- name: Destroy route
-  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/destroy/route.yml"
-  when:
-    - seaa_deploy_role == "admin" or seaa_developer_deploys_namespace | bool
-    - seaa_automation_strategy == "inline"
-
 # DELETE Z CLOUD BROKER INSTANCE
 - name: Destroy broker instance
   ansible.builtin.include_tasks: "{{ ocp_task_dir }}/destroy/brokerInstance.yml"

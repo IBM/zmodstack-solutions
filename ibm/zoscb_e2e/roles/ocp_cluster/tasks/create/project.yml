@@ -15,30 +15,10 @@
 
     - name: Get authenticate user from cache
       ansible.builtin.set_fact:
-        authenticated_user: "{{ ocp_cluster_cache | get_user_from_cache(current_ocphost) | trim }} "
+        authenticated_user: "{{ ocp_cluster_cache | get_user_from_cache(current_ocphost) | trim }}"
       when:
         - ocp_cluster_cache is defined and ocp_cluster_cache != None
         - seaa_automation_strategy != "generate_yaml"
-
-    - name: Create Project
-      when: seaa_automation_strategy == "inline"
-      block:
-        - name: "Create project: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
-          kubernetes.core.k8s:
-            state: present
-            api_key: "{{ ocp_cluster.auth_token }}"
-            definition:
-              kind: Project
-              apiVersion: "{{ project_namespace.apiVersion }}"
-              metadata:
-                name: "{{ project_namespace.name }}"
-                annotations:
-                  openshift.io/description: "{{ project_namespace.description }}" # ${project_description}
-                  openshift.io/display-name: "{{ project_namespace.display_name }}" # ${project_displayname}
-                  openshift.io/requester: "{{ authenticated_user | default(project_namespace.requester, true) }}" # ${project_requesting_user}
-              spec:
-                finalizers:
-                  - kubernetes
 
     - name: Create Project namespace with YAML file
       when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"

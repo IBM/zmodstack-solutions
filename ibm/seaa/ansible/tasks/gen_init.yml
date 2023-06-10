@@ -8,7 +8,7 @@
     can_clean_output_dir: true
   when:
     - can_clean_output_dir is undefined
-    - seaa_delete_outdir_if_exist | bool
+    - seaa_clean_yaml_output_dir | bool
 
 - name: Set stats of '{{ _seaa_yaml_output_dir }}/clone_project.sh' script.
   ansible.builtin.stat:
@@ -38,18 +38,18 @@
         timeout: 300
 
 # Set output directory 'yaml_output/project' or 'yaml_output/ocphost/project' by appending ocphost/projectname if more than one host in inventory and
-# seaa_seperate_generation_by_ocphost_dir is true else just appending 'projectname'
+# seaa_separate_generation_by_ocphost_dir is true else just appending 'projectname'
 - name: Set YAML project output directories
   ansible.builtin.set_fact:
     _seaa_bin_output_dir: "{{ seaa_yaml_output_dir }}/{{ seaa_generated_content_dirname }}/bin"
-    _seaa_yaml_output_dir: "{{ _seaa_yaml_output_dir }}/{{ current_ocphost~'/' if seaa_seperate_generation_by_ocphost_dir and \
+    _seaa_yaml_output_dir: "{{ _seaa_yaml_output_dir }}/{{ current_ocphost~'/' if seaa_separate_generation_by_ocphost_dir and \
      groups['ocphosts']|length > 1 else '' }}{{ project_namespace.name }}"
 
-# Set output directory append hostname__projectname if more than one host in inventory and not 'seaa_seperate_generation_by_ocphost_dir'
+# Set output directory append hostname__projectname if more than one host in inventory and not 'seaa_separate_generation_by_ocphost_dir'
 # to avoid collisions in generated outputs for different host
 - name: Check if YAML output needs to be seperated for multiple OCP host
   when:
-    - not seaa_seperate_generation_by_ocphost_dir | bool
+    - not seaa_separate_generation_by_ocphost_dir | bool
     - groups['ocphosts']|length > 1
   ansible.builtin.set_fact:
     _seaa_yaml_output_dir: "{{ _seaa_yaml_output_dir }}/{{ current_ocphost~'__'~project_namespace.name }}"

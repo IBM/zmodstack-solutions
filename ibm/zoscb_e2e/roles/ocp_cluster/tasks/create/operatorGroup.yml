@@ -5,23 +5,6 @@
     resource_variable_name: "{{ operator_group.name }}"
   when: seaa_automation.debug | bool
 
-- name: Create operatorGroup
-  when: seaa_automation_strategy == "inline"
-  block:
-    - name: "Create operator group: '{{ operator_group.name }}' in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
-      kubernetes.core.k8s:
-        state: present
-        namespace: "{{ project_namespace.name }}"
-        api_key: "{{ ocp_cluster.auth_token }}"
-        definition:
-          kind: OperatorGroup
-          apiVersion: "{{ operator_group.apiVersion }}"
-          metadata:
-            name: "{{ operator_group.name }}"
-          spec:
-            targetNamespaces:
-              - "{{ project_namespace.name }}"
-
 - name: Create operatorGroup with YAML file
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:

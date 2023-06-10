@@ -4,20 +4,6 @@
     oc_version: "{{ oc_product.oc_version }}"
   when: oc_product.import_mode == 'galaxy'
 
-- name: "Delete sub-operator config: '{{ oc_product.name }}' from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
-  when: seaa_automation_strategy == "inline"
-  kubernetes.core.k8s:
-    api_key: "{{ ocp_cluster.auth_token }}"
-    state: absent
-    namespace: "{{ project_namespace.name }}"
-    kind: SubOperatorConfig
-    api_version: "{{ subop_config.apiVersion }}"
-    label_selectors:
-      - "instance-name = {{ broker_instance.name }}"
-      - "name = {{ oc_product.name }}"
-    wait: "{{ seaa_undeploy_wait | bool }}" # yes
-    wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}" # 600
-
 - name: Block to delete sub-operator with YAML
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   # when: (csv_exist is defined and not csv_exist and seaa_automation_strategy == "generate_deploy_yaml") or seaa_automation_strategy == "generate_yaml"
