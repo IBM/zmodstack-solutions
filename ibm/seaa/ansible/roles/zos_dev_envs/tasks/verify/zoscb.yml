@@ -19,12 +19,6 @@
 - name: Verify project
   ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/brokerInstance.yml"
 
-# Verify INSECURE ROUTE
-- name: Verify project
-  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/route.yml"
-  when:
-    - seaa_automation_strategy == "inline"
-
 # Verify ENDPOINT info_only is used with smart deploy to deterning if ALL endpoints are deployed
 - name: Verify endpoints are deployed
   ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/endpoint.yml"

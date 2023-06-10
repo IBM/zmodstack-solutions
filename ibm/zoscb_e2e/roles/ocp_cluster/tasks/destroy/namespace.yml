@@ -1,17 +1,4 @@
 # NOTE: The removal of the namespace should fail regardless of the configuration of "seaa_undeploy_continue_on_error"
-- name: "Delete namespace: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
-  when: seaa_automation_strategy == "inline"
-  kubernetes.core.k8s:
-    api_key: "{{ ocp_cluster.auth_token }}"
-    state: absent
-    namespace: "{{ project_namespace.name }}"
-    kind: Project
-    name: "{{ project_namespace.name }}"
-    api_version: "{{ project_namespace.apiVersion }}"
-    wait: true
-    wait_timeout: "{{ seaa_undeploy_namespace_wait_timeout | int }}"  # 600
-    continue_on_error: false
-
 - name: Delete Project namespace with YAML file
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:

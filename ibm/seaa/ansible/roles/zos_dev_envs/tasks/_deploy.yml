@@ -131,8 +131,7 @@
                 - broker_instance_info_only.resources[0].status.phase == "Successful"
                 # Subscription Info
                 - broker_subscription_info_only.resources[0].status.installedCSV == broker_subscription.name~'.v'~broker_subscription.version
-                # TODO: add route info
-
+               
             # Verify CSV instance exist
             - name: Set zoscb_csv_deploy_verified if it exist true
               ansible.builtin.set_fact:
@@ -245,17 +244,17 @@
         - oel-dev
         - zpm
       block:
-        # ****************************************************************************************************************************
-        # *
-        # - name: Get CRSF token for broker API calls on this ocp cluster
-        # *
-        # ****************************************************************************************************************************
-        - name: Get CRSF token
-          when:
-            - seaa_automation_strategy == 'inline'
-            - oc_product_api_version != 'zoscb.ibm.com/v2beta2' # TODO REMOVE HARDCODED VALUE AND TEST FOR API VERSION LESS THAN 2.0
-            - subop_config_api_version != 'zoscb.ibm.com/v2beta2' # TODO REMOVE HARDCODED VALUE AND TEST FOR API VERSION LESS THAN 2.0
-          ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/get_csrf_token.yml"
+        # # ****************************************************************************************************************************
+        # # *
+        # # - name: Get CRSF token for broker API calls on this ocp cluster
+        # # *
+        # # ****************************************************************************************************************************
+        # - name: Get CRSF token
+        #   when:
+        #     - seaa_automation_strategy == 'inline'
+        #     - oc_product_api_version != 'zoscb.ibm.com/v2beta2' # TODO REMOVE HARDCODED VALUE AND TEST FOR API VERSION LESS THAN 2.0
+        #     - subop_config_api_version != 'zoscb.ibm.com/v2beta2' # TODO REMOVE HARDCODED VALUE AND TEST FOR API VERSION LESS THAN 2.0
+        #   ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/get_csrf_token.yml"
 
         # Deploy ZPM
         - name: Deploy ZPM
@@ -280,17 +279,17 @@
         - name: Smart Deploy ZPM
           when: seaa_zpm_smart_deploy | bool
           block:
-            # ****************************************************************************************************************************
-            # *
-            # - name: Get CRSF token for broker API calls on this ocp cluster
-            # *
-            # ****************************************************************************************************************************
-            - name: Get CRSF token
-              when:
-                - seaa_automation_strategy == 'inline'
-                - oc_product_api_version != 'zoscb.ibm.com/v2beta2' # TODO REMOVE HARDCODED VALUE AND TEST FOR API VERSION LESS THAN 2.0
-                - subop_config_api_version != 'zoscb.ibm.com/v2beta2' # TODO REMOVE HARDCODED VALUE AND TEST FOR API VERSION LESS THAN 2.0
-              ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/get_csrf_token.yml"
+            # # ****************************************************************************************************************************
+            # # *
+            # # - name: Get CRSF token for broker API calls on this ocp cluster
+            # # *
+            # # ****************************************************************************************************************************
+            # - name: Get CRSF token
+            #   when:
+            #     - seaa_automation_strategy == 'inline'
+            #     - oc_product_api_version != 'zoscb.ibm.com/v2beta2' # TODO REMOVE HARDCODED VALUE AND TEST FOR API VERSION LESS THAN 2.0
+            #     - subop_config_api_version != 'zoscb.ibm.com/v2beta2' # TODO REMOVE HARDCODED VALUE AND TEST FOR API VERSION LESS THAN 2.0
+            #   ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/get_csrf_token.yml"
 
             # Verify z/OS Package Manager
             - name: Verify z/OS Package Manager

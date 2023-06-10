@@ -21,44 +21,8 @@
 - name: Block for verifying Sub-Operator
   when: info_only is undefined
   block:
-
-    - name: Block for verifying INLINE deployments
-      when: seaa_automation_strategy == "inline"
-      block:
-
-        - name: "Retrieve sub-operator config: '{{ oc_product.name }}.zpm.{{ oc_version }}-suboperatorconfig-...'"
-          when: info_only is undefined
-          kubernetes.core.k8s_info:
-            api_key: "{{ ocp_cluster.auth_token }}"
-            kind: SubOperatorConfig
-            namespace: "{{ project_namespace.name }}"
-            api_version: "{{ subop_config.apiVersion }}"
-            label_selectors:
-              - "instance-name = {{ broker_instance.name }}"
-              - "operatorcollection-name = {{ oc_product.name }}.zpm.{{ oc_version }}"
-          register: subop_config_info
-          until:
-            - subop_config_info.resources is defined and subop_config_info.resources | length > 0
-            - "'installStatus' in subop_config_info.resources[0].status.namespaces[0] and \
-              subop_config_info.resources[0].status.namespaces[0].installStatus == 'Operator installed successfully'"
-          retries: "{{ seaa_verify_retries | int }}" # 30
-          delay: "{{ seaa_verify_delay | int }}" # 10
-
-        - name: "Verify sub-operator config: '{{ subop_config_info.resources[0].metadata.name }}'"
-          when: info_only is undefined
-          ansible.builtin.assert:
-            that:
-              - subop_config_info.resources is defined
-              - subop_config_info.resources[0] and subop_config_info.resources | length > 0
-              - "'{{ oc_product.name }}.zpm.{{ oc_version }}-suboperatorconfig-' in subop_config_info.resources[0].metadata.name"
-              - "'{{ subop_config.finalizers[0] }}' in subop_config_info.resources[0].metadata.finalizers"
-              - "'{{ project_namespace.name }}' in subop_config_info.resources[0].spec.namespaces"
-              - subop_config_info.resources[0].spec.operatorCollection == "{{ oc_product.name }}.zpm.{{ oc_version }}"
-              - subop_config_info.resources[0].status.namespaces[0].installStatus == "Operator installed successfully"
-              - "'{{ subop_config.endpointNames }}' in subop_config_info.resources[0].status.zosEndpoints"
-
-    - name: Block for verifying INLINE deployments
-      when: seaa_automation_strategy != "inline"
+   
+    - name: Block for verifying Sub Operator deployments
       block:
         - name: "Retrieve sub-operator config: '{{ oc_product.name }}.zpm.{{ oc_version }}-suboperatorconfig-...'"
           # when: info_only is undefined

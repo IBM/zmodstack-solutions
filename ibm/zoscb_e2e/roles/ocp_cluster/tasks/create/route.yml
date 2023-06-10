@@ -5,32 +5,6 @@
     resource_variable_name: "{{ route.name }}"
   when: seaa_automation.debug | bool
 
-- name: Create route
-  when: seaa_automation_strategy == "inline"
-  block:
-    - name: "Create route: '{{ route.name }}' in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
-      kubernetes.core.k8s:
-        state: present
-        namespace: "{{ project_namespace.name }}"
-        api_key: "{{ ocp_cluster.auth_token }}"
-        definition:
-          kind: Route
-          apiVersion: "{{ route.apiVersion }}"
-          metadata:
-            name: "{{ route.name }}"
-            namespace: "{{ project_namespace.name }}"
-          spec:
-            to:
-              kind: "{{ route.toKind }}"
-              name: "{{ route.toName }}"
-              weight: "{{ route.weight }}"
-            port:
-              targetPort: "{{ route.targetPort }}"
-            tls:
-              termination: "{{ route.tlsTermination }}"
-              insecureEdgeTerminationPolicy: "{{ route.tlsInsecureEdgeTerminationPolicy }}"
-            wildcardPolicy: "{{ route.wildcardPolicy }}"
-
 - name: Create route with YAML file
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:

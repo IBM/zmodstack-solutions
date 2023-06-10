@@ -5,29 +5,6 @@
     resource_variable_name: "{{ persistent_volume_claim.name }}"
   when: seaa_automation.debug | bool
 
-
-- name: Create persistentVolumeClaim
-  when: seaa_automation_strategy == "inline"
-  block:
-    - name: "Create persistent volume claim: '{{ persistent_volume_claim.name }}' in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
-      kubernetes.core.k8s:
-        state: present
-        namespace: "{{ project_namespace.name }}"
-        api_key: "{{ ocp_cluster.auth_token }}"
-        definition:
-          kind: PersistentVolumeClaim
-          apiVersion: "{{ persistent_volume_claim.apiVersion }}"
-          metadata:
-            name: "{{ persistent_volume_claim.name }}"
-          spec:
-            accessModes: "{{ persistent_volume_claim.accessModes }}"
-            resources:
-              requests:
-                storage: "{{ persistent_volume_claim.storage }}"
-            volumeMode: "{{ persistent_volume_claim.volumeMode }}"
-            storageClassName: "{{ persistent_volume_claim.storageClassName }}"
-
-
 - name: Create persistentVolumeClaim with YAML file
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:

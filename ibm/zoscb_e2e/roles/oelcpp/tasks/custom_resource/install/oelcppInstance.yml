@@ -4,23 +4,6 @@
     resource_variable: "{{ oelcpp_instance }}"
   when: seaa_automation.debug | bool
 
-- name: "Create sub-operator CR {{ oelcpp_instance.kind }}: '{{ oelcpp_instance.name }} \
-        ' in project '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}' for zosendpoint '{{ oelcpp_instance.zosEndpoint }}'"
-  when: seaa_automation_strategy == "inline"
-  kubernetes.core.k8s:
-    state: present
-    namespace: "{{ project_namespace.name }}"
-    api_key: "{{ ocp_cluster.auth_token }}"
-    definition:
-      kind: "{{ oelcpp_instance.kind }}"
-      apiVersion: "{{ oelcpp_instance.apiVersion }}"
-      metadata:
-        name: "{{ oelcpp_instance.name }}"
-      spec:
-        accept: "{{ oelcpp_instance.licenseAccept }}"
-        product_ver: "{{ oelcpp_instance.productVersion }}"
-        zosendpoint: "{{ oelcpp_instance.zosEndpoint }}"
-
 - name: Create oelcppInstance with YAML file
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:
@@ -83,7 +66,7 @@
 
 - name: Capture Deploy Wait time
   when:
-    - seaa_automation_strategy != "deploy_yaml" or seaa_automation_strategy != "inline"
+    - seaa_automation_strategy != "deploy_yaml"
     - seaa_capture_deployment_wait_time | bool and start_tstamp_ns is defined
   block:
     - name: Capture wait time and add to deploy script

@@ -1,17 +1,3 @@
-- name: "Delete cluster service version: '{{ broker_subscription.name }}.v{{ broker_subscription.version }} \
-        ' from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
-  when: seaa_automation_strategy == "inline"
-  kubernetes.core.k8s:
-    api_key: "{{ ocp_cluster.auth_token }}"
-    state: absent
-    namespace: "{{ project_namespace.name }}"
-    kind: ClusterServiceVersion
-    name: "{{ broker_subscription.name }}.v{{ broker_subscription.version }}"
-    api_version: "{{ broker_subscription.apiVersion }}"
-    wait: "{{ seaa_undeploy_wait | bool }}" # yes
-    wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}" # 600
-    continue_on_error: "{{ seaa_undeploy_continue_on_error | bool }}"
-
 - name: Delete clusterServiceVersion with YAML file
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:

@@ -5,29 +5,6 @@
     resource_variable_name: "{{ broker_subscription.name }}"
   when: seaa_automation.debug | bool
 
-- name: Create Broker Subscription
-  when: seaa_automation_strategy == "inline"
-  block:
-    - name: "Create broker subscription: '{{ broker_subscription.name }}.v{{ broker_subscription.version }}' in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
-      kubernetes.core.k8s:
-        state: present
-        namespace: "{{ project_namespace.name }}"
-        api_key: "{{ ocp_cluster.auth_token }}"
-        definition:
-          kind: Subscription
-          apiVersion: "{{ broker_subscription.apiVersion }}"
-          metadata:
-            name: "{{ broker_subscription.name }}"
-            namespace: "{{ project_namespace.name }}"
-          spec:
-            channel: "{{ broker_subscription.channel }}"
-            installPlanApproval: "{{ broker_subscription.installPlanApproval }}"
-            name: "{{ broker_subscription.name }}"
-            source: "{{ broker_subscription.source }}"
-            sourceNamespace: "{{ broker_subscription.sourceNamespace }}"
-            startingCSV: "{{ broker_subscription.name }}.v{{ broker_subscription.version }}"
-            apiVersion: operators.coreos.com/v1alpha1
-
 - name: Create brokerSubscription with YAML file
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:

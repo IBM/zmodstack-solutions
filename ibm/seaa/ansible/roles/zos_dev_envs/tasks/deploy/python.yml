@@ -46,18 +46,7 @@
       ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/create/operatorCollection.yml"
       when: seaa_deploy_operator_collections | bool
 
-    # CREATE SUB-OPERATOR CONFIG (MAP TO ENDPOINT)
-    - name: Create subOperatorConfig
-      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/create/subOperatorConfig.yml"
-      when:
-        - seaa_automation_strategy == "inline"
-        - hostvars[current_zosendpoint]._is_active
-        - seaa_deploy_suboperator | bool
-      with_items:
-        - "{{ groups['zosendpoints'] }}"
-      loop_control:
-        loop_var: current_zosendpoint
-
+    
     # CREATE SUB-OPERATOR CONFIG
     - name: Create subOperatorConfig with yaml
       ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/create/subOperatorConfig.yml"

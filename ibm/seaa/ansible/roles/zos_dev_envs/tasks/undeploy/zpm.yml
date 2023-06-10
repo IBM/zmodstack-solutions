@@ -40,19 +40,6 @@
 - name: Undeploy Operator Collection and SubOperator
   block:
 
-    # DELETE SUB-OPERATOR CONFIG (MAP TO ENDPOINT)
-    - name: Destroy subOperatorConfig
-      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/destroy/subOperatorConfig.yml"
-      when:
-        - seaa_automation_strategy == "inline"
-        - hostvars[current_zosendpoint]._is_active
-        - seaa_deploy_role == "admin"
-        - seaa_deploy_suboperator | bool
-      with_items:
-        - "{{ groups['zosendpoints'] }}"
-      loop_control:
-        loop_var: current_zosendpoint
-
     # DELETE SUB-OPERATOR
     - name: Destroy subOperatorConfig yaml
       ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/destroy/subOperatorConfig.yml"

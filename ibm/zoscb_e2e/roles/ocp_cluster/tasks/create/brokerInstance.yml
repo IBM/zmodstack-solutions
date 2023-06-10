@@ -4,47 +4,6 @@
     resource_variable: "{{ broker_instance }}"
   when: seaa_automation.debug | bool
 
-- name: Create brokerInstance
-  when: seaa_automation_strategy == "inline"
-  block:
-    - name: "Create broker instance: '{{ broker_instance.name }}' in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
-      kubernetes.core.k8s:
-        state: present
-        namespace: "{{ project_namespace.name }}"
-        api_key: "{{ ocp_cluster.auth_token }}"
-        definition:
-          kind: "{{ broker_instance.kind }}"
-          apiVersion: "{{ broker_instance.apiVersion }}"
-          metadata:
-            name: "{{ broker_instance.name }}"
-          spec:
-            license:
-              accept: "{{ broker_instance.license.accept }}"
-            logLevel: "{{ broker_instance.loglevel }}"
-            resources:
-              limits:
-                cpu: "{{ broker_instance.resources.limits.cpu }}" # "200m"
-                memory: "{{ broker_instance.resources.limits.memory }}" # "256Mi"
-                ephemeral-storage: "{{ broker_instance.resources.limits.ephemeralStorage }}"
-              requests:
-                cpu: "{{ broker_instance.resources.requests.cpu }}"  # "100m"
-                memory: "{{ broker_instance.resources.requests.memory }}" # "128Mi"
-                ephemeral-storage: "{{ broker_instance.resources.requests.ephemeralStorage }}"
-            storage:
-              configure: "{{ broker_instance.storage.configure }}"
-              enabled: "{{ broker_instance.storage.enabled }}"
-              pvc: "{{ broker_instance.storage.pvc }}"
-              size: "{{ broker_instance.storage.size }}"
-              storageClassName: "{{ broker_instance.storage.storageClassName }}"
-              volumeMode: "{{ broker_instance.storage.volumeMode }}"
-              accessModes: "{{ broker_instance.storage.accessMode }}"
-        wait: true
-        wait_condition:
-          type: Succeeded
-          status: 'True'
-          reason: Success
-        wait_timeout: 600
-
 - name: Create brokerInstance with YAML file
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:

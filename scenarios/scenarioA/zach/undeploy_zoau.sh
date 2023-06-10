@@ -31,5 +31,5 @@ skiptags=
 echo "Admin - Undeploy Admin Project and Broker, ZPM Operators and ZOAU instances from endpoints"
 "${run_playbook_dir}/run-undeploy-oel-dev-env.sh" -v="${verbosity}" -t="${tags}" -st="${skiptags}" -i_loc="${INVENTORY_LOCATION}" -e='{
     "seaa_yaml_output_dir": '"${YAML_OUTPUT_DIR}"',
-    "seaa_delete_outdir_if_exist": false
+    "seaa_clean_yaml_output_dir": false
   }'

@@ -4,29 +4,6 @@
     resource_variable: "{{ zos_package_manager }}"
   when: seaa_automation.debug | bool
 
-- name: "Install sub-operator CR {{ zos_package_manager.kind }}: '{{ zos_package_manager.name }}\
-   ' in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
-  when: seaa_automation_strategy == "inline"
-  kubernetes.core.k8s:
-    state: present
-    namespace: "{{ project_namespace.name }}"
-    api_key: "{{ ocp_cluster.auth_token }}"
-    definition:
-      kind: "{{ zos_package_manager.kind }}"
-      apiVersion: "{{ zos_package_manager.apiVersion }}"
-      metadata:
-        name: "{{ zos_package_manager.name }}"
-      spec:
-        java_home: "{{ zos_package_manager.javaHomeDirectory }}"
-        zosendpoint: "{{ endpoint.name }}"
-        zpm_install_path: "{{ zos_package_manager.installDirectoryPath }}"
-        zpm_products_hlq: "{{ zos_package_manager.productsHLQ }}"
-        zpm_registry_location: "{{ zpm_registry.host }}"
-        zpm_state_path: "{{ zos_package_manager.stateDirectoryPath }}"
-        zpm_registry_proxy_host: "{{ zos_package_manager.zpmRegistryProxyHost }}"
-        zpm_registry_proxy_port: "{{ zos_package_manager.zpmRegistryProxyPort }}"
-        accept: "{{ zos_package_manager.licenseAccept }}"
-
 - name: Create zpm Instance with YAML file
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:
@@ -91,7 +68,7 @@
 
 - name: Capture Deploy Wait time
   when:
-    - seaa_automation_strategy != "deploy_yaml" or seaa_automation_strategy != "inline"
+    - seaa_automation_strategy != "deploy_yaml"
     - seaa_capture_deployment_wait_time | bool and start_tstamp_ns is defined
   block:
     - name: Capture wait time and add to deploy script
