@@ -54,6 +54,7 @@
       run_once: true
       seaa_variables_validation:
         inventory_source: "{{ ansible_inventory_sources }}"
+        debug: True
       tags: always
 
     # ****************************************************************************************************************************
