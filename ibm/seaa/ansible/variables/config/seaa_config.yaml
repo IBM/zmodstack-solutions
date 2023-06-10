@@ -93,11 +93,11 @@ cluster_cacert: # "{{ lookup('env', 'KUBE_LB_SIGNER') }}"  # Can be set in inven
 # *******************************************************************************
 
 # Define the automation strategy for k8s resources  default(deploy_yaml)
-# Set automation strategy using values generate_deploy_yaml, deploy_yaml, generate_yaml, inline (to-be - deprecated)
+# Set automation strategy using values generate_deploy_yaml, deploy_yaml, generate_yaml
 # - "deploy_yaml" (default) - deploy or undeploy resources using native YAML API
 # - "generate_yaml" - generate Native YAML, script and readme files for deployment or undeployment
 # - "generate_deploy_yaml" - generate Native YAML, script and readme files and deploy or undeploy resources using native YAML API
-seaa_automation_strategy: deploy_yaml # deploy_yaml | generate_yaml | generate_deploy_yaml | inline (deprecated)
+seaa_automation_strategy: deploy_yaml # deploy_yaml | generate_yaml | generate_deploy_yaml
 
 # Output Directory for generated YAML files default(se ansible directory /yamls)
 seaa_yaml_output_dir: "{{ seaa_ansible_directory }}/yamls"
@@ -108,7 +108,7 @@ seaa_generated_content_dirname: _seaa_
 # Use the OCP host name in the generated YAML output directory if more than one ocphost is defined. default(true)
 # Note: if this is set to false and more than one host exist for the 'ocphost' then the ocphost name is appended to the
 # YAML output directory name - with the following naming convention: '{{ current_ocphost~'__'~project_namespace.name }}''
-seaa_seperate_generation_by_ocphost_dir: true # true | false | always
+seaa_separate_generation_by_ocphost_dir: true # true | false | always
 
 # If deployment script exist append deployment steps, if false clear deployment steps default(false)
 seaa_append_to_deployment_script: false
@@ -117,7 +117,7 @@ seaa_append_to_deployment_script: false
 seaa_append_version_to_software_instances: true
 
 # Always delete the output directory if it exist and 'seaa_append_to_deployment_script' flag is not 'true'
-seaa_delete_outdir_if_exist: true
+seaa_clean_yaml_output_dir: true
 
 # Boolean to copy endpoint zpm install and state dirs to endpoint
 # TODO REMOVE THIS

@@ -9,21 +9,6 @@
     wait: false
   register: check_k8s_info
 
-- name: "Delete sub-operator CR {{ validate_python.kind }}: '{{ validate_python.name }}' from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
-  when:
-    - seaa_automation_strategy == "inline"
-    - check_k8s_info is defined and check_k8s_info not none and check_k8s_info.api_found
-  kubernetes.core.k8s:
-    api_key: "{{ ocp_cluster.auth_token }}"
-    state: absent
-    namespace: "{{ project_namespace.name }}"
-    kind: "{{ validate_python.kind }}"
-    name: "{{ validate_python.name }}"
-    api_version: "{{ validate_python.apiVersion }}"
-    wait: "{{ seaa_undeploy_wait | bool }}" # yes
-    wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}" # 600
-    continue_on_error: "{{ seaa_undeploy_continue_on_error | bool }}"
-
 - name: Delete validatePythonInstance with YAML file
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:

@@ -4,23 +4,6 @@
     resource_variable: "{{ go_instance }}"
   when: seaa_automation.debug | bool
 
-- name: "Create sub-operator CR {{ go_instance.kind }}: '{{ go_instance.name }}' in project '{{ project_namespace.name }} \
-  ' on '{{ ocp_cluster.hostname }}' for zosendpoint '{{ go_instance.zosEndpoint }}'"
-  when: seaa_automation_strategy == "inline"
-  kubernetes.core.k8s:
-    state: present
-    namespace: "{{ project_namespace.name }}"
-    api_key: "{{ ocp_cluster.auth_token }}"
-    definition:
-      kind: "{{ go_instance.kind }}"
-      apiVersion: "{{ go_instance.apiVersion }}"
-      metadata:
-        name: "{{ go_instance.name }}"
-      spec:
-        accept: "{{ go_instance.licenseAccept }}"
-        product_ver: "{{ go_instance.productVersion }}"
-        zosendpoint: "{{ go_instance.zosEndpoint }}"
-
 - name: Create goInstance with YAML file
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:
@@ -83,7 +66,7 @@
 
 - name: Capture Deploy Wait time
   when:
-    - seaa_automation_strategy != "deploy_yaml" or seaa_automation_strategy != "inline"
+    - seaa_automation_strategy != "deploy_yaml"
     - seaa_capture_deployment_wait_time | bool and start_tstamp_ns is defined
   block:
     - name: Capture wait time and add to deploy script

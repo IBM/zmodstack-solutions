@@ -23,5 +23,5 @@ echo "Admin - Undeploy Admin Project and Broker, ZPM Operators and ZOAU instance
 "${run_playbook_dir}/run-undeploy-oel-dev-env.sh" -v="${verbosity}" -t="${tags}" -st="${skiptags}" -e='{
     "seaa_yaml_output_dir": '"${scriptdir}"',
     "seaa_deploy_validate_crs": false,
-    "seaa_delete_outdir_if_exist": false
+    "seaa_clean_yaml_output_dir": false
   }'
