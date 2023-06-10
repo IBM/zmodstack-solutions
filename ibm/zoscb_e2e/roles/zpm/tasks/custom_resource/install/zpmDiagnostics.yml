@@ -36,7 +36,8 @@
       no_log: "{{ not seaa_automation.debug }}"
       changed_when: start_tstamp_ns != 0
 
-    - name: "Create zpmDiagnosticsInstance with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+    - name: "Create zpmDiagnosticsInstance '{{ zos_package_manager_diagnostics.name }}' with Native YAML API: '{{ project_namespace.name }} \
+        ' on '{{ ocp_cluster.hostname }}'"
       when: seaa_automation_strategy != "generate_yaml"
       kubernetes.core.k8s:
         state: present

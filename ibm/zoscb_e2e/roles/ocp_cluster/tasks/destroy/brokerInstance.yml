@@ -25,7 +25,7 @@
         destination_file: "broker-instance.yaml"
         is_ocp_resource: true
 
-    - name: "Delete brokerInstance with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+    - name: "Delete brokerInstance '{{ broker_instance.name }}' with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
       when: seaa_automation_strategy != "generate_yaml"
       kubernetes.core.k8s:
         state: absent
