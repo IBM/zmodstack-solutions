@@ -106,10 +106,6 @@ seaa_work_dir = "/tmp/.seaa" #os.path.expanduser("~")+'/.seaa/tmp'
 # Prefix for tmp files
 tmp_file_prefix = "vseaa"
 
-# Flag used to _cleanup temp files after running parts of validation and 
-# to cleanup temp file/directories on next run
-_cleanup = False
-
 # Function to validate inventory and combined ansible variables
 def validate_seaa_variables(inventory_data: str, schema_data: str):
 
@@ -161,12 +157,11 @@ def validate_host(schema_data: str, group_name: str, host_name: str, host_variab
             variable_value = host_variables[variable]
 
             # Check if variable value is None
-            if variable_value == None:
-                raise MissingVariableValue(f"Variable '{variable}' value is null for host '{host_name}' in {group_name}'") #MissingVariableValue
-            
+            if variable_value == None or variable_value == "" :
+                raise MissingVariableValue(f"Variable '{variable}' value not provided for host '{host_name}' in {group_name}'") #MissingVariableValue
             # Check if the variable is of the correct type
-            elif isinstance(variable, list) and (len(variable_value) == 0 or all(element == None for element in variable_value)):
-                raise MissingVariableValue(f"Variable '{variable}' has no values for host '{host_name}'") #MissingVariableValue
+            elif isinstance(variable_value, list) and (len(variable_value) == 0 or all(element == None for element in variable_value)):
+                    raise MissingVariableValue(f"Variable '{variable}' has no values for host '{host_name}'") #MissingVariableValue
             else:
                 validate_types(host_name, expected_types, variable, variable_value)
 
@@ -291,9 +286,9 @@ def build_ansible_inventory_command(inventory_source, seaa_variable_path, temp_d
             command += ['-e', '@'+preprocess_json_file(ev_file, temp_dir_path)]
 
     return command
-
+ 
 # Function to build and run the 'ansible-inventory' command
-def run_ansible_inventory(module, inventory_source, seaa_variable_path, extra_var_files):
+def run_ansible_inventory(module, inventory_source, seaa_variable_path, extra_var_files, _debug):
     
     # Create the directory for temp_dirs if it doesn't exist
     if not os.path.exists(seaa_work_dir):
@@ -329,15 +324,45 @@ def run_ansible_inventory(module, inventory_source, seaa_variable_path, extra_va
             module.fail_json(msg=f"Failed to parse ansible-inventory output as YAML: {e}")
         
         # Clean up the temporary file
-        if _cleanup:
+        if not _debug:
           os.remove(temp_file_path)
     
     # Clean up the temporary directory
-    if _cleanup: 
+    if not _debug:
       shutil.rmtree(temp_dir_path)
 
-    return inventory_data
- 
+    return temp_file_path, inventory_data
+
+# Return failure
+def return_failure(module, inventory_source, validation_details, e, _debug, _temp_file_path ):
+
+    if not _debug:               
+    
+        # Return fail_json    
+        module.fail_json(msg=f"Failed to validate seaa variable for inventory_source {inventory_source}: {str(e)}",
+                        validation_info=validation_details)
+    else: # Debug is True
+        # Return fail_json    
+        module.fail_json(msg=f"Failed to validate seaa variable for inventory_source {inventory_source}: {str(e)}",
+                        validation_info=validation_details,
+                        validation_debug_info=_temp_file_path
+                        )
+
+# Return results
+def return_results(module, result, _debug, _temp_file_path):
+    if not _debug:
+        # simple AnsibleModule.exit_json(), passing the key/value results
+        module.exit_json(**result)
+    else:
+        module.exit_json(**result,
+                validation_debug_info=_temp_file_path)
+
+# Validate if list is empty bracket '[]'         
+def is_list_field_empty(field_data):
+    if isinstance(field_data, list) :
+       return field_data == []
+    return False
+
 # Function to run Ansible Module       
 def run_module():
 
@@ -346,6 +371,7 @@ def run_module():
         inventory_source=dict(type='raw', required=True),
         schema_path=dict(type='path', required=False),
         extra_var_files=dict(type='list', required=False),
+        debug=dict(type='bool', required=False, default=False)
     )
 
     # define the result dictionary return any data that you want your module to pass back
@@ -371,9 +397,11 @@ def run_module():
     # **********************************************  
     # Start custom module state and implementation
     # **********************************************  
-      
-    # Cleanup if not  
-    if _cleanup :
+    # Set debug param
+    _debug = module.params['debug']
+
+    # Check if should cleanup 
+    if not _debug:
       cleanup_tmp_dir(seaa_work_dir)
     
     # Path to SEAA variables used for validating ansible variables used with inventory
@@ -394,7 +422,8 @@ def run_module():
         # Run ansible-inventory command for inventory_sources
         inventory_source = module.params['inventory_source']
         extra_var_files = module.params['extra_var_files']
-        inventory_data = run_ansible_inventory(module, inventory_source, seaa_variable_path, extra_var_files)
+
+        _temp_file_path, inventory_data = run_ansible_inventory(module, inventory_source, seaa_variable_path, extra_var_files, _debug)
     except Exception as e:  
         module.fail_json(msg=f"Failed to process Inventory source '{inventory_source}': {str(e)}")
 
@@ -450,10 +479,9 @@ def run_module():
                                     "seaa_schema_file": schema_path
                                 }
                             }
-            # Return fail_json    
-            module.fail_json(msg=f"Failed to validate seaa variable for inventory_source {inventory_source}: {str(e)}",
-                             validation_info=validation_details)
-    
+
+            # Return failure
+            return_failure(module, inventory_source, validation_details, e, _debug, _temp_file_path)            
         else:    
             # Return fail_json  
             module.fail_json(msg=f"Failed to validate seaa variable for source {inventory_source}: {str(e)}")
@@ -461,10 +489,8 @@ def run_module():
     # **********************************************  
     # End custom module state and implementation
     # **********************************************  
-
-    # simple AnsibleModule.exit_json(), passing the key/value results
-    module.exit_json(**result)
-
+    return_results(module, result, _debug, _temp_file_path)
+        
 def main():
     run_module()
 
