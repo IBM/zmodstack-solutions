@@ -28,7 +28,6 @@ This role uses the following variables. Some of the values of these variables ca
       - `operator_group` (type `dict`): Specifications for the Operator Group to be created in the namespace
       - `broker_subscription` (type `dict`): Specifications for the Broker Subscription to be created in the namespace
       - `broker_instance` (type `dict`): Specifications for the Cloud Broker Instance to be created in the namespace
-      - `route` (type `dict`): Specifications for the Route to be created in the namespace
   - From `zoscb-e2e/ocp_cluster/vars/endpoints.yml`
       - `endpoint` (type `dict`): Specifications for the endpoint to be created in the namespace
 

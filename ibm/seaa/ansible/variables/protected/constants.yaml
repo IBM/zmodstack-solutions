@@ -42,18 +42,12 @@ broker_zosendpoint_api_version: zoscb.ibm.com/v2beta2
 broker_sub_operator_api_group: suboperator.zoscb.ibm.com
 
 # *************************************
-# Broker Automation passthrough UI Route
-# *************************************
-route_api_version: route.openshift.io/v1
-
-# *************************************
 # Operator Collection & Sub Operator
 # *************************************
 oc_product_api_version: zoscb.ibm.com/v2beta2
 oc_product_finalizer: operatorcollections.zoscb.ibm.com/finalizer
 subop_config_api_version: zoscb.ibm.com/v2beta2
 subop_config_finalizer: suboperatorconfigs.zoscb.ibm.com/finalizer
-
 
 # *************************************
 # ZPM Instance Variables
