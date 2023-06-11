@@ -86,15 +86,3 @@ broker_instance:
     accessModes: "{{ lookup('vars', 'pvc_access_mode') }}"
     accessMode: "{{ lookup('vars', 'pvc_access_mode') }}"
     pvc: "{{ lookup('vars', 'pvc_name') }}"
-
-# INSECURE ROUTE (Route) Defaults and Constants
-route:
-  name: "{{ lookup('vars', 'route_name') }}"
-  apiVersion: "{{ lookup('vars', 'route_api_version') }}"
-  toKind: "{{ lookup('vars', 'route_to_kind') }}"
-  toName: "{{ lookup('vars', 'route_to_name') }}"
-  targetPort: "{{ lookup('vars', 'route_target_port') }}"
-  tlsTermination: "{{ lookup('vars', 'route_tls_termination') }}"
-  tlsInsecureEdgeTerminationPolicy: "{{ lookup('vars', 'route_tls_insecure_edge_termination_policy') }}"
-  wildcardPolicy: "{{ lookup('vars', 'route_wildcard_policy') }}"
-  weight: "{{ lookup('vars', 'route_weight') | int }}"

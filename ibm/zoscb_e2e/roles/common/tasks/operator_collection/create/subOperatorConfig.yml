@@ -28,17 +28,10 @@
     oc_version: "{{ oc_product.oc_version }}"
   when: oc_product.import_mode == 'galaxy'
 
-- name: Set Broker API uri for '{{ ocp_cluster.hostname }}'
-  ansible.builtin.set_fact:
-    broker_application_url: "https://{{ route.name }}-{{ project_namespace.name }}.apps.{{ ocp_cluster.hostname | replace('api.', '') }}"
-
 - name: Debug Collection and endpoint before mapping
   when:
     - seaa_automation.debug | bool
   block:
-    - name: Debug var broker_application_url
-      ansible.builtin.debug:
-        var: broker_application_url
     - name: Debug var endpoint
       ansible.builtin.debug:
         var: endpoint
