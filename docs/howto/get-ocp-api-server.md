@@ -1,5 +1,5 @@
 # How to get API server for your OCP host
-When configuring your [inventory](../../playbooks/inventory/sample-inventory.yaml) file, you will need the API server URL to define the OCP host.
+When configuring your [inventory](/ibm/seaa/ansible/playbooks/inventory/sample-inventory.yaml) file, you will need the API server URL to define the OCP host.
 Complete these steps to obtain the API server URL for your OCP cluster.
 
 1. Access the OCP cluster's command-line interface (CLI) or management console.
