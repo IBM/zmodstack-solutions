@@ -80,7 +80,7 @@
       register: create_new_yaml_dir
       when: not yaml_outfile.stat.exists
 
-    - name: Delete '{{ yaml_file }}'' YAML file if it already exist
+    - name: Delete '{{ yaml_file }}' YAML file if it already exist
       when:
         - yaml_outfile.stat.exists and deploy_type == "deploy"
       failed_when: false
