@@ -28,7 +28,8 @@
         namespace: "{{ project_namespace.name }}"
         definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/instances/validate-nodejs-instance.yaml') | from_yaml }}"
 
-- name: "Wait for installation of sub-operator CR {{ validate_nodejs.kind }}: '{{ validate_nodejs.name }}' on '{{ ocp_cluster.hostname }}'"
+- name: "Wait for installation of sub-operator CR {{ validate_nodejs.kind }}: '{{ validate_nodejs.name }}' in '{{ project_namespace.name }}\
+          ' on '{{ ocp_cluster.hostname }}'"
   when: seaa_automation_strategy != "generate_yaml"
   kubernetes.core.k8s_info:
     api_key: "{{ ocp_cluster.auth_token }}"

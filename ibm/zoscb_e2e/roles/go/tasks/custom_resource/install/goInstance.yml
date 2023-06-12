@@ -46,7 +46,8 @@
       ansible.builtin.pause:
         prompt: "Check to see if '{{ go_instance.name }}' instance has installed on '{{ ocp_cluster.hostname }}' in project '{{ project_namespace.name }}'"
 
-- name: "Wait for installation of sub-operator CR {{ go_instance.kind }}: '{{ go_instance.name }}' on '{{ ocp_cluster.hostname }}'"
+- name: "Wait for installation of sub-operator CR {{ go_instance.kind }}: '{{ go_instance.name }}' in '{{ project_namespace.name }}\
+          ' on '{{ ocp_cluster.hostname }}'"
   when: seaa_automation_strategy != "generate_yaml"
   kubernetes.core.k8s_info:
     api_key: "{{ ocp_cluster.auth_token }}"
