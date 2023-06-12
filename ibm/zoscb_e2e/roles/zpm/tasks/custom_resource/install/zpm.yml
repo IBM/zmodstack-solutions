@@ -48,7 +48,8 @@
         prompt: "Check to see if '{{ zos_package_manager.name }}' instance has installed on '{{ ocp_cluster.hostname }}' \
                  in project '{{ project_namespace.name }}'"
 
-- name: "Wait for installation of sub-operator CR {{ zos_package_manager.kind }}: '{{ zos_package_manager.name }}' on '{{ ocp_cluster.hostname }}'"
+- name: "Wait for installation of sub-operator CR {{ zos_package_manager.kind }}: '{{ zos_package_manager.name }}' in '{{ project_namespace.name }}\
+          ' on '{{ ocp_cluster.hostname }}'"
   when: seaa_automation_strategy != "generate_yaml"
   kubernetes.core.k8s_info:
     api_key: "{{ ocp_cluster.auth_token }}"
