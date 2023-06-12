@@ -51,8 +51,8 @@ java_short_name: "{{ sub_operators.java.short_name }}" #java
 java_code_name: "{{ sub_operators.java.code_name }}"
 java_name: "{{ sub_operators.java.name }}" #zos-java
 java_oc_version: "{{ oc_product_oc_version }}"
-java_oci_version: 8.0.7.20 # 2023.1.1 GA
-java_product_version: 8.0.7
+java_oci_version: 8.0.8.5 # 2023.2.1 GA
+java_product_version: 8.0.8
 
 # *************************************
 # Secure Operator Collection
