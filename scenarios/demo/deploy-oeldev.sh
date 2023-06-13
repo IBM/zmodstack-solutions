@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 # Directory to run playbook
 run_playbook_dir="${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/../scripts/run_playbooks"
 
