@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 # Solutions Enablement Ansible Automation (SEAA) framework for IBM Z and Cloud Modernization Stack
 
 ## Overview

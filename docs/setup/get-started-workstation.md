@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 # Getting Started Workstation
 
 **Clone the ['zmodstack-solutions'](https://github.com/IBM/zmodstack-solutions) repo and follow the steps below to setup your workstation.**
