@@ -5,10 +5,10 @@
 
 # Scenario A - Admin Deployment of z/OS artifacts
 
-## Description:
+## Description
 OCP Admin Zach deploys ZOSCB,  ZPM(OSI) and ZOAU(OSI) as requested by early tenure z/OS Application developer Deb using his SHARED RACF credentials for the z/OS endpoint.
 
-## Systems:
+## Systems
 
 - One OCP Host (single admin namespace for Sys Admin)
 
@@ -16,13 +16,13 @@ OCP Admin Zach deploys ZOSCB,  ZPM(OSI) and ZOAU(OSI) as requested by early tenu
 
 - **Suggested Use-cases:** Test System
 
-## Personas:
+## Personas
 
 Zach - Sys Admin (Senior z/OS Systems Programmer)
 
 Deb - Developer (Early tenure z/OS Application) - needs ZOAU
 
-## Scenario Steps:
+## Scenario Steps
 
 - Pre-req - Create or Discover the z/OS ID used by Zach on the target z/OS Endpoint that have the required RACF Credentials/USS permissions to install software
 
@@ -34,7 +34,7 @@ Deb - Developer (Early tenure z/OS Application) - needs ZOAU
 
 - Deb (Developer) - Configures and uses ZOAU on the z/OS endpoint
 
-## Component Topology Post Install:
+## Component Topology Post Install
 
 **OCP Cluster (s390x)** →
 
