@@ -12,7 +12,7 @@ OCP Admin Zach deploys ZOSCB,  ZPM(OSI) and ZOAU(OSI) as requested by early tenu
 
 - One OCP Host (single admin namespace for Sys Admin)
 
-- One z/OS Endpoint for z/OS Sys Prog
+- One z/OS endpoint for z/OS Sys Prog
 
 - **Suggested Use-cases:** Test System
 
@@ -24,7 +24,7 @@ Deb - Developer (Early tenure z/OS Application) - needs ZOAU
 
 ## Scenario Steps
 
-- Pre-req - Create or Discover the z/OS ID used by Zach on the target z/OS Endpoint that have the required RACF Credentials/USS permissions to install software
+- Pre-req - Create or discover the z/OS ID used by Zach on the target z/OS endpoint that has the required RACF Credentials/USS permissions to install software
 
 - Zach (Sys Admin) - Deploy Admin Project and Broker to OCP
 
@@ -40,9 +40,9 @@ Deb - Developer (Early tenure z/OS Application) - needs ZOAU
 
 - Admin Namespace → z/OS Cloud Broker → Installed by Zach (Sys Admin) →
 
-  - ZPM OC → ZPM Sub-OC (SHARED) → z/OS Endpoint CR → ZPM Instance
+  - ZPM OC → ZPM Sub-OC (SHARED) → z/OS endpoint CR → ZPM Instance
 
-  - ZOAU OC → ZOAU Sub-OC (SHARED) → z/OS Endpoint CR → ZOAU Instance
+  - ZOAU OC → ZOAU Sub-OC (SHARED) → z/OS endpoint CR → ZOAU Instance
 
 **z/OS Endpoint (Wazi-Sandbox)** →
 
