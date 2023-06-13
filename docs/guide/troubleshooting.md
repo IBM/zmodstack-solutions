@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 # Troubleshooting
 ## SEAA variable validation error
  - The framework provides a module to validate the inventory and variables used at runtime. If an error message occurs review and make the necessary updates to the inventory or variable files as required.
