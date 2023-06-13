@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 - name: "Retrieve sub-operator CR {{ nodejs_instance.kind }}: '{{ nodejs_instance.name }}'"
   kubernetes.core.k8s_info:
     api_key: "{{ ocp_cluster.auth_token }}"

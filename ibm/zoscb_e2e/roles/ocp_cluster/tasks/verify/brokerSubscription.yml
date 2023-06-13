@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 - name: "Info ONLY Retrieve broker subscription: '{{ broker_subscription.name }}' in '{{ project_namespace.name }}\
     ' on '{{ ocp_cluster.hostname }}'"
   when: info_only is defined

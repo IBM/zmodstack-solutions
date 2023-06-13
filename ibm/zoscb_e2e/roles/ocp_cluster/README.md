@@ -1,3 +1,7 @@
+<!-- #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+# -->
 # Role: 'ocp_cluster'
 This role and the scenario of the same name (`ocp_cluster`) within it can be used to bootstrap an OpenShift cluster.
 

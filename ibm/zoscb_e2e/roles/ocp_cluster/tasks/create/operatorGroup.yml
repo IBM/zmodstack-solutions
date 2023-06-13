@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 - ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/debug_resource.yml"
   vars:
     resource_variable: "{{ operator_group }}"

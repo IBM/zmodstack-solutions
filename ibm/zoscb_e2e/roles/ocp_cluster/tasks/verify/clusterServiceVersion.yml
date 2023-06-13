@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 - name: "Info Only Retrieve cluster service version (operator): '{{ broker_subscription.name }}.v{{ broker_subscription.version }}' on '\
    {{ ocp_cluster.hostname }}'"
   when: info_only is defined
