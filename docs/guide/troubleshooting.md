@@ -5,7 +5,7 @@
 
 # Troubleshooting
 ## SEAA variable validation error
- - The framework provides a module to validate the inventory and variables used at runtime. If an error message occurs review and make the necessary updates to the inventory or variable files as required.
+ - The framework provides a module to validate the inventory and variables used at runtime. If an error message occurs, review and make the necessary updates to the inventory or variable files as required.
   
 ## Known local run errors
  - ERROR! Unknown error when attempting to call Galaxy at 'https://galaxy.ansible.com/api/': <urlopen error [SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed
