@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 ---
 # Set fact to check if CSV already exist for this namespace
 - name: "Check for existence of CSV: 'zpm-{{ oc_product.name }}-operator'"

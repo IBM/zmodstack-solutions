@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 - name: "Info ONLY Retrieve sub-operator CR {{ zos_package_manager.kind }}: '{{ zos_package_manager.name }}' from '{{ project_namespace.name }}\
    ' on '{{ ocp_cluster.hostname }}'"
   when: info_only is defined

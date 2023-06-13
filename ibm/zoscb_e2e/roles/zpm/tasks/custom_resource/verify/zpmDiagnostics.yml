@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 - name: "Info_only Retrieve sub-operator CR {{ zos_package_manager_diagnostics.kind }}: '{{ zos_package_manager_diagnostics.name }}'"
   when: info_only is defined
   kubernetes.core.k8s_info:

@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 ---
 # Use auth token to login to the cluster
 - name: "Login to OpenShift cluster: 'https://{{ ocp_cluster.ipaddress | default(ocp_cluster.hostname, true) }}:{{ ocp_cluster.port }} \
