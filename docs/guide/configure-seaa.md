@@ -25,9 +25,9 @@ Complete the following steps to configure the framework to run on your workstati
     **Note:** These environment variables can also be added to **.bash_profile** or to environment variables for a specific OS.
 
 ---
-## (Optional) Create Ansible config file in home directory    
+## (Optional) Create Ansible config file in the home directory    
   
-  Save the following content to an '.ansible.cfg' file in your home directory, see this [link](https://docs.ansible.com/ansible/latest/reference_appendices/config.html) for details on Ansible config files. Having this ansible config file will allow you to run the framework script from other locations on your workstation:
+  Save the following content to an '.ansible.cfg' file in your home directory, see this [link](https://docs.ansible.com/ansible/latest/reference_appendices/config.html) for details on Ansible config files. Having this ansible config file will allow you to run the framework script from other locations on your workstation.
   
     
     [defaults]
