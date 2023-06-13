@@ -1,3 +1,7 @@
+<!-- #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+# -->
 # Role: 'zpm'
 This role and the scenario of the same name (`zpm`) within it can be used to install, verify and destroy z/OS Package Manager on a z/OS endpoint through OpenShift by importing the associated operator collection and creating custom resources on an OpenShift cluster.
 
