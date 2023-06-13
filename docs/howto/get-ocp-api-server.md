@@ -1,7 +1,7 @@
-#
+<!-- #
 # Copyright 2023 IBM Inc. All rights reserved
 # SPDX-License-Identifier: Apache2.0
-#
+# -->
 
 # How to get API server for your OCP host
 When configuring your [inventory](../../ibm/seaa/ansible/playbooks/inventory/sample-inventory.yaml) file, you will need the API server URL to define the OCP host.
