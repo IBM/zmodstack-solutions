@@ -14,13 +14,13 @@ Tags can be used to deploy/undeploy or skip deployment/undeployment of resources
  -  go      - deploy Go
  -  java    - deploy Java
  -  nodejs  - deploy NodeJS
- -  oelcpp - deploy OelCPP
+ -  oelcpp - deploy OELCPP
  -  python  - deploy Python
  -  zoau    - deploy ZOAU
 
 ### Operator and SubOperator tags
- -  zoscb   - deploy Zos Cloud Broker (require if smart deploy not on)
- -  zpm     - deploy ZosPackage Manager (require if smart deploy not on)
+ -  zoscb   - deploy Z/OS Cloud Broker (require if smart deploy is not on)
+ -  zpm     - deploy Z/OS Package Manager (require if smart deploy is not on)
   
 ### Functional tags
  -  developer - deploy developer resources
