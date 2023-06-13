@@ -1,3 +1,8 @@
+<!-- #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+# -->
+
 # Admin Scripts
 Scripts used to administer OpenShift and z/OS Endpoints resources.
 

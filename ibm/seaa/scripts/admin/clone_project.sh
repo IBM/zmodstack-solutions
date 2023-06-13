@@ -1,5 +1,10 @@
 #!/bin/bash
 #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+#
 # Description:
 # Clone generated project to new project or find and replace all strings from the generated project
 #

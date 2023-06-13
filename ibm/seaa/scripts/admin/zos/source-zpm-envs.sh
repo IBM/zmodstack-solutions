@@ -1,4 +1,9 @@
 #!/bin/sh
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 # set -x
 # Set env variables for tagging text files/output
 export _BPXK_AUTOCVT=ON

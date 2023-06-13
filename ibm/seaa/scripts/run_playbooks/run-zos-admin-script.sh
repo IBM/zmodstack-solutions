@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 # **************************************************************************************************#
 # Script that calls ansible playbook to deploy/run/clean admin scripts for zCMS
 # For additional usage information use "--help" flag as input to script.

@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 ---
 # Include ansible variables for product sub-operator being verifyed
 - name: Include Nodejs vars

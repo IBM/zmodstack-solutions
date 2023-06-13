@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 ---
 - name: Direct Deploy SSH Key for Yaml Sub-Operator Collections
   when: run_task_direct is defined and run_task_direct

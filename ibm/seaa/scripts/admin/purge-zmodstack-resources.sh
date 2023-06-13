@@ -1,5 +1,10 @@
 #!/bin/bash
 #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+#
 # Description:
 # This Script will purge ALL projects with Broker resources from OCP server that name or description matches filter provided.
 # By default this script will run a TestRun and display all the resources to-be deleted, to actually delete resources

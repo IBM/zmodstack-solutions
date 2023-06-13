@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 ---
 # Called By generate_cmd and generate_yaml task to add information to generated readme
 - name: Set generate script file directories and variables

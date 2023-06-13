@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 # **************************************************************************************************#
 # Script that calls ansible playbook to Deploy zCM Stack configuration to z/OS Endpoint to create
 # development environment on USS

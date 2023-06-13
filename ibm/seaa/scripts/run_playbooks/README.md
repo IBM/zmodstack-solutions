@@ -1,3 +1,8 @@
+<!-- #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+# -->
+
 # SEAA run playbook scripts
 The following scripts are used to run playbooks from the solutions repo.
 

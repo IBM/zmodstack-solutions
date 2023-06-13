@@ -1,3 +1,8 @@
+<!-- #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+# -->
+
 # List of playbooks implemented for SEAA framework
 ## IBM Open Enterprise Language (OEL) Playbooks
 |File name|Description|
