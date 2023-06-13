@@ -60,4 +60,4 @@ The following table provides details about variable files used with the Solution
 Extra-vars have the highest-level of precedence and can be used to override ANY ansible variables when [running](https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#defining-variables-at-runtime) the framework.
 
 ---
-## [back to framework guide](/docs/guide/README.md)
+## [back to framework guide](../../../../docs/guide/README.md)

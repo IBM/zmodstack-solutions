@@ -3,11 +3,11 @@ Follow the steps below to run the framework on your workstation.
 
 ---
 ## Review and configure default Ansible variables
-TL;DR - (Optional) review documentation for [variables](/ibm/seaa/ansible/variables/README.md) and make any changes as required to deploy desired language versions or configuration.
+TL;DR - (Optional) review documentation for [variables](../../ibm/seaa/ansible/variables/README.md) and make any changes as required to deploy desired language versions or configuration.
 
 ---
 ## Create default inventory
-Review [sample-inventory.yaml](/ibm/seaa/ansible/playbooks/inventory/sample-inventory.yaml) file and use it to create a local default '**inventory.yaml**' file in your cloned zmodstack-solutions repo **[inventory](/ibm/seaa/ansible/playbooks/inventory)** directory.
+Review [sample-inventory.yaml](../../ibm/seaa/ansible/playbooks/inventory/sample-inventory.yaml) file and use it to create a local default '**inventory.yaml**' file in your cloned zmodstack-solutions repo **[inventory](../../ibm/seaa/ansible/playbooks/inventory)** directory.
 <!--
 # Ansible Inventory Notes
 - simple-inventory.yaml - ansible inventory file for deploying/undeploying z cloud and modernization stack components across ocp clusters, zos endpoints and ocp projects. Edit this file and rename per usecase/scenarios.
@@ -21,7 +21,7 @@ Review [sample-inventory.yaml](/ibm/seaa/ansible/playbooks/inventory/sample-inve
 -->
 ---
 ## Run playbook script for deploying Open Enterprise Languages (OEL) development environments-aaS
-'CD' to the **[run_playbooks](/ibm/seaa/scripts/run_playbooks)** directory in cloned repo and run one or more of the following scenarios with 'default' configuration values using the commands below:
+'CD' to the **[run_playbooks](../../ibm/seaa/scripts/run_playbooks)** directory in cloned repo and run one or more of the following scenarios with 'default' configuration values using the commands below:
 
   - #### Deploy **z/OS Cloud Broker** and **z/OS Package Manager** - ONLY:<br>
     ```
@@ -49,7 +49,7 @@ Review [sample-inventory.yaml](/ibm/seaa/ansible/playbooks/inventory/sample-inve
     ./run-undeploy-oel-dev-env.sh --tags=oel-dev --skiptags=oelcpp
     ```
 
-**[View available tags for run script and playbook.](/docs/guide/seaa-tags.md)**    
+**[View available tags for run script and playbook.](../guide/seaa-tags.md)**    
 
 ---
 ## Creating your own deployment scripts
@@ -64,4 +64,4 @@ Review [sample-inventory.yaml](/ibm/seaa/ansible/playbooks/inventory/sample-inve
  - **TODO** - work in progress 
 
 ---    
-## Next steps [troubleshooting](/docs/guide/troubleshooting.md) -or- [back to framework guide](/docs/guide/README.md)
+## Next steps [troubleshooting](../guide/troubleshooting.md) -or- [back to framework guide](../guide/README.md)
