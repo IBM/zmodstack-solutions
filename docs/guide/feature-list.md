@@ -4,7 +4,7 @@
 # -->
 
 # SEAA framework capabilities and features
-This section provides a high-level list of features pertaining to the framework.
+This section provides a high-level list of framework related features.
 
 - Generate/Deploy resources to multiple OCP cluster, projects and z/OS endpoints
 - Generate YAML deployment, scripts, and README files
