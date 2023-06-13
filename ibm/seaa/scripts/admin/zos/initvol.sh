@@ -1,5 +1,10 @@
 #!/bin/sh
 #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+#
 # Initialize volume on z/OS endpoint
 #
 # For additional usage information use "--help" flag as input to script.

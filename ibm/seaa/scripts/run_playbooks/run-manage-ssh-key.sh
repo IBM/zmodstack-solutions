@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 # **************************************************************************************************#
 # Script that calls ansible playbook to manage SSH Key on z/OS Endpoint
 # For additional usage information use "--help" flag as input to script.

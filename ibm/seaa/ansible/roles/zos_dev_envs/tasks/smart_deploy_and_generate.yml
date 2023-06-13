@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 ---
 # HANDLE Cache and initialize variables for GENERATING YAML, SCRIPTS and README files
 - name: Set flags for Generating YAML files

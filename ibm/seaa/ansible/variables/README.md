@@ -1,3 +1,7 @@
+<!-- #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+# -->
 # Ansible Variable Files
 The following table provides details about variable files used with the Solution Enablement Ansible Automation (SEAA) framework.
 

@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 ---
 # Define ZOS Broker E2E role directory
 zoscb_e2e_roles_directory: "{{ seaa_ansible_directory~'/../../zoscb_e2e/roles' }}"

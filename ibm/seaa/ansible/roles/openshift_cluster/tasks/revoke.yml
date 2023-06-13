@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 ---
 - name: Revoke access token if it has been defined
   when: openshift_auth_token is defined
