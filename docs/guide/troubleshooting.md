@@ -1,7 +1,7 @@
-#
+<!-- #
 # Copyright 2023 IBM Inc. All rights reserved
 # SPDX-License-Identifier: Apache2.0
-#
+# -->
 
 # Troubleshooting
 ## SEAA variable validation error

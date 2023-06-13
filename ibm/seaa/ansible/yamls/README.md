@@ -1,3 +1,7 @@
+<!-- #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+# -->
 # Templates for generating SEAA framework files
 Given below is a list of directories that contian templates for generating Solution Enablement Ansible Automation (SEAA) framework files.
 |Directory|Templates available|

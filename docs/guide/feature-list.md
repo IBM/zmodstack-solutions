@@ -1,7 +1,7 @@
-#
+<!-- #
 # Copyright 2023 IBM Inc. All rights reserved
 # SPDX-License-Identifier: Apache2.0
-#
+# -->
 
 # SEAA framework capabilities and features
 This section provides a high-level list of features pertaining to the framework.
