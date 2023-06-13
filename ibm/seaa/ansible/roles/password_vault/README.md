@@ -24,7 +24,7 @@ None
 Usage
 ----------------
 To use this with the SEAA framework make sure the 1password credential item name matches the value of "seaa_security_password_vault_item" variable (default - 'se-login'). This variable is located in 
-&lt;seaa_ansible_directory&gt;/variables/config/seaa_config.yaml [file](../../variables/config/seaa_config.yaml).
+&lt;seaa_ansible_directory&gt;/variables/config/seaa_config.yaml [file](../../../ansible/variables/config/seaa_config.yaml).
 
 Here is an example of how this role is used:
 ```
