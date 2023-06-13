@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 ---
 - name: "Info Only Retrieve sub-operator config: '{{ oc_product.name }}.zpm.{{ oc_version }}-suboperatorconfig-...'"
   when: info_only is defined and info_only

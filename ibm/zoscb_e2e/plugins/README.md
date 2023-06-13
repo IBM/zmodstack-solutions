@@ -1,3 +1,7 @@
+<!-- #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+# -->
 # Collections Plugins Directory
 
 This directory can be used to ship various plugins inside an Ansible collection. Each plugin is placed in a folder that

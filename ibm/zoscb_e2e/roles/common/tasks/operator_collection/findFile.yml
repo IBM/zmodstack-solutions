@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 - name: "Find operator collection tar.gz file locally"
   ansible.builtin.find:
     paths: "{{ zoscb_e2e_roles_directory }}/{{ oc_product.short_name }}/oc_file"
