@@ -1,3 +1,8 @@
+<!-- #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+# -->
+
 #jinja2: lstrip_blocks: True
 # {{ deploy_type | capitalize }} Getting Started
 **[Important Note](.)**: The below {{ deploy_type }}ment readme was originally generated on {{ start_time_stamp }} by the SEAA framework, with '**_{{ seaa_automation_strategy | upper }}_**' automation strategy and is **NOT** guaranteed to be in sync with the actual "[_{{ deploy_type }}.sh](_{{ deploy_type }}.sh)" script.
