@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 if [ $# -eq 0 ]; then
   echo "Usage: $0 directory_name"
   exit 1
