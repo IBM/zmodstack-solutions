@@ -24,7 +24,7 @@ Deb - Developer (Early tenure z/OS Application) - needs ZOAU
 
 ## Scenario Steps:
 
-- Pre-Req - Create or Discover the z/OS ID used by Zach on the target z/OS Endpoint that have the required RACF Credentials/USS permissions to install software
+- Pre-req - Create or Discover the z/OS ID used by Zach on the target z/OS Endpoint that have the required RACF Credentials/USS permissions to install software
 
 - Zach (Sys Admin) - Deploy Admin Project and Broker to OCP
 
