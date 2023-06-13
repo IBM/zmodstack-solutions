@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 # ***********************************
 # Pre-Req export Env/Ansible Variable to run Scenario
 # ***********************************
