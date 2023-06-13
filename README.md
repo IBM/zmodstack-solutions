@@ -6,9 +6,9 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](./LICENSE)
 
 # Overview
-This repo contains solutions, automated scenarios and artifacts for deploying and administrating IBM Z and Cloud Modernization Stack resources. The goal is to provide solutions that enhance modernization journey when using the stack.
+This repo contains solutions, automated scenarios, and artifacts for deploying and administrating IBM Z and Cloud Modernization Stack resources. The goal is to provide automated solutions that enhance your modernization journey when using the stack.
 
-One way this is achieved is with the Solutions Enablement Ansible Automation (SEAA) framework for IBM Z and Cloud Modernization Stack. The SEAA framework consist of [Ansible Variable](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html), [Ansible Playbooks](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html), [Ansible Roles](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_reuse_roles.html), [run_playbooks](/ibm/seaa/scripts/run_playbooks/README.md) and [admin](/ibm/seaa/scripts/admin/README.md) scripts that allow you to deploy and administer components of the stack. In addition to the SEAA framework this repo provides [persona-based](/docs/scenarios/README.md) samples to achieve the stated goal. See table below for automated solutions that are provided or under consideration. <br>
+Solutions Enablement Ansible Automation (SEAA) framework for IBM Z and Cloud Modernization Stack consists of [Ansible Variable](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_variables.html), [Ansible Playbooks](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_intro.html), [Ansible Roles](https://docs.ansible.com/ansible/latest/playbook_guide/playbooks_reuse_roles.html), [run_playbooks](/ibm/seaa/scripts/run_playbooks/README.md), and [admin](/ibm/seaa/scripts/admin/README.md) scripts that allow you to deploy and administer components of the stack. In addition to the SEAA framework, this repo provides [persona-based](/docs/scenarios/README.md) samples to achieve the stated goal. See the table below for automated solutions that are currently available or under consideration. <br>
 
 
 ## Automated Solutions
