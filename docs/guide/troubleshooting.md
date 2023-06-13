@@ -13,4 +13,4 @@
      <!-- adding dns and ip and /etc/hosts --> 
 
 ---
-## [back to framework guide](/docs/guide/README.md)
+## [back to framework guide](../guide/README.md)

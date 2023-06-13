@@ -4,11 +4,11 @@ Complete the following steps to configure the framework to run on your workstati
 ---
 ## Export the following environment variables on your workstation.
   
-  - **SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS** - the path to your cloned solutions-enablement repo **[ansible](/ibm/seaa/ansible)** directory.
+  - **SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS** - the path to your cloned solutions-enablement repo **[ansible](../../ibm/seaa/ansible)** directory.
   - **ANSIBLE_FILTER_PLUGINS** - the path to the filter plugins directory appended to the ansible defaults.
   - **ANSIBLE_LIBRARY** - the path to the library plugins directory appended to the ansible defaults. 
 
-  - (Optional) **SEAA_CONFIG_PATH_TO_SE_VARIABLES** - the path to ansible variables directory to use with the framework, if different from default location **[ansible/variables](/ibm/seaa/ansible/variables)** directory.<br>
+  - (Optional) **SEAA_CONFIG_PATH_TO_SE_VARIABLES** - the path to ansible variables directory to use with the framework, if different from default location **[ansible/variables](../../ibm/seaa/ansible/variables)** directory.<br>
 
 - **Example for unix-like OS terminal:**<br>
     ```
@@ -43,4 +43,4 @@ Complete the following steps to configure the framework to run on your workstati
     pipelining = True
     
 ---    
-## Next steps [run locally](/docs/guide/run-seaa-locally.md) -or- [back to framework guide](/docs/guide/README.md)
+## Next steps [run locally](../guide/run-seaa-locally.md) -or- [back to framework guide](../guide/README.md)

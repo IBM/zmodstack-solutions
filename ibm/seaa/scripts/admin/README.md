@@ -6,4 +6,4 @@ Scripts used to administer OpenShift and z/OS Endpoints resources.
 - purge-zmodstack-resources.sh - purge IBM Z and Cloud Modernization Stack resources from an OpenShift cluster (requires cluster admin privileges) and z/OS endpoint 
 
 ---
-## [back to framework guide](/docs/guide/README.md)
+## [back to framework guide](../../../../docs/guide/README.md)

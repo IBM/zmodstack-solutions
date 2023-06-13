@@ -32,4 +32,4 @@
  - **TODO** - work in progress 
 
 ---
-## Next steps [troubleshooting](/docs/guide/troubleshooting.md) -or- [back to framework guide](/docs/guide/README.md)
+## Next steps [troubleshooting](../guide/troubleshooting.md) -or- [back to framework guide](../guide/README.md)

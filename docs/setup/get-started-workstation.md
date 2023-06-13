@@ -43,43 +43,7 @@
     <img width="1107" alt="image" src="https://media.github.ibm.com/user/55799/files/dff4f584-0ba9-4569-addb-8b2c59e5535f">
 ---   
 ## (Optional) Install [1Password](https://1password.com/developers) CLI [tools](https://developer.1password.com/docs/cli/get-started#requirements) for integration with framework.
-   - See [password_vault](/ibm/seaa/ansible/roles/password_vault/README.md) role for more information.
-
-<!-- 
-### 1. Configure Workstation
-a. Export the following environment variables on local machine.
-  - **SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS** - the path to your cloned solutions-enablement repo **[ansible](ansible)** directory.
-  - **ANSIBLE_FILTER_PLUGINS** - the path to the filter plugins directory appended to the ansible defaults.
-  - **ANSIBLE_LIBRARY** - the path to the library plugins directory appended to the ansible defaults.
-
-b. Optional: **SEAA_CONFIG_PATH_TO_SE_VARIABLES** - the path to ansible variables to use in seaa automation, if different from default location **[ansible/variables](ansible/variables)** directory.<br>
-    **Example for unix-like OS terminal:**
-    
-    export SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS=~/git/zstack/solutions-enablement/scenarios/ansible
-    export ANSIBLE_FILTER_PLUGINS=${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/plugins/filter:~/.ansible/plugins/filter:/usr/share/ansible/plugins/filter
-    export ANSIBLE_LIBRARY=${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/plugins/validation:~/.ansible/plugins:/usr/share/ansible/plugins
-
- **Note These environment variables can also be added to **.bash_profile** or to environment variables for specific OS.**
-
-c. Create Ansible Config file in home directory with the following content, see this [link](https://docs.ansible.com/ansible/latest/reference_appendices/config.html) for details on Ansible config:
-  ```
-  [defaults]
-  # Number of forks Ansible will use to execute tasks on target hosts.
-  forks = 25
-
-  # This option preserves variable types during template operations
-  jinja2_native=True
-
-  # Colon separated paths in which Ansible will search for Roles.
-  roles_path = ${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/../../../zoscb_e2e/roles:${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/roles
-
-  # Toggle to control displaying skipped task/host entries in a task in the default callback
-  display_skipped_hosts = false
-
-  [ssh_connection]
-  # Improvements performance when enabled.
-  pipelining = True
-  ``` -->
+   - See [password_vault](../../ibm/seaa/ansible/roles/password_vault/README.md) role for more information.
 
 ---
-## Next steps [configure workstation](/docs/guide/configure-seaa.md) -or- [back to framework guide](/docs/guide/README.md)
+## Next steps [configure workstation](../guide/configure-seaa.md) -or- [back to framework guide](../guide/README.md)
