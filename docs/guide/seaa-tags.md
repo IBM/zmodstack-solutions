@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 # Using SEAA tags
 The following is a list of 'tags' available for use when running deployment scripts or playbooks.
 Tags can be used to deploy/undeploy or skip deployment/undeployment of resources.

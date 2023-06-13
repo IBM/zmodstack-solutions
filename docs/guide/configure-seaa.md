@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 # Configure workstation
 Complete the following steps to configure the framework to run on your workstation.
 
