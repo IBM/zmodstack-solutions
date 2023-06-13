@@ -6,7 +6,7 @@
 # Solutions Enablement Ansible Automation (SEAA) framework for IBM Z and Cloud Modernization Stack
 
 ## Overview
- In this topic, we outline the [capabilities](/docs/guide/feature-list.md) and components of the SEAA framework. The framework provides a prescriptive model based on tags and configuration variables provided. These values determine how automation interacts with the underlying systems and a user. The framework offers the following components as outlined in the table below.
+ In this topic, we outline the [capabilities](/docs/guide/feature-list.md) and components of the SEAA framework. The framework provides a prescriptive model based on tags and configuration variables provided. These values determine how automation interacts with the underlying systems and a user. The framework offers components as outlined in the table below.
 
 |**Components**|**Description**|
 |----------------------|---------------|
@@ -27,7 +27,7 @@ Listed below are the minimum requirements for OpenShift and z/OS endpoints.
 <!-- -<!-- - - Dev Environment:
 - ansible-lint -  python -m pip install ansible-lint -->
 
-**Openshift Cluster - v4.9 or later**
+**OpenShift Cluster - v4.9 or later**
 - OpenShift cluster with [IBM Z and Cloud Modernization Stack](https://www.ibm.com/docs/en/cloud-paks/z-modernization-stack/latest?topic=installing) entitlement keys for the following certified operators installed:
   - z/OS Cloud Broker<br>
 
