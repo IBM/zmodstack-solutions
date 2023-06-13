@@ -1,4 +1,9 @@
 #jinja2: lstrip_blocks: True
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 ---
 kind: "{{ zos_package_manager.kind }}"
 apiVersion: "{{ zos_package_manager.apiVersion }}"

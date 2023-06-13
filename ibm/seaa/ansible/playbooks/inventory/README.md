@@ -1,3 +1,8 @@
+<!-- #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+# -->
+
 # SEAA framework default inventory directory
 Contains sample [inventory](inventory) files that need to be modified for you OCP hosts and z/OS endpoints
 |File name|Description|

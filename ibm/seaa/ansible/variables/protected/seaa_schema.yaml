@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 # Define variable based on the following 
 # Current IMPLEMENTATION - Variable listed has to exist for all host groups and is always required if listed
 # variable_types: <type>

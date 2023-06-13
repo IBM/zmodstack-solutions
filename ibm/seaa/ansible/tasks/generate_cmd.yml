@@ -1,3 +1,8 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 ---
 - name: Include initialization task for generating files
   ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/gen_init.yml"

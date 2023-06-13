@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
 # Source this script in another script that can be used as apart of a CI/CD pipeline, regressin bucket to run deployment scenarios
 
 # failure_count
