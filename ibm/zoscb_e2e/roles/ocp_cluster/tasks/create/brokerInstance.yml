@@ -43,7 +43,7 @@
           type: Succeeded
           status: 'True'
           reason: Success
-        wait_timeout: "{{ seaa_deploy_wait_timeout }}" # 600
+        wait_timeout: "{{ seaa_zoscb_deploy_wait_timeout }}" # 600
 
     # Block to capture wait time to add to deploy script
     - name: Capture Deploy Wait time
