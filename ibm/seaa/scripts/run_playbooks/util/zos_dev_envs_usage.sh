@@ -20,7 +20,7 @@ function printUsage {
   echo "Usage: $(basename "$0"): "
   echo "    --tags=* (short '-t=*') tag of I component(s) to deploy/undeploy ('oel-dev' - all components, or specify component(s))"
   echo "    --extra_vars=* (short '-e=*') used to overide ansible variables in seaa framework, can be a JSON structure or @FILE reference"
-  echo "    --override_values=* (short '-ov=*') list of values to override in the provided Ansible SEAA_EXTRAVARS JSON @FILE reference"
+  echo "    --override_values=* (short '-ov=*') list of values to override in the provided Ansible SEAA_EXTRA_VARS JSON @FILE reference"
   echo "    --inventory=* (short '-i=*') inventory file to use for playbook run, default (inventory.yaml)"
   echo "    --inventory_loc=* (short '-i_loc=*') directory location of inventory file, default (ansible/playbooks/inventory)"
   echo "    --ansible_verbosity=* (short '-v=*') turn on verbosity for playbook run (0-4), default(0)"
@@ -65,8 +65,8 @@ function printEnvVarUsage {
     echo -e "\n  EXPORTED SEAA environment variables ***********************************************************"
 
     # Check to see if SEAA_CONFIG_EXTRAVARS_FILE ENV provided
-    if [[ -n "${SEAA_EXTRAVARS+1}" ]]; then
-        echo -e "\t${green}Environment variable${reset} '${cyan}SEAA_EXTRAVARS${reset}': $SEAA_MASKED_EXTRAVARS"
+    if [[ -n "${SEAA_EXTRA_VARS+1}" ]]; then
+        echo -e "\t${green}Environment variable${reset} '${cyan}SEAA_EXTRA_VARS${reset}': $SEAA_MASKED_EXTRAVARS"
 
     fi
 
@@ -182,7 +182,7 @@ function parseCommandLine {
                 elif [[ "${val}" == "@"* ]]; then
                     isExtraVarsFileReference=true
                 fi
-                export SEAA_EXTRAVARS="${val}" # ${i#*=}
+                export SEAA_EXTRA_VARS="${val}" # ${i#*=}
         ;;
             --override_values=*|-ov=*)
                 overrideValues="${i#*=}"
@@ -220,14 +220,14 @@ function parseCommandLine {
                 echo "Inventory Location: ${SEAA_INVENTORY_LOCATION}"
                 echo  "Inventory File: ${SEAA_INVENTORY}"
                 # echo  "Ansible Tags: ${SEAA_TAGS}"
-                # echo  "Ansible Extra-Vars: ${SEAA_EXTRAVARS}"
+                # echo  "Ansible Extra-Vars: ${SEAA_EXTRA_VARS}"
                 # echo  "OCP Limit: ${LIMIT_OCP}"
 	    ;;
             --script_debug|-sdbug)
    		        echo "Inventory Location: ${SEAA_INVENTORY_LOCATION}"
                 echo  "Inventory File: ${SEAA_INVENTORY}"
                 # echo  "Ansible Tags: ${SEAA_TAGS}"
-                # echo  "Ansible Extra-Vars: ${SEAA_EXTRAVARS}"
+                # echo  "Ansible Extra-Vars: ${SEAA_EXTRA_VARS}"
                 # echo  "OCP Limit: ${LIMIT_OCP}"
                 set -x
 	    ;;
@@ -236,7 +236,7 @@ function parseCommandLine {
                 echo "Inventory Location: ${SEAA_INVENTORY_LOCATION}"
                 echo  "Inventory File: ${SEAA_INVENTORY}"
                 echo  "Ansible Tags: ${SEAA_TAGS}"
-                echo  "Ansible Extra-Vars: ${SEAA_EXTRAVARS}"
+                echo  "Ansible Extra-Vars: ${SEAA_EXTRA_VARS}"
                 set -x
 	    ;;
             --help)
@@ -285,25 +285,25 @@ function overrideAndMaskExtraVars {
           )
           ' <(echo "$new_input"))
 
-    # Export the SEAA_EXTRAVARS variable
-    export SEAA_EXTRAVARS="$output_file"
+    # Export the SEAA_EXTRA_VARS variable
+    export SEAA_EXTRA_VARS="$output_file"
   # Check if extra-vars is a file reference  
   elif [[ "$isExtraVarsFileReference" == "true" ]]; then
 
     # Set input file and trimmed '@' char from front
-    input_file="${SEAA_EXTRAVARS:1}"
+    input_file="${SEAA_EXTRA_VARS:1}"
 
     # Check if file contains comment characters
     if grep -q '\/\*' "$input_file" && grep -q '\*\/' "$input_file"; then
-      # Export the SEAA_EXTRAVARS variable
-      SEAA_EXTRAVARS=$(sed 's/\/\*.*\*\///' "$input_file"| jq '.' )
+      # Export the SEAA_EXTRA_VARS variable
+      SEAA_EXTRA_VARS=$(sed 's/\/\*.*\*\///' "$input_file"| jq '.' )
 
     else # No Pre-processing of JSON file required for comment characters
 
-      # Create the SEAA_EXTRAVARS variable
-      SEAA_EXTRAVARS=$(jq '.' "$input_file")
+      # Create the SEAA_EXTRA_VARS variable
+      SEAA_EXTRA_VARS=$(jq '.' "$input_file")
 
-    #   # Create the SEAA_EXTRAVARS variable
+    #   # Create the SEAA_EXTRA_VARS variable
     #   TMPEXTRAVARS=$(jq '.' "$input_file")
 
 
@@ -351,8 +351,8 @@ function overrideAndMaskExtraVars {
 
   fi
 
-  # Check if SEAA_EXTRAVARS env variable is provided
-  if [[ -n "${SEAA_EXTRAVARS}" ]]; then
+  # Check if SEAA_EXTRA_VARS env variable is provided
+  if [[ -n "${SEAA_EXTRA_VARS}" ]]; then
     # Print extravars to Terminal
     if [[ -n "$input_file" ]]; then
       echo
@@ -363,7 +363,7 @@ function overrideAndMaskExtraVars {
     if [ "$ANSIBLE_VERBOSITY" -gt 0 ]; then
     # if [[ "$ANSIBLE_DEBUG" == "true" ]]; then
         echo -e "${green}Merged extra-vars for playbook run:${reset} "
-        echo "$SEAA_EXTRAVARS" | jq 'walk(
+        echo "$SEAA_EXTRA_VARS" | jq 'walk(
             if type == "object" then
                 with_entries(
                     if .key | test("(?i)password|token") then
@@ -378,7 +378,7 @@ function overrideAndMaskExtraVars {
         )'
     fi
     # Export Masked extra vars env variable
-    SEAA_MASKED_EXTRAVARS=$(echo "$SEAA_EXTRAVARS" | jq 'walk(
+    SEAA_MASKED_EXTRAVARS=$(echo "$SEAA_EXTRA_VARS" | jq 'walk(
           if type == "object" then
               with_entries(
                   if .key | test("(?i)password|token") then
@@ -405,20 +405,20 @@ function setRunOptions {
 
 
         # Validate File
-        if ! [ -r  "${SEAA_EXTRAVARS:1}" ]; then
-            echo -e "ExtraVars file ${red}'${SEAA_EXTRAVARS:1}'${reset} does not exist or can not be read."
+        if ! [ -r  "${SEAA_EXTRA_VARS:1}" ]; then
+            echo -e "ExtraVars file ${red}'${SEAA_EXTRA_VARS:1}'${reset} does not exist or can not be read."
             exit 99
         # else
-        #     echo "ExtraVars file ${SEAA_EXTRAVARS:1} file found."
+        #     echo "ExtraVars file ${SEAA_EXTRA_VARS:1} file found."
         fi
 
         # Generate Overridden EXTRA JSON if override values exist for JSON file
-        overrideAndMaskExtraVars "${SEAA_EXTRAVARS}"
+        overrideAndMaskExtraVars "${SEAA_EXTRA_VARS}"
     # elif [[ -n "$overrideValues" ]]; then
     else
 
 
-        # Display SEAA_EXTRAVARS and set masked
+        # Display SEAA_EXTRA_VARS and set masked
         overrideAndMaskExtraVars
     fi
 

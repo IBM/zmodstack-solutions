@@ -11,7 +11,7 @@
 # For additional usage information use "--help" flag as input to script.
 #
 # To run script:
-# ./run-undeploy-oel-dev-env_with_roles.sh -t=tags -e=SEAA_EXTRAVARS
+# ./run-undeploy-oel-dev-env_with_roles.sh -t=tags -e=SEAA_EXTRA_VARS
 #  valid tags:
 #    oel-dev - deploy all compilers, languages and tools
 #    zoscb   - deploy Zos Cloud Broker
@@ -49,7 +49,7 @@ function main() {
 
     #Run playbook
     ansible-playbook "${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/playbooks/zos_dev_envs/oel/deploy-oel-dev-env.yml" ${RUNOPTIONS} \
-     -e "${SEAA_EXTRAVARS}" --tags "${SEAA_TAGS}" --skip-tags "${SEAA_SKIPTAGS}" -e "${ev_automation_strategy:=}"
+     -e "${SEAA_EXTRA_VARS}" --tags "${SEAA_TAGS}" --skip-tags "${SEAA_SKIPTAGS}" -e "${ev_automation_strategy:=}"
 
     # Return Playbook exit code
     return $?
@@ -58,7 +58,7 @@ function main() {
 # Set defaults
 export SEAA_TAGS=
 export SEAA_SKIPTAGS=
-export SEAA_EXTRAVARS=
+export SEAA_EXTRA_VARS=
 export SEAA_INVENTORY="${SEAA_INVENTORY:-inventory.yaml}"
 export SEAA_INVENTORY_LOCATION="${SEAA_INVENTORY_LOCATION:-${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/playbooks/inventory}"
 
