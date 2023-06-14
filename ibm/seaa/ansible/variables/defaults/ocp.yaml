@@ -17,9 +17,6 @@ project_displayname: "** seaa automated **"
 #This is the default value and only used if authenticated user is not in cache
 project_requesting_user: # no-name
 
-# Default project name:
-namespace_name:
-
 # *************************************
 # PVC
 # *************************************

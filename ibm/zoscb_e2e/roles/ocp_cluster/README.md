@@ -18,7 +18,6 @@ This role uses the following variables. Some of the values of these variables ca
     - `OCP_CLUSTER_HOSTNAME`
     - `OCP_CLUSTER_PORT`
     - `OCP_CLUSTER_AUTH_TOKEN`
-    <!-- - `namespace_name` -->
     - `zpm_registry_host`
     - `zpm_registry_user`
     - `zpm_registry_password`
