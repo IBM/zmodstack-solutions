@@ -1,6 +1,11 @@
 .DS_Store
-__pycache__
 _seaa_
 .private
 inventory.yaml
 ibm/seaa/ansible/secrets
+
+# Byte-compiled / optimized / DLL files
+__pycache__
+*.py[cod]
+*$py.class
+
