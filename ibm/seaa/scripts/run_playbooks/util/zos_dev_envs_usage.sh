@@ -34,6 +34,12 @@ function printEnvVarUsage {
     echo -e "Display SEAA environment variables ***********************************************************"
 
     # Check to see if SEAA_AUTOMATION_STRATEGY ENV provided
+    if [[ -n "${SEAA_CONFIG_PATH_TO_SE_VARIABLES+1}" ]]; then
+        echo -e "\t${green}Using environment variable${reset} '${cyan}SEAA_CONFIG_PATH_TO_SE_VARIABLES${reset}': $SEAA_CONFIG_PATH_TO_SE_VARIABLES"
+
+    fi
+
+    # Check to see if SEAA_AUTOMATION_STRATEGY ENV provided
     if [[ -n "${SEAA_AUTOMATION_STRATEGY+1}" ]]; then
         echo -e "\t${green}Using environment variable${reset} '${cyan}SEAA_AUTOMATION_STRATEGY${reset}': $SEAA_AUTOMATION_STRATEGY"
 
@@ -252,7 +258,7 @@ function overrideAndMaskExtraVars {
   # echo $overrideValues
 
   # Check if input file with ExtraVARS is provided
-  if [[ -n "${1}" ]]; then
+  if [[ -n "${1}" && -n "$overrideValues" ]]; then
     # Set input file and trimmed '@' char from front
     input_file=${1:1}
 
@@ -287,12 +293,8 @@ function overrideAndMaskExtraVars {
     # Set input file and trimmed '@' char from front
     input_file="${SEAA_EXTRAVARS:1}"
 
-    # Get comments if the exist of extra-vars file
-    containsComments=$(grep '\/\*' "$input_file" | grep '\*\/')
-
     # Check if file contains comment characters
-    if [[ -n "$containsComments" ]]; then
-
+    if grep -q '\/\*' "$input_file" && grep -q '\*\/' "$input_file"; then
       # Export the SEAA_EXTRAVARS variable
       SEAA_EXTRAVARS=$(sed 's/\/\*.*\*\///' "$input_file"| jq '.' )
 
@@ -301,49 +303,49 @@ function overrideAndMaskExtraVars {
       # Create the SEAA_EXTRAVARS variable
       SEAA_EXTRAVARS=$(jq '.' "$input_file")
 
-      # Create the SEAA_EXTRAVARS variable
-      TMPEXTRAVARS=$(jq '.' "$input_file")
+    #   # Create the SEAA_EXTRAVARS variable
+    #   TMPEXTRAVARS=$(jq '.' "$input_file")
 
 
-      # echo "Ansible extra-vars with overrides on extra-vars file ($input_file): "
-      echo
-      echo "Extra-vars file: '$input_file'"
+    #   # echo "Ansible extra-vars with overrides on extra-vars file ($input_file): "
+    #   echo
+    #   echo "Extra-vars file: '$input_file'"
       
-      if [ "$ANSIBLE_VERBOSITY" -gt 0 ]; then
-        echo "Ansible extra-vars overrides: "
-        echo "$TMPEXTRAVARS" | jq 'walk(
-            if type == "object" then
-                with_entries(
-                    if .key | test("(?i)password|token") then
-                        .value |= "***MASKED***"
-                    else
-                        .
-                    end
-                )
-            else
-                .
-            end
-        )'
-      fi
-      # Export Masked extra vars env variable
-      SEAA_MASKED_EXTRAVARS=$(echo "$TMPEXTRAVARS" | jq 'walk(
-            if type == "object" then
-                with_entries(
-                    if .key | test("(?i)password|token") then
-                        .value |= "***MASKED***"
-                    else
-                        .
-                    end
-                )
-            else
-                .
-            end
-        )')
+    #   if [ "$ANSIBLE_VERBOSITY" -gt 0 ]; then
+    #     echo "Ansible extra-vars overrides: "
+    #     echo "$TMPEXTRAVARS" | jq 'walk(
+    #         if type == "object" then
+    #             with_entries(
+    #                 if .key | test("(?i)password|token") then
+    #                     .value |= "***MASKED***"
+    #                 else
+    #                     .
+    #                 end
+    #             )
+    #         else
+    #             .
+    #         end
+    #     )'
+    #   fi
+    #   # Export Masked extra vars env variable
+    #   SEAA_MASKED_EXTRAVARS=$(echo "$TMPEXTRAVARS" | jq 'walk(
+    #         if type == "object" then
+    #             with_entries(
+    #                 if .key | test("(?i)password|token") then
+    #                     .value |= "***MASKED***"
+    #                 else
+    #                     .
+    #                 end
+    #             )
+    #         else
+    #             .
+    #         end
+    #     )')
 
-      export SEAA_MASKED_EXTRAVARS
+    #   export SEAA_MASKED_EXTRAVARS
 
       # Return to caller no further processing of file required
-      return 0
+    #   return 0
 
     fi
 
@@ -395,9 +397,13 @@ function overrideAndMaskExtraVars {
 }
 
 function setRunOptions {
+
     # set -a
     # Check if there are values to override for extra-vars JSON file
-    if [[ -n "$overrideValues" && "$isExtraVarsFileReference" == "true" ]]; then
+    # if [[ -n "$overrideValues" && "$isExtraVarsFileReference" == "true" ]]; then
+    if [[ "$isExtraVarsFileReference" == "true" ]]; then
+
+
         # Validate File
         if ! [ -r  "${SEAA_EXTRAVARS:1}" ]; then
             echo -e "ExtraVars file ${red}'${SEAA_EXTRAVARS:1}'${reset} does not exist or can not be read."
@@ -408,7 +414,10 @@ function setRunOptions {
 
         # Generate Overridden EXTRA JSON if override values exist for JSON file
         overrideAndMaskExtraVars "${SEAA_EXTRAVARS}"
-    elif [[ -n "$overrideValues" ]]; then
+    # elif [[ -n "$overrideValues" ]]; then
+    else
+
+
         # Display SEAA_EXTRAVARS and set masked
         overrideAndMaskExtraVars
     fi
