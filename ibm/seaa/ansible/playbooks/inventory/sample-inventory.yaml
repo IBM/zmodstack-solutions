@@ -30,14 +30,14 @@ all:
   children:
     ocphosts: # IMPORTANT: this group name CANNOT be changed it is referenced in the automation
       vars:
-        # Openshift host port
-        ansible_port: 6443 # <Change if necessary>
+        # OpenShift host port
+        ansible_port: # <Port for OCP api server >
 
-        # Openshift host user id
+        # OpenShift host user id
         # (Optional) Used if 1Password CLI integration is not configured to authenticate to OCP host.
         ansible_user: # <Default OCP user id>
 
-        # Openshift auth token
+        # OpenShift auth token
         # (Optional) Provide this token for the 'ansible_user' defined if 1Password is not configured to authenticate to the OCP host.
         cluster_auth_token:
 
@@ -50,7 +50,7 @@ all:
 
       children:
         # **************************************************************************
-        # Openshift Clusters to deploy/undeploy stack resource
+        # OpenShift Clusters to deploy/undeploy stack resource
         # **************************************************************************
         # This can be any allowed name to group OCP host vars, see doc: 
         # https://docs.ansible.com/ansible/latest/network/getting_started/first_inventory.html
