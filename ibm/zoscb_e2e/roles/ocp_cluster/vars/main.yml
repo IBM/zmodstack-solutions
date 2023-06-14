@@ -8,7 +8,7 @@
 ocp_cluster:
   name: "{{ current_ocphost }}"
   hostname: "{{ hostvars[current_ocphost].ansible_host }}" # "{{ lookup('vars', 'OCP_CLUSTER_HOSTNAME') }}"
-  ipaddress: "{{ hostvars[current_ocphost].cluster_ip_address }}" # "{{ lookup('vars', 'OCP_CLUSTER_IP_ADDRESS') }}"
+  ipaddress: "{{ hostvars[current_ocphost].cluster_ip_address | default('', true) }}" # "{{ lookup('vars', 'OCP_CLUSTER_IP_ADDRESS') }}"
   port: "{{ hostvars[current_ocphost].ansible_port }}" # "{{ lookup('vars', 'OCP_CLUSTER_PORT') | int }}"
   auth_token: "{{ hostvars[current_ocphost].cluster_auth_token |
                   default(lookup('vars', 'openshift_auth_token', default=''), true) |
