@@ -25,7 +25,7 @@
     seaa_product: cleanup
   tags: always
   block:
-    - name: Set up ssmart deploy and generate variables
+    - name: Set up smart deploy and generate variables
       ansible.builtin.include_tasks: "smart_deploy_and_generate.yml"
   rescue:
     - name: Debug rescue error
