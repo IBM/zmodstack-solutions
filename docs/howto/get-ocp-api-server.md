@@ -22,7 +22,7 @@ If you are using the CLI, log in to the cluster by executing the appropriate com
     To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
     ```
 3. Copy the API server.
-  Look for the line that has "api" in URL output. The API server is usually listed next to it, and it typically starts with `https://api.` in our example:
+  Look for the line that has "api" in URL output. The API server is usually listed next to it, in our example:
     ```
     api.zstack.ibm.com
     ```
