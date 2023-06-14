@@ -170,6 +170,9 @@ zpm_append_dirname_to_state_dir: state
 # *******************************************************************************
 # Variables to configure timeouts and error handling when deploying and undeploying resources
 # *******************************************************************************
+# Set Deploy waiting parameter for Broker instance
+seaa_zoscb_deploy_wait_timeout: 300
+
 # Set Deploy parameters for how many times to retry and delay between retries when creating CR's
 seaa_deploy_retries: 150 #150
 seaa_deploy_delay: 10
