@@ -1,8 +1,3 @@
-#
-# Copyright 2023 IBM Inc. All rights reserved
-# SPDX-License-Identifier: Apache2.0
-#
-
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
@@ -111,67 +106,158 @@ seaa_work_dir = "/tmp/.seaa" #os.path.expanduser("~")+'/.seaa/tmp'
 # Prefix for tmp files
 tmp_file_prefix = "vseaa"
 
+# schema_type = "complex"
+
 # Function to validate inventory and combined ansible variables
-def validate_seaa_variables(inventory_data: str, schema_data: str):
+def validate_seaa_variables(module, inventory_data: str, schema_data: str):
 
     # Validate variables for 'ocphosts' groups
-    if validate_group_hosts(inventory_data, schema_data, 'ocphosts'):
-
-        # Validate variables for 'zosendpoints' groups
-       return validate_group_hosts(inventory_data, schema_data, 'zosendpoints')
-
+    if validate_group_hosts(module, inventory_data, schema_data, 'ocphosts'):
+       # Validate variables for 'zosendpoints' groups
+       return validate_group_hosts(module, inventory_data, schema_data, 'zosendpoints')
+    else:
+       return False   
+ 
 # Validate inventory groups
-def validate_group_hosts(inventory_data: str, schema_data: str, groupname: str):
+def validate_group_hosts(module, inventory_data: str, schema_data: str, validating_group: str):
     # Variable to track if any host is active
     any_active_host_in_group = False
 
     # Iterate over groups in the inventory
-    for group_name, group_data in inventory_data['all']['children'][groupname]['children'].items():
+    for current_group_name, group_data in inventory_data['all']['children'][validating_group]['children'].items():
         
         # Check if 'hosts' fields are in group_data
         if 'hosts' in group_data:
-           
-            # Iterate 
+            
+            # Iterate hist in group data 
             for host_name, host_variables in group_data['hosts'].items():
-                # Perform testing on host values here
-                if '_is_active' not in host_variables:
-                    raise NoActiveHost(f"Error: '_is_active' is not defined in {host_name}") #NoActiveHost
-                elif '_is_active' in host_variables and host_variables['_is_active'] == None:
-                    raise NoActiveHost("Error: '_is_active' has no default value set.") #NoActiveHost
-                elif host_variables['_is_active'] == True:
-                    # Set active host to True
-                    any_active_host_in_group = True
+                # Check if '_is_active' exist and has a value in this group
+                _check_for_active_host(host_name, host_variables, validating_group)
 
-                    # Validate host for a specific group
-                    validate_host(schema_data, group_name, host_name, host_variables)
+                # Check if '_is_active' is true
+                if host_variables['_is_active'] == True:
+                    # Set any active host to True
+                    any_active_host_in_group = True
+                    # Validate current groups host against schema data
+                    schema_validation(module, schema_data, validating_group, current_group_name, host_name, host_variables)
 
     #Fail if none of the hosts are active
     if not any_active_host_in_group:
-        raise NoActiveHost("None of the hosts are active in inventory . Validation failed.") #NoActiveHost
+        raise NoActiveHost(f"Error validating '{validating_group}': None of the hosts are active in inventory. Validation failed.") #NoActiveHost
     else:
         return any_active_host_in_group
+    
+def _check_for_active_host(host_name, host_variables, validating_group): 
+    # Perform testing on host values here
+    if '_is_active' not in host_variables:
+        raise NoActiveHost(f"Error validating '{validating_group}': '_is_active' is not defined in {host_name}") #NoActiveHost
+    elif '_is_active' in host_variables and host_variables['_is_active'] == None:
+        raise NoActiveHost(f"Error validating '{validating_group}': '_is_active' has no default value set.") #NoActiveHost
+
+def schema_validation(module, schema_data, validating_group, current_group_name, host_name, host_variables):
+    # Get schema type for validation
+    _schema_type = module.params['schema_type']
+
+    # Validate host for a specific group
+    if _schema_type == "complex":
+        validate_host_complex_types(schema_data, validating_group, current_group_name, host_name, host_variables)
+    else:    
+        validate_host_simple(schema_data, current_group_name, host_name, host_variables)
+        
+# Validate values for inventory host
+def validate_host_complex_types(schema_data: str, validating_group: str, current_group_name: str, host_name: str, host_variables):
+
+    # Iterate of variables in schema
+    for variable, variable_schema in schema_data.items():
+        # Check if variable is 'all_groups' and continue
+        if variable == 'all_groups':
+          # Continue to next variable
+          continue
+        else:  
+            # Set variable to check if variable is required
+            _is_required = variable_schema['host_group']['required']
+            
+            # Set variable for group_names to check
+            _group_names = variable_schema['host_group']['name']
+                
+            # Check if parm is required and should be validated against group being validated
+            if _is_required and validating_group in _group_names and variable not in host_variables:
+                raise MissingVariable(f"Variable '{variable}' is missing for host '{host_name}' in '{current_group_name}' for '{validating_group}'") #MissingVariable
+            # Check if group being verified is in list for variable
+            elif validating_group in _group_names:
+
+                
+                _do_validate_host_complex_types(variable, host_variables[variable], variable_schema, validating_group, current_group_name, host_name)
+
+def _do_validate_host_complex_types(variable, variable_value, variable_schema, validating_group: str, current_group_name: str, host_name: str):
+
+    # Set variable to check if variable is required
+    _is_required = variable_schema['host_group']['required']
+
+    # Check if variable value is None
+    if _is_required and ( variable_value == None or variable_value == "" ) :
+        raise MissingVariableValue(f"Variable '{variable}' value not provided for host '{host_name}' in '{current_group_name}' for '{validating_group}'") #MissingVariableValue
+    # Check if the variable is of the correct type
+    elif _is_required and isinstance(variable_value, list) and (len(variable_value) == 0 or all(element == None for element in variable_value)):
+        raise MissingVariableValue(f"Variable '{variable}' has no values for host '{host_name}' in '{current_group_name}' for '{validating_group}'") #MissingVariableValue
+    elif variable_value != None and variable_value != "" : # or (isinstance(variable_value, list) and (len(variable_value) != 0 and all(element != None for element in variable_value))):
+            validate_complex_types(host_name, variable_schema['data_type'], variable, variable_value, validating_group, current_group_name)
+
+# Validate data types for variable value
+def validate_complex_types(host_name, _expected_types, variable, variable_value, validating_group, current_group_name):
+    # Convert expected types to a tuple of types
+    if isinstance(_expected_types, str):
+        expected_types = (eval(_expected_types),)
+    elif isinstance(_expected_types, list):
+        expected_types = tuple(eval(t) for t in _expected_types)
+
+    # Check if variable value is expected type
+    if not isinstance(variable_value, expected_types):
+        if len(expected_types) == 1:
+            expected_type_str = expected_types[0].__name__
+            raise TypeError(f"Variable '{variable}' for host '{host_name}' in '{current_group_name}' for '{validating_group}' is not of type '{expected_type_str}'") #IncorrectVariableType
+        else:
+            expected_type_names = [expected_type.__name__ for expected_type in expected_types]
+            expected_type_str = " or ".join(expected_type_names)
+            raise TypeError(f"Variable '{variable}' for host '{host_name}' in '{current_group_name}' for '{validating_group}' is not one of the expected types: {expected_type_str}") #IncorrectVariableType
+    # Check if values in a list are the right type 
+    elif isinstance(variable_value, list) and not validate_list_type(variable_value, expected_types):
+        raise TypeError(f"Variable '{variable}' value '{variable_value}' for host '{host_name}' in '{current_group_name}' for '{validating_group}' is not the expected type: {expected_types}") #IncorrectVariableType
+
+# Check if values in a list are of the right type 
+def validate_list_type(value_list, expected_types):
+    # Check if expected type is only 1 type and it is a list
+    if len(expected_types) == 1 and expected_types[0] == list:
+        return True
+    else:  
+        # Iterate over values in a list and verify if they are of the expected type  
+        for value in value_list:
+            if not isinstance(value, expected_types):
+                return False
+        return True
 
 # Validate values for inventory host
-def validate_host(schema_data: str, group_name: str, host_name: str, host_variables):
-    
+def validate_host_simple(schema_data: str, group_name: str, host_name: str, host_variables):
+
     # Check if all required variables are present and of the correct type in the host's variables
     for variable, expected_types in schema_data.items():
         if variable not in host_variables:
             raise MissingVariable(f"Variable '{variable}' is missing for host '{host_name}'") #MissingVariable
         else:
+            # Set variable value
             variable_value = host_variables[variable]
 
             # Check if variable value is None
             if variable_value == None or variable_value == "" :
-                raise MissingVariableValue(f"Variable '{variable}' value not provided for host '{host_name}' in {group_name}'") #MissingVariableValue
+                raise MissingVariableValue(f"Variable '{variable}' value not provided for host '{host_name}' in '{group_name}'") #MissingVariableValue
             # Check if the variable is of the correct type
             elif isinstance(variable_value, list) and (len(variable_value) == 0 or all(element == None for element in variable_value)):
-                    raise MissingVariableValue(f"Variable '{variable}' has no values for host '{host_name}'") #MissingVariableValue
+                raise MissingVariableValue(f"Variable '{variable}' has no values for host '{host_name}'") #MissingVariableValue
             else:
-                validate_types(host_name, expected_types, variable, variable_value)
+                validate_simple_types(host_name, expected_types, variable, variable_value)
 
 # Validate data types for variable value
-def validate_types(host_name, expected_types, variable, variable_value):
+def validate_simple_types(host_name, expected_types, variable, variable_value):
     # Convert expected types to a tuple of types
     if isinstance(expected_types, str):
         expected_types = (eval(expected_types),)
@@ -254,9 +340,11 @@ def build_ansible_inventory_command(inventory_source, seaa_variable_path, temp_d
     ansible_inventory_cmd = get_bin_path('ansible-inventory', required=True)
 
     # Build the ansible-inventory command with the desired options
+    # Create command array for inventory command
+    command = []
+    
     # Check if inventory source is a list
     if isinstance(inventory_source, list):
-        command = []
         # If source is a list of files
         for file in inventory_source:
             command += [ansible_inventory_cmd, '-i', file]
@@ -265,6 +353,9 @@ def build_ansible_inventory_command(inventory_source, seaa_variable_path, temp_d
     # Else check if inventory source is a single file of directory of inventories
     elif os.path.isfile(inventory_source) or os.path.isdir(inventory_source):
         command = [ansible_inventory_cmd, '-i', inventory_source, '--output', temp_file_path, '--list', '--yaml']
+    # Raise error file for directory not found 
+    else:
+        raise FileNotFoundError(f"Unable to find inventory source '{inventory_source}'")
 
     # Add seaa config an protected ansible variables as extra-var files
     command += ['-e', '@'+seaa_variable_path+'/config/seaa_config.yaml']
@@ -276,20 +367,18 @@ def build_ansible_inventory_command(inventory_source, seaa_variable_path, temp_d
             # Add file as extra-var file
             command += ['-e', '@'+seaa_variable_path+'/defaults/'+filename ]
 
-    # Check If 'SEAA_EXTRAVARS' environment variable exist (created when running - run-playbook scripts)
-    extra_vars_env = os.environ.get('SEAA_EXTRAVARS')
+    # Check If 'SEAA_EXTRA_VARS' environment variable exist (created when running - run-playbook scripts)
+    extra_vars_env = os.environ.get('SEAA_EXTRA_VARS')
     if extra_vars_env is not None:
-        # Add content from SEAA_EXTRAVARS as extra-vars
+        # Add content from SEAA_EXTRA_VARS as extra-vars
         command += ['-e', extra_vars_env]
 
     # Check any extra_var_files passed into this module and add to command 
-    # extra_var_files = module.params['extra_var_files']
     if extra_var_files is not None:
         # Iterate over list of extra vars provided
         for ev_file in extra_var_files:
             # Add file as extra-var file
             command += ['-e', '@'+preprocess_json_file(ev_file, temp_dir_path)]
-
     return command
  
 # Function to build and run the 'ansible-inventory' command
@@ -336,7 +425,7 @@ def run_ansible_inventory(module, inventory_source, seaa_variable_path, extra_va
     if not _debug:
       shutil.rmtree(temp_dir_path)
 
-    return temp_file_path, inventory_data
+    return temp_file_path, inventory_data, command
 
 # Return failure
 def return_failure(module, inventory_source, validation_details, e, _debug, _temp_file_path ):
@@ -376,7 +465,8 @@ def run_module():
         inventory_source=dict(type='raw', required=True),
         schema_path=dict(type='path', required=False),
         extra_var_files=dict(type='list', required=False),
-        debug=dict(type='bool', required=False, default=False)
+        debug=dict(type='bool', required=False, default=False),
+        schema_type=dict(type='str', required=False, default='complex', choices=['complex', 'simple'])
     )
 
     # define the result dictionary return any data that you want your module to pass back
@@ -428,7 +518,7 @@ def run_module():
         inventory_source = module.params['inventory_source']
         extra_var_files = module.params['extra_var_files']
 
-        _temp_file_path, inventory_data = run_ansible_inventory(module, inventory_source, seaa_variable_path, extra_var_files, _debug)
+        _temp_file_path, inventory_data, _command = run_ansible_inventory(module, inventory_source, seaa_variable_path, extra_var_files, _debug)
     except Exception as e:  
         module.fail_json(msg=f"Failed to process Inventory source '{inventory_source}': {str(e)}")
 
@@ -439,9 +529,16 @@ def run_module():
         
         # Check if schema parameter if provided
         if schema_path == None:
-            # Use default parameter schema file    
-            schema_path = seaa_variable_path+'/protected/seaa_schema.yaml'
-
+            # Get schema type for validation
+            _schema_type = module.params['schema_type']
+            
+            if _schema_type == "complex":
+                # Set schema to complex schema file   
+                schema_path = seaa_variable_path+'/protected/seaa_schema.yaml'
+            else: 
+                # Set schema to simple schema file  
+                schema_path = seaa_variable_path+'/protected/seaa_schema_simple.yaml'
+            
         # Open and load schema data file
         with open(schema_path, 'r') as schema_file:
           schema_data = yaml.safe_load(schema_file)
@@ -454,26 +551,26 @@ def run_module():
     # Try validating inventory data against variable schema data
     try:
         # Validate inventory and ansible variables
-        if validate_seaa_variables(inventory_data, schema_data):
+        if validate_seaa_variables(module, inventory_data, schema_data):
           # Return successful results
           result['msg']="Validation completed successfully"
     except Exception as e:
         # Check if ansible verbosity is greater or equal to 3
-        if module._verbosity >= 3:
+        if module._verbosity == 3:
             
-            # Check If 'SEAA_EXTRAVARS' environment variable exist (created when running - run-playbook scripts)
-            extra_vars_env = os.environ.get('SEAA_EXTRAVARS')
+            # Check If 'SEAA_EXTRA_VARS' environment variable exist (created when running - run-playbook scripts)
+            extra_vars_env = os.environ.get('SEAA_EXTRA_VARS')
 
-            # Add SEAA_EXTRAVARS if it exist to fail_json output
+            # Add SEAA_EXTRA_VARS if it exist to fail_json output
             if extra_vars_env is not None:
                 validation_details = {
-                        "details": "Verify the files and environment variable 'SEAA_EXTRAVARS' used for validation",
+                        "details": "Verify the files and environment variable 'SEAA_EXTRA_VARS' used for validation",
                         "validation_files": {
                                 "seaa_ansible_variable_path": seaa_variable_path,
                                 "extra_var_files": extra_var_files,
                                 "seaa_schema_file": schema_path
                             },
-                         "validation_seaa_extravars": extra_vars_env
+                         "validation_seaa_extra_vars": extra_vars_env
                         }
             else: # Build details for fail_json
                 validation_details = {
@@ -482,6 +579,37 @@ def run_module():
                                     "seaa_ansible_variable_path": seaa_variable_path,
                                     "extra_var_files": extra_var_files,
                                     "seaa_schema_file": schema_path
+                                }
+                            }
+            
+            # Return failure
+            return_failure(module, inventory_source, validation_details, e, _debug, _temp_file_path)            
+      
+        elif module._verbosity == 4: # Check if ansible verbosity is greater or equal to 3
+        
+            # Check If 'SEAA_EXTRA_VARS' environment variable exist (created when running - run-playbook scripts)
+            extra_vars_env = os.environ.get('SEAA_EXTRA_VARS')
+
+            # Add SEAA_EXTRA_VARS if it exist to fail_json output
+            if extra_vars_env is not None:
+                validation_details = {
+                        "details": "Verify the files and environment variable 'SEAA_EXTRA_VARS' used for validation",
+                        "validation_files": {
+                                "seaa_ansible_variable_path": seaa_variable_path,
+                                "extra_var_files": extra_var_files,
+                                "seaa_schema_file": schema_path,
+                                "inventory_command": _command
+                            },
+                         "validation_seaa_extra_vars": extra_vars_env
+                        }
+            else: # Build details for fail_json
+                validation_details = {
+                            "details": "Verify the files used for validation",
+                            "validation_files": {
+                                    "seaa_ansible_variable_path": seaa_variable_path,
+                                    "extra_var_files": extra_var_files,
+                                    "seaa_schema_file": schema_path,
+                                    "inventory_command": _command
                                 }
                             }
 
