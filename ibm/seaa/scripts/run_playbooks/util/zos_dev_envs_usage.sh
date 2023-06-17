@@ -264,26 +264,26 @@ function overrideAndMaskExtraVars {
 
     # Use Stream editor to pre-process and remove and comments in JSON file
     new_input=$(sed 's/\/\*.*\*\///' "$input_file"| jq '.' )
-    
+ 
     if [ "$ANSIBLE_VERBOSITY" -gt 0 ]; then
         # Print message for processing extra-vars file
         echo -e "${green}Override extra-vars file:${reset} '${input_file}' ...\n\t With: '$overrideValues' "    
     fi 
     
     # Set output JSON file by adding and overriding from overrideValues JSON
-    output_file=$(sed 's/\/\*.*\*\///' "$input_file" | jq -nc --argjson original "$new_input" \
-          --argjson values "$overrideValues" \
-          '
-          reduce ($values | to_entries[]) as $pair ($original;
-              if has($pair.key) then .[$pair.key] = $pair.value else . end
-          )
-          | del(.[] | select(. == "" or . == []) )
+    output_file=$(jq -nc --argjson original "$new_input" \
+        --argjson values "$overrideValues" \
+        '
+        reduce ($values | to_entries[]) as $pair ($original;
+            if has($pair.key) then .[$pair.key] = $pair.value else . end
+        )
+        | del(.[] | select(. == "" or . == []) )
 
-          # Check if fields in $values exist in $original, if not add them to output
-          | reduce ($values | keys_unsorted[]) as $key (.;
-              if ($original | has($key)) then . else . + {($key): $values[$key]} end
-          )
-          ' <(echo "$new_input"))
+        # Check if fields in $values exist in $original, if not add them to output
+        | reduce ($values | keys_unsorted[]) as $key (.;
+            if ($original | has($key)) then . else . + {($key): $values[$key]} end
+        )
+        ' <(echo "$new_input"))
 
     # Export the SEAA_EXTRA_VARS variable
     export SEAA_EXTRA_VARS="$output_file"
@@ -294,58 +294,17 @@ function overrideAndMaskExtraVars {
     input_file="${SEAA_EXTRA_VARS:1}"
 
     # Check if file contains comment characters
-    if grep -q '\/\*' "$input_file" && grep -q '\*\/' "$input_file"; then
+    if grep -q '\/\*' "$input_file" && grep -q '\*\/' "$input_file" || grep -q '\/\/' "$input_file"; then
       # Export the SEAA_EXTRA_VARS variable
       SEAA_EXTRA_VARS=$(sed 's/\/\*.*\*\///' "$input_file"| jq '.' )
+    #   SEAA_EXTRA_VARS==$(sed -e 's/\/\*[^*]*\*\///g' "$input_file" | jq '.')
+    #   SEAA_EXTRA_VARS=$(sed -e 's|\/\/[^/].*$||' -e 's/\/\*[^*]*\*\///g' "$input_file" | jq '.')
+
 
     else # No Pre-processing of JSON file required for comment characters
 
       # Create the SEAA_EXTRA_VARS variable
       SEAA_EXTRA_VARS=$(jq '.' "$input_file")
-
-    #   # Create the SEAA_EXTRA_VARS variable
-    #   TMPEXTRAVARS=$(jq '.' "$input_file")
-
-
-    #   # echo "Ansible extra-vars with overrides on extra-vars file ($input_file): "
-    #   echo
-    #   echo "Extra-vars file: '$input_file'"
-      
-    #   if [ "$ANSIBLE_VERBOSITY" -gt 0 ]; then
-    #     echo "Ansible extra-vars overrides: "
-    #     echo "$TMPEXTRAVARS" | jq 'walk(
-    #         if type == "object" then
-    #             with_entries(
-    #                 if .key | test("(?i)password|token") then
-    #                     .value |= "***MASKED***"
-    #                 else
-    #                     .
-    #                 end
-    #             )
-    #         else
-    #             .
-    #         end
-    #     )'
-    #   fi
-    #   # Export Masked extra vars env variable
-    #   SEAA_MASKED_EXTRAVARS=$(echo "$TMPEXTRAVARS" | jq 'walk(
-    #         if type == "object" then
-    #             with_entries(
-    #                 if .key | test("(?i)password|token") then
-    #                     .value |= "***MASKED***"
-    #                 else
-    #                     .
-    #                 end
-    #             )
-    #         else
-    #             .
-    #         end
-    #     )')
-
-    #   export SEAA_MASKED_EXTRAVARS
-
-      # Return to caller no further processing of file required
-    #   return 0
 
     fi
 
