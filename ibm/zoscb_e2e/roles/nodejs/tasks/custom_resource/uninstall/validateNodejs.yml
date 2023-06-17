@@ -36,3 +36,6 @@
         wait: "{{ seaa_undeploy_wait | bool }}" # yes
         wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}" # 600
         continue_on_error: "{{ seaa_undeploy_continue_on_error | bool }}"
+      register: delete_instance
+      failed_when: "delete_instance.failed and
+        'Failed to find exact match for' not in delete_instance.msg"
