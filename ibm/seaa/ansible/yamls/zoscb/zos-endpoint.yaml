@@ -39,18 +39,6 @@ spec:
       value: >-
         {{ registry_password | safe | indent(width=8) }}
 {% endif %}
-{% if seaa_copy_zpm_dir_params_to_endpoint is defined and seaa_copy_zpm_dir_params_to_endpoint == true %}
-  {% if endpoint.zpm_installation_dir is defined and endpoint.zpm_installation_dir != "" %}
-    - name: zpm_installation_dir
-      type: string
-      value: "{{ endpoint.zpm_installation_dir }}"
-  {% endif %}
-  {% if endpoint.zpm_state_dir is defined and endpoint.zpm_state_dir != "" %}
-    - name: zpm_state_dir
-      type: string
-      value: "{{ endpoint.zpm_state_dir }}"
-  {% endif %}
-{% endif %}
 {% if endpoint.zpm_bash_dir is defined and endpoint.zpm_bash_dir != "" %}
     - name: zpm_bash_dir
       type: string
