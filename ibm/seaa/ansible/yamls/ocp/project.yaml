@@ -16,7 +16,7 @@ metadata:
 spec:
   finalizers:
     - kubernetes
-{% if not (seaa_developer_deploys_namespace | bool) and broker_instance.multiNamespace is defined and
+{% if not (seaa_developer_deploys_project | bool) and broker_instance.multiNamespace is defined and
       broker_instance.multiNamespace == true and multi_namespaces | length > 0 and seaa_automation_strategy == "generate_yaml" %}
 # CREATE MULTI-NAMESPACES
 {% for m_namespace in multi_namespaces %}

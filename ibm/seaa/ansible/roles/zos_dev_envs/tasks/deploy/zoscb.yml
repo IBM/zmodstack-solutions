@@ -8,7 +8,7 @@
 - name: Create OpenShift project
   ansible.builtin.include_tasks: "{{ ocp_task_dir }}/create/project.yml"
   when:
-    - seaa_deploy_role == "admin" or seaa_developer_deploys_namespace | bool
+    - seaa_deploy_role == "admin" or seaa_developer_deploys_project | bool
     - should_deploy_project is undefined or should_deploy_project
 
 # ADD developer PERSONAL Secrets
@@ -55,7 +55,7 @@
 - name: Create operator group
   ansible.builtin.include_tasks: "{{ ocp_task_dir }}/create/operatorGroup.yml"
   when:
-    - seaa_deploy_role == "admin" # TODO Discuss with latrell shoul Devs deploy own projects
+    - seaa_deploy_role == "admin" or seaa_developer_deploys_project | bool # TODO Discuss with broker lead to see if deploy own projects
 
 # CREATE Z CLOUD BROKER SUBSCRIPTION
 - name: Create broker subscription

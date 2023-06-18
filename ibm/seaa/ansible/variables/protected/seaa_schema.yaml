@@ -191,7 +191,7 @@ _is_active:
 #   domain: config
 
 # # Flag to determine if developer 'seaa_deploy_role' developer role are able to deploy their own namespaces
-# seaa_developer_deploys_namespace: false
+# seaa_developer_deploys_project: false
 #   data_type: bool
 #   host_group:
 #     name: *id_all_groups
