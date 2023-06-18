@@ -293,7 +293,7 @@ class FilterModule(object):
           return "/" + _str   
        
     # Append Namespace to directory name organized by host of namespace
-    def append_host_and_namespace_dir(self, prefix, ocp_host, namespace_delm, default_namespace, zpm_directory_org_by):
+    def append_host_and_namespace_dir(self, prefix, ocp_host, namespace_delm, default_namespace, zpm_directory_org_by, zpm_append_to_generated_state_dir):
 
         self._debug("Enter: append_host_and_namespace_dir")
 
@@ -318,6 +318,9 @@ class FilterModule(object):
               return_str += self._prepend_forward_slash(default_namespace) + namespace_delm + ocp_host
             else:
               return_str += self._prepend_forward_slash(ocp_host) + namespace_delm + default_namespace
+
+          if zpm_append_to_generated_state_dir is not None:
+             return_str += namespace_delm + zpm_append_to_generated_state_dir
 
         self._debug("return_str: ")
         self._debug(return_str)
