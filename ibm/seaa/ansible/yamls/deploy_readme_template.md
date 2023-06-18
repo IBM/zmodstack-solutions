@@ -31,7 +31,10 @@
   {% set json_data = extravars | from_json %}
   {% if json_data %}
 --------------------------------
-### Ansible extra-vars used to '**_{{ seaa_automation_strategy | upper }}_**' the original script:
+## Ansible Variables used to '_{{ seaa_automation_strategy | upper }}_' the original script
+
+- **Variable directory:** `{{ seaa_variables_directory }}`<br>
+- **Extra-vars used:**
 ```json
 {{ json_data | tojson(indent=4) | safe }}
 ```
