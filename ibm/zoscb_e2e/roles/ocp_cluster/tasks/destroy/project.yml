@@ -30,7 +30,7 @@
         - seaa_automation_strategy != "generate_yaml"
         - multi_namespaces | length > 0
         - broker_instance.multiNamespace is defined and broker_instance.multiNamespace | bool
-        - not seaa_developer_deploys_namespace | bool
+        - not seaa_developer_deploys_project | bool
       block:
 
         - name: "Delete Multi-Namespace Projects with Native YAML API: '{{ m_namespace }}' on '{{ ocp_cluster.hostname }}'"

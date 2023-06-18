@@ -54,7 +54,7 @@ seaa_deploy_suboc_to_admin_namespaces: true
 seaa_deploy_resource_ifpresent: true # Can be set in inventory per ocphost group
 
 # Flag to determine if developer 'seaa_deploy_role' developer role are able to deploy their own projects
-seaa_developer_deploys_namespace: false
+seaa_developer_deploys_project: false
 
 # Flag to deploy SSH Key secrets
 seaa_deploy_secrets: true

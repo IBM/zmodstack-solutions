@@ -53,7 +53,7 @@
             - seaa_automation_strategy != "generate_yaml"
             - multi_namespaces | length > 0
             - broker_instance.multiNamespace is defined and broker_instance.multiNamespace | bool
-            - not seaa_developer_deploys_namespace | bool
+            - not seaa_developer_deploys_project | bool
           block:
 
             - name: "Create Multi-Namespace Projects with Native YAML API: '{{ multi_namespaces }}' on '{{ ocp_cluster.hostname }}'"
