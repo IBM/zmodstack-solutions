@@ -22,7 +22,7 @@ zpm_registry_password:
 zpm_product_short_name: "{{ sub_operators.zpm.short_name }}" # zpm
 zpm_product_code_name: "{{ sub_operators.zpm.code_name }}"
 zpm_product_name: "{{ sub_operators.zpm.name }}" #zos-package-manager
-zpm_oc_version: 2.0.0 # GA 2023.2.1
+zpm_oc_version: 2.0.1 # GA 2023.2.1
 zpm_oc_vrm_string: "{{ zpm_oc_version | get_vmp_string }}" #v2minor0patch0
 zpm_api_version_string: "{{ broker_sub_operator_api_group }}/{{ zpm_oc_vrm_string }}"
 zpm_oci_version: "{{ zpm_oc_version }}"

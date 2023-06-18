@@ -23,32 +23,29 @@ endpoint:
   # Install directory has the following logic
   # if hostvar 'zpm_install_dir' is provided use it
   # Or use hostvar 'install_dir' prefix if it exist and append namepace and host information
-  # Or default to 'zpm_install_dir'
+  # Or default to 'zpm_install_dir' and default to '/usr/lpp/IBM/zpm'
   zpm_installation_dir: "{{ hostvars[current_zosendpoint].zpm_install_dir | default(None, true) |
                              ternary(hostvars[current_zosendpoint].zpm_install_dir,
                               hostvars[current_zosendpoint].zpm_install_dir_prefix | default(None, true) |
-                                append_host_and_namespace_dir(current_ocphost, zpm_directory_delm, this_project_name, zpm_directory_org_by) |
+                                append_host_and_namespace_dir(current_ocphost, zpm_directory_delm, this_project_name, zpm_directory_org_by, None) |
                                   default(lookup('vars', 'zpm_install_dir'), true)) }}"
   # State directory has the following logic
   # if hostvar 'zpm_state_dir' is provided use it
-  # Or use hostvar 'install_dir' prefix if it exist and append namepace and host information
-  # Or default to 'zpm_state_dir' if it exist
-  # Or default to hostvar 'zpm_install_dir' if it exist
-  # Or default to use hostvar 'install_dir' prefix if it exist and append namepace and host information
-  # Or default to 'zpm_install_dir' and append stat_dir dirname if it exist
+  # Or use hostvar 'zpm_state_dir_prefix' if it exist and append namepace, host information and zpm_append_to_generated_state_dir
+  # Or default to use hostvar 'zpm_install_dir_prefix' prefix if it exist and append namepace, host information and zpm_append_to_generated_state_dir
+  # Or default to lookup 'zpm_state_dir' and default to '/var/zpm'
   zpm_state_dir: "{{ hostvars[current_zosendpoint].zpm_state_dir | default(None, true) |
                           ternary(
                               hostvars[current_zosendpoint].zpm_state_dir ,
                               hostvars[current_zosendpoint].zpm_state_dir_prefix | default(None, true) |
                                 append_host_and_namespace_dir(current_ocphost, zpm_directory_delm,
-                                   this_project_name, zpm_directory_org_by) |
-                              default( lookup('vars', 'zpm_state_dir'), true) |
-                              default( hostvars[current_zosendpoint].zpm_install_dir | default(None, true), true) |
-                              default( hostvars[current_zosendpoint].zpm_install_dir_prefix | default(None, true) |
-                                append_host_and_namespace_dir(current_ocphost, zpm_directory_delm,
-                                   this_project_name, zpm_directory_org_by), true) |
-                            default( lookup('vars', 'zpm_install_dir'), true)~('' if zpm_append_dirname_to_state_dir == none
-                              else zpm_directory_delm~zpm_append_dirname_to_state_dir)
-                          )
+                                   this_project_name, zpm_directory_org_by, zpm_append_to_generated_state_dir) |
+
+                                default( hostvars[current_zosendpoint].zpm_install_dir_prefix | default(None, true) |
+                                  append_host_and_namespace_dir(current_ocphost, zpm_directory_delm,
+                                      this_project_name, zpm_directory_org_by, zpm_append_to_generated_state_dir), true) |
+
+                                  default( lookup('vars', 'zpm_state_dir'), true))
                         }}"
+
 registry_password:
