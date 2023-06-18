@@ -348,8 +348,19 @@ _is_active:
 # # namespace - <INSTALL_DIR>/namespace/host
 # zpm_directory_org_by: host # host | namespace
 
+
 # # Name to append to zpm_install_dir for state directory if zpm_state_dir not specified
-# zpm_append_dirname_to_state_dir: state
+# zpm_append_to_generated_state_dir: state
+# domain: config 
+
+# # Writable prefix on USS directory z/OS Endpoint for ZPM to state dir, default "{{zpm_install_dir_prefix}}"
+# # If zpm_state_dir not specified this and 'zpm_append_to_generated_state_dir' are used to determine generated ZPM state directory
+# zpm_state_dir_prefix:
+# domain: inventory 
+
+# zpm_install_dir_prefix
+# domain: inventory 
+
 
 #****************************************************************************************
 # Ansible Inventory vars

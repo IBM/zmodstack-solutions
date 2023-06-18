@@ -2,10 +2,3 @@
 # Copyright 2023 IBM Inc. All rights reserved
 # SPDX-License-Identifier: Apache2.0
 #
-
----
-# Array of namespaces
-project_names:
-
-# Writable prefix on USS directory z/OS Endpoint for ZPM to install zproducts
-zpm_install_dir_prefix:

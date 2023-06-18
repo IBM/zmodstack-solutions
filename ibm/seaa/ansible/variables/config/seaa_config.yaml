@@ -53,7 +53,7 @@ seaa_deploy_suboc_to_admin_namespaces: true
 # Deploy resources (currently only implemented for OCP Projects because of issue on OCP 4.12) if they already present
 seaa_deploy_resource_ifpresent: true # Can be set in inventory per ocphost group
 
-# Flag to determine if developer 'seaa_deploy_role' developer role are able to deploy their own namespaces
+# Flag to determine if developer 'seaa_deploy_role' developer role are able to deploy their own projects
 seaa_developer_deploys_namespace: false
 
 # Flag to deploy SSH Key secrets
@@ -124,10 +124,6 @@ seaa_append_version_to_software_instances: true
 # Always delete the output directory if it exist and 'seaa_append_to_deployment_script' flag is not 'true'
 seaa_clean_yaml_output_dir: true
 
-# Boolean to copy endpoint zpm install and state dirs to endpoint
-# TODO REMOVE THIS
-seaa_copy_zpm_dir_params_to_endpoint: false
-
 # Continue deployment script on errors default(false)
 seaa_deployment_script_continue_on_error: false
 
@@ -163,7 +159,7 @@ zpm_directory_delm: /
 zpm_directory_org_by: host # host | namespace
 
 # Name to append to zpm_install_dir for state directory if zpm_state_dir not specified
-zpm_append_dirname_to_state_dir: state
+zpm_append_to_generated_state_dir: state
 
 
 
