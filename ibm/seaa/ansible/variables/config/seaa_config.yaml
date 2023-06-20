@@ -166,10 +166,15 @@ zpm_append_to_generated_state_dir: state
 # *******************************************************************************
 # Variables to configure timeouts and error handling when deploying and undeploying resources
 # *******************************************************************************
+# How many time to retry deploying YAML file
+seaa_deploy_yaml_retries: 5
+# How much time to delay between YAML file deployment retries
+seaa_deploy_yaml_delay: 30
+
 # Set Deploy waiting parameter for Broker instance
 seaa_zoscb_deploy_wait_timeout: 600
 
-# Set Deploy parameters for how many times to retry and delay between retries when creating CR's
+# Set Deploy parameters for how many times to retry and delay between checking for custom resource (CR) status 
 seaa_deploy_retries: 150 #150
 seaa_deploy_delay: 10
 

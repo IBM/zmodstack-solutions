@@ -85,6 +85,10 @@
         namespace: "{{ project_namespace.name }}"
         definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/sub-operator-config.yaml') | from_yaml }}"
       register: mapped_suboperator
+      until: "mapped_suboperator.failed == false"
+      failed_when: mapped_suboperator.failed == true
+      retries: "{{ seaa_deploy_yaml_retries | int }}" # 5
+      delay: "{{ seaa_deploy_yaml_delay | int }}" # 30
 
     - name: "Ensure successful installation of the {{ oc_product.name }} suboperator before proceeding"
       when: seaa_automation_strategy != "generate_yaml"
