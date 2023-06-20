@@ -36,7 +36,7 @@
           when: oc_product.import_mode == 'galaxy'
           ansible.builtin.set_fact:
             oc_download_uri: "{{ oc_product.import_url }}/download/{{ operator_name }}.tar.gz"
-        # TODO Assert Amsible Error when  oc_product.import_mode != galaxy
+        # TODO Assert Ansible Error when  oc_product.import_mode != galaxy
 
     - name: Deploy Signed Operator Collection
       when: not oc_product.skipVerify | bool
