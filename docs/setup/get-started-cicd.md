@@ -10,21 +10,23 @@
  <!-- NOTES
 
  - Environment variables:
-   - SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS:
+   - SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS: 
+   **Important** this must be created first so it is exported first in Travis OS, to be used in the other env vars!
       ```
-      $TRAVIS_BUILD_DIR/scenarios/ansible
+       $TRAVIS_BUILD_DIR/zmodstack-solutions/ibm/seaa/ansible
       ```
    - ANSIBLE_FILTER_PLUGINS:
       ```
       $SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS/plugins/filter:~/.ansible/plugins/filter:/usr/share/ansible/plugins/filter
       ```
-    # Travis ENV Vars
-    # SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS=$TRAVIS_BUILD_DIR/scenarios/ansible
-    # ANSIBLE_FILTER_PLUGINS=${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/plugins/filter:~/.ansible/plugins/filter:/usr/share/ansible/plugins/filter
-    # ANSIBLE_LIBRARY=${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/plugins/validation:~/.ansible/plugins:/usr/share/ansible/plugins
+   - ANSIBLE_LIBRARY:
+      ```
+      ${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/plugins/validation:~/.ansible/plugins:/usr/share/ansible/plugins
+      ```
     
  - Add [.travis.yml](../.travis.yml) file to root of branch 
- - Add SSH Keys to this [directory](../../../zoscb-e2e/ansible_roles/ocp_cluster/secrets)
+ 
+ - TODO Add SSH Keys??
  - 
   - Configure token for endpoints
    - Add SECRET ENV variable with OCP login token
