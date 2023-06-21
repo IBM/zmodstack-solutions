@@ -197,4 +197,4 @@ seaa_verify_delay: 10
 
 # Temporary fix for deleting projects that get recreated after undeploy script,
 # if this is set to true a two minute sleep is added before second deletion of project
-seaa_delete_project_twice: true
+seaa_delete_project_twice: false
