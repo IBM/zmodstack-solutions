@@ -103,7 +103,7 @@
       register: deploy_csv_subop
       until:
         - deploy_csv_subop.resources is defined and deploy_csv_subop.resources | length > 0
-        - "'status' in deploy_csv_subop.resources[0]"
+        - "'status' in deploy_csv_subop.resources[0] and 'message' in deploy_csv_subop.resources[0]"
         - deploy_csv_subop.resources[0].status.phase == 'Succeeded' or
            (deploy_csv_subop.resources[0].status.phase == 'Failed' and
             deploy_csv_subop.resources[0].message != "install timeout" and
