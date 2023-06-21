@@ -36,7 +36,7 @@
           when: oc_product.import_mode == 'galaxy'
           ansible.builtin.set_fact:
             oc_download_uri: "{{ oc_product.import_url }}/download/{{ operator_name }}.tar.gz"
-        # TODO Assert Amsible Error when  oc_product.import_mode != galaxy
+        # TODO Assert Ansible Error when  oc_product.import_mode != galaxy
 
     - name: Deploy Signed Operator Collection
       when: not oc_product.skipVerify | bool
@@ -82,8 +82,8 @@
       register: oc_output
       until: "oc_output.failed == false"
       failed_when: oc_output.failed == true
-      retries: 5
-      delay: 30
+      retries: "{{ seaa_deploy_yaml_retries | int }}" # 5
+      delay: "{{ seaa_deploy_yaml_delay | int }}" # 30
 
     - name: "Ensure successful installation of {{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }} Operator Collection"
       when: seaa_automation_strategy != "generate_yaml"

@@ -82,7 +82,6 @@
             sticky_ocphost: "{{ current_ocphost }}"
           when: ocp_cluster_cache is defined and ocp_cluster_cache != None
   rescue:
-    # TODO add error stack message
     - name: Rescue if can't find last count and start count over
       ansible.builtin.set_fact:
         _readme_has_started: true

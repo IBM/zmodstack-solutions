@@ -310,10 +310,6 @@ _is_active:
 # # Always delete the output directory if it exist and 'seaa_append_to_deployment_script' flag is not 'true'
 # seaa_clean_yaml_output_dir: true
 
-# # Boolean to copy endpoint zpm install and state dirs to endpoint
-# # TODO REMOVE THIS
-# seaa_copy_zpm_dir_params_to_endpoint: false
-
 # # Continue deployment script on errors default(false)
 # seaa_deployment_script_continue_on_error: false
 
