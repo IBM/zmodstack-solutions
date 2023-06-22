@@ -1,0 +1,25 @@
+#jinja2: lstrip_blocks: True
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+kind: "{{ python_instance.kind }}"
+apiVersion: "{{ python_instance.apiVersion }}"
+metadata:
+  name: "{{ python_instance.name }}"
+spec:
+{% if python_instance.licenseAccept == true %}
+  accept: true
+{% else %}
+  accept: false
+{% endif %}
+{% if zpm_consolidated_operator | bool == true %}
+  product_name: {{ oc_product.code_name }}
+{% endif %}
+  product_ver: "{{ python_instance.productVersion }}"
+  zosendpoint: "{{ python_instance.zosEndpoint }}"
+{% if oc_product.credential_type == "personal" %}
+  credential: "ssh-key-{{ endpoint.username }}-{{ endpoint.name }}"
+{% endif %}

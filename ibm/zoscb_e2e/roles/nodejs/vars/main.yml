@@ -1,0 +1,79 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+# Variables file for Nodejs Operator
+
+# OPERATOR COLLECTION
+oc_product:
+  short_name: "{{ lookup('vars', 'nodejs_short_name') }}"
+  code_name: "{{ lookup('vars', 'nodejs_code_name', default='') }}"
+  name: "{{ lookup('vars', 'nodejs_name') }}"
+  oc_version: "{{ lookup('vars', 'zpm_oc_version') if zpm_consolidated_operator | bool == true else lookup('vars', 'nodejs_oc_version') }}"
+  oci_version: "{{ lookup('vars', 'nodejs_oci_version') }}"
+  apiVersion: "{{ lookup('vars', 'oc_product_api_version') }}"
+  finalizers:
+    - "{{ lookup('vars', 'oc_product_finalizer') }}"
+  import_mode: "{{ lookup('vars', 'nodejs_import_mode') | default('galaxy') }}"
+  import_url: "{{ lookup('vars', 'nodejs_import_url') | default('https://galaxy.ansible.com') }}"
+  git_token: "{{ lookup('vars', 'nodejs_git_token') | default('') }}"
+  delete_collections: "{{ lookup('vars', 'oc_product_delete_collections', errors='ignore') | default(true) }}"
+  signatureFile: "{{  lookup('vars', 'nodejs_signature_file') if lookup('vars', 'nodejs_signature_upload_mode', default='url') == 'url' else
+                          seaa_ansible_directory~'/roles/openshift_cluster/secrets/ibm-'~lookup('vars', 'nodejs_name') |
+                          replace('-', '_')~'_operator-'~lookup('vars', 'nodejs_oci_version')~'.sig'
+                  }}"
+  signatureFileExt: "{{ lookup('vars', 'nodejs_signature_file_ext', default='.sig') }}"
+  signatureUploadMode: "{{ lookup('vars', 'nodejs_signature_upload_mode', default='url') }}"
+  publicKey: "{{ lookup('vars', 'nodejs_public_key') if lookup('vars', 'nodejs_signature_upload_mode', default='url') == 'url' else
+                  seaa_ansible_directory~'/roles/openshift_cluster/secrets/'~lookup('vars', 'nodejs_public_key', default='z-mod-stack.pub')
+              }}"
+  skipVerify: "{{ lookup('vars', 'nodejs_skip_verify') }}"
+  domain: "{{ lookup('vars', 'oc_product_domain') }}"
+  credential_type: "{{ lookup('vars', 'nodejs_credential_type', default='') }}"
+
+# SUB-OPERATOR CONFIG
+subop_config:
+  apiVersion: "{{ lookup('vars', 'subop_config_api_version') }}"
+  endpointNames: "{{ zos_endpoints }}" # "{{ endpoint.name }}"
+  finalizers:
+    - "{{ lookup('vars', 'subop_config_finalizer') }}"
+
+##### Edit variables below for any Custom Resources (CRs) #####
+
+# Nodejs Sub-Operator CRs
+nodejs_instance:
+  name: "{{ hostvars[current_ocphost].nodejs_instance_name |
+            default(nodejs_instance_prefix |
+            get_simple_version_string(lookup('vars', 'nodejs_instance_product_version'), seaa_append_version_to_software_instances) |
+            append_str_if_not_null('-'~current_zosendpoint), true)  |
+            default( lookup('vars', 'nodejs_instance_name'), true) }}"
+  kind: "{{ 'ZosProductInstall' if zpm_consolidated_operator | bool == true else lookup('vars', 'nodejs_instance_kind') }}"
+  apiVersion: "{{ broker_sub_operator_api_group~'/'~lookup('vars', 'zpm_oc_version') |
+    get_vmp_string if zpm_consolidated_operator | bool == true else lookup('vars', 'nodejs_instance_api_version') }}"
+  finalizers:
+    - "{{ lookup('vars', 'nodejs_instance_finalizer') }}"
+  zosEndpoint: "{{ endpoint.name }}"
+  licenseAccept: "{{ lookup('vars', 'nodejs_instance_license_accept') | bool }}"
+  productVersion: "{{ lookup('vars', 'nodejs_instance_product_version') }}"
+
+validate_nodejs:
+  name: "{{ hostvars[current_ocphost].validate_nodejs_name |
+            default(validate_nodejs_prefix |
+            get_simple_version_string(lookup('vars', 'nodejs_instance_product_version'), seaa_append_version_to_software_instances) |
+            append_str_if_not_null('-'~current_zosendpoint), true)  |
+            default( lookup('vars', 'validate_nodejs_name'), true) }}"
+  kind: "{{ 'ZosProductValidate' if zpm_consolidated_operator | bool == true else lookup('vars', 'validate_nodejs_kind') }}"
+  apiVersion: "{{ broker_sub_operator_api_group~'/'~lookup('vars', 'zpm_oc_version') |
+    get_vmp_string if zpm_consolidated_operator | bool == true else lookup('vars', 'validate_nodejs_api_version') }}"
+  finalizers:
+    - "{{ lookup('vars', 'validate_nodejs_finalizer') }}"
+  productCRName: "{{ hostvars[current_ocphost].nodejs_instance_name |
+            default(nodejs_instance_prefix |
+            get_simple_version_string(lookup('vars', 'nodejs_instance_product_version'), seaa_append_version_to_software_instances) |
+            append_str_if_not_null('-'~current_zosendpoint), true)  |
+            default( lookup('vars', 'nodejs_instance_name'), true) }}"
+  zosEndpoint: "{{ endpoint.name }}"
+
+product_filename: "{{ oc_product.oci_version if seaa_append_version_to_software_instances | bool == true else oc_product.oc_version }}"

@@ -1,0 +1,22 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+- name: "Retrieve sub-operator CR {{ validate_zoau.kind }}: '{{ validate_zoau.name }}'"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: "{{ validate_zoau.kind }}"
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ validate_zoau.name }}"
+    api_version: "{{ validate_zoau.apiVersion }}"
+  register: validate_zoau_info
+  until: "validate_zoau_info.resources is defined and validate_zoau_info.resources[0].status.phase !='Running'"
+  retries: "{{ seaa_verify_retries | int }}" # 30
+  delay: "{{ seaa_verify_delay | int }}" # 10
+
+- name: "Verify sub-operator CR {{ validate_zoau.kind }}: '{{ validate_zoau.name }}'"
+  ansible.builtin.assert:
+    that:
+      - validate_zoau_info.resources[0].status.phase == "Succeeded"
+  when: info_only is undefined

@@ -1,0 +1,26 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+- name: "Converge: Import operator collection file into the cluster"
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../../vars/main.yml
+    - ../../../ocp_cluster/vars/main.yml
+    - ../../../ocp_cluster/vars/endpoints.yml
+
+  tasks:
+    - name: "Include role: 'ocp_cluster'"
+      ansible.builtin.include_role:
+        name: "ocp_cluster"
+
+    - name: "Include role: 'zoau'"
+      ansible.builtin.include_role:
+        name: "zoau"
+
+    - import_tasks: ../../../../common/tasks/operator_collection/findFile.yml
+    - import_tasks: ../../../../common/tasks/operator_collection/create/operatorCollection.yml

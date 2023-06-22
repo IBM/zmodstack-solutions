@@ -1,0 +1,63 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+# Include ansible variables for product sub-operator being undeployed
+# Include sub operator role
+- name: Include Python vars
+  ansible.builtin.include_vars:
+    file: "{{ zoscb_e2e_roles_directory }}/python/vars/main.yml"
+  when: not python_vars_loaded
+
+- name: Set python_vars_loaded flag
+  ansible.builtin.set_fact:
+    python_vars_loaded: true
+  when: not python_vars_loaded
+
+- name: "Include role: 'python'"
+  ansible.builtin.include_role:
+    name: "python"
+
+# Undeploy PYTHON SUB-OPERATOR CUSTOM RESOURCES
+- name: Uninstall validatePython instance
+  ansible.builtin.include_tasks: "{{ python_cr_task_dir }}/uninstall/validatePython.yml"
+  when:
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_validate_crs | bool
+    - sub_operator_python_create_validate_cr | bool
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint
+
+- name: Uninstall pythonInstance
+  ansible.builtin.include_tasks: "{{ python_cr_task_dir }}/uninstall/pythonInstance.yml"
+  when:
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_software_instances | bool
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint
+
+- name: Undeploy Operator Collection and SubOperator
+  when:
+    - not zpm_consolidated_operator | bool
+  block:
+
+    # DELETE SUB-OPERATOR CONFIG
+    - name: Destroy subOperatorConfig yaml
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/destroy/subOperatorConfig.yml"
+      when:
+        - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+        - seaa_deploy_role == "admin"
+        - seaa_deploy_suboperator | bool
+
+    # IMPORT OPERATOR COLLECTION
+    - name: Destroy operatorCollection
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/destroy/operatorCollection.yml"
+      when:
+        - seaa_deploy_role == "admin"
+        - seaa_deploy_operator_collections | bool

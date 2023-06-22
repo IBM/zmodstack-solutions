@@ -1,0 +1,39 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+- ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/debug_resource.yml"
+  vars:
+    resource_variable: "{{ broker_subscription }}"
+    resource_variable_kind: Subscription
+    resource_variable_name: "{{ broker_subscription.name }}"
+  when: seaa_automation.debug | bool
+
+- name: Create brokerSubscription with YAML file
+  when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+  block:
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/zoscb/broker-subscription.yaml"
+        destination_file: "broker-subscription.yaml"
+        is_ocp_resource: true
+
+    - name: "Create brokerSubscription '{{ broker_subscription.name }}.v{{ broker_subscription.version }}' from source '{{ broker_subscription.source }}' \
+       with Native YAML API in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/zoscb/broker-subscription.yaml') | from_yaml }}"
+
+    - name: "Check for creation of Broker Subscription '{{ broker_subscription.name }}' from source '{{ broker_subscription.source }}' \
+        in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      ansible.builtin.pause:
+        prompt: "Create brokerSubscription resource with Native YAML API, press enter to continue ...:"
+      when:
+        - seaa_automation.prompt_during_automation | bool
+        - seaa_automation.track_resources | bool

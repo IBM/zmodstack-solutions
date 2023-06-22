@@ -1,0 +1,134 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+- name: Debug Deploy variables for ZPM
+  when: seaa_automation.debug | bool
+  block:
+    # Status of ZPM Operator Collection
+    - name: Debug var zpm_oc_deploy_verified
+      ansible.builtin.debug:
+        var: zpm_oc_deploy_verified
+    - name: Debug var seaa_deploy_operator_collections
+      ansible.builtin.debug:
+        var: seaa_deploy_operator_collections
+
+    # Status of ZPM Sub-Operator
+    - name: Debug var zpm_subop_deploy_verified
+      ansible.builtin.debug:
+        var: zpm_subop_deploy_verified
+    - name: Debug var seaa_deploy_suboperator
+      ansible.builtin.debug:
+        var: seaa_deploy_suboperator
+
+    # Status of ZPM Instance
+    - name: Debug var zpm_deploy_verified
+      ansible.builtin.debug:
+        var: zpm_deploy_verified
+    - name: Debug var seaa_deploy_software_instances
+      ansible.builtin.debug:
+        var: seaa_deploy_software_instances
+    - name: Debug var zpm_zosendpoints_deploy_verified
+      ansible.builtin.debug:
+        var: zpm_zosendpoints_deploy_verified
+
+    # Status of ZPM Diagnostic CR
+    - name: Debug var zpm_diag_deploy_verified
+      ansible.builtin.debug:
+        var: zpm_diag_deploy_verified
+    - name: Debug var seaa_deploy_validate_crs
+      ansible.builtin.debug:
+        var: seaa_deploy_validate_crs
+    - name: Debug var zpm_create_diagnostics_cr
+      ansible.builtin.debug:
+        var: zpm_create_diagnostics_cr
+
+    - name: Waiting for user response
+      ansible.builtin.pause:
+        prompt: Review variables to deploy zpm, press enter to continue ...
+      when:
+        - seaa_automation.prompt_during_automation | bool
+
+# Include ansible variables for product sub-operator being installed
+- name: Include ZPM vars
+  ansible.builtin.include_vars:
+    file: "{{ zoscb_e2e_roles_directory }}/zpm/vars/main.yml"
+  when: not zpm_vars_loaded
+
+- name: Set zpm_vars_loaded flag
+  ansible.builtin.set_fact:
+    zpm_vars_loaded: true
+  when: not zpm_vars_loaded
+
+# Include sub operator role
+- name: "Include role: 'zpm'"
+  ansible.builtin.include_role:
+    name: "zpm"
+
+- name: Deploy Operator Collection and SubOperator
+  block:
+
+    # FIND OPERATOR COLLECTION TAR.GZ FILE LOCALLY
+    - name: Find upload file
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/findFile.yml"
+      when: oc_product.import_mode == 'upload'
+
+    - name: Manage Secret for OC
+      when:
+        - hostvars[current_zosendpoint]._is_active
+        - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+        - seaa_deploy_role == "admin"
+      ansible.builtin.include_role:
+        name: openshift_cluster
+        tasks_from: manage_secrets
+      vars:
+        resource_kind: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}" # "{{ oc_product.  resource_kind }}"
+        cred_type: "{{ oc_product.credential_type }}"
+      with_items:
+        - "{{ groups['zosendpoints'] }}"
+      loop_control:
+        loop_var: current_zosendpoint
+
+    # IMPORT OPERATOR COLLECTION
+    - name: Create operatorCollection
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/create/operatorCollection.yml"
+      when:
+        - seaa_deploy_operator_collections | bool
+        - (zpm_oc_deploy_verified is undefined or not zpm_oc_deploy_verified)
+        - seaa_deploy_role == "admin" # ONLY ALLOW ADMIN TO DEPLOY OC
+
+    # CREATE SUB-OPERATOR CONFIG
+    - name: Create subOperatorConfig with yaml
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/create/subOperatorConfig.yml"
+      when:
+        - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+        - seaa_deploy_suboperator | bool
+        - (zpm_subop_deploy_verified is undefined or not zpm_subop_deploy_verified)
+        - seaa_deploy_role == "admin" # ONLY ALLOW ADMIN TO DEPLOY OC
+
+# CREATE ZPM INSTANCE
+- name: Create zpm instance
+  ansible.builtin.include_tasks: "{{ zpm_cr_task_dir }}/install/zpm.yml"
+  when:
+    - zpm_deploy_verified is undefined or not zpm_deploy_verified # TODO: add IFPresent flag
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_software_instances | bool
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint
+
+# CREATE ZPM DIAGNASTIC INSTANCE
+- name: Create zpmDiagnostics instance
+  ansible.builtin.include_tasks: "{{ zpm_cr_task_dir }}/install/zpmDiagnostics.yml"
+  when:
+    - zpm_diag_deploy_verified is undefined or not zpm_diag_deploy_verified
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_validate_crs | bool
+    - zpm_create_diagnostics_cr | bool
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint

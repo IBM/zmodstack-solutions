@@ -1,0 +1,17 @@
+#jinja2: lstrip_blocks: True
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+kind: "{{ validate_java.kind }}"
+apiVersion: "{{ validate_java.apiVersion }}"
+metadata:
+  name: "{{ validate_java.name }}"
+spec:
+  product_cr_name: "{{ validate_java.productCRName }}"
+  zosendpoint: "{{ validate_java.zosEndpoint }}"
+  {% if oc_product.credential_type == "personal" %}
+  credential: "ssh-key-{{ endpoint.username }}-{{ endpoint.name }}"
+  {% endif %}

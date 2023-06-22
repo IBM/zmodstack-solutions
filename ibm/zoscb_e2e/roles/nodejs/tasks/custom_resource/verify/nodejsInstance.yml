@@ -1,0 +1,23 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+- name: "Retrieve sub-operator CR {{ nodejs_instance.kind }}: '{{ nodejs_instance.name }}'"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: "{{ nodejs_instance.kind }}"
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ nodejs_instance.name }}"
+    api_version: "{{ nodejs_instance.apiVersion }}"
+  register: nodejs_instance_info
+  until: "nodejs_instance_info.resources is defined and nodejs_instance_info.resources[0].status.phase !='Running'"
+  retries: "{{ seaa_verify_retries | int }}" # 30
+  delay: "{{ seaa_verify_delay | int }}" # 10
+
+
+- name: "Verify sub-operator CR {{ nodejs_instance.kind }}: '{{ nodejs_instance.name }}'"
+  ansible.builtin.assert:
+    that:
+      - nodejs_instance_info.resources[0].status.phase == "Succeeded"
+  when: info_only is undefined

@@ -1,0 +1,41 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+- name: "Check for availability of operator collection:"
+  when: seaa_automation_strategy != "generate_yaml"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    namespace: "{{ project_namespace.name }}"
+    kind: "{{ validate_nodejs.kind }}"
+    name: "{{ validate_nodejs.name }}"
+    api_version: "{{ validate_nodejs.apiVersion }}"
+    wait: false
+  register: check_k8s_info
+
+- name: Delete validateNodejsInstance with YAML file
+  when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+  block:
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/operators/instances/validate-nodejs-instance.yaml"
+        destination_file: "val-{{ oc_product.short_name }}-{{ product_filename }}_Instance.yaml"
+        is_zos_resource: true
+        zos_endpoint: "{{ endpoint }}"
+
+    - name: "Delete validateNodejsInstance '{{ validate_nodejs.name }}' with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: absent
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/instances/validate-nodejs-instance.yaml') | from_yaml }}"
+        wait: "{{ seaa_undeploy_wait | bool }}" # yes
+        wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}" # 600
+        continue_on_error: "{{ seaa_undeploy_continue_on_error | bool }}"
+      register: delete_instance
+      failed_when: "delete_instance.failed and
+        'Failed to find exact match for' not in delete_instance.msg"

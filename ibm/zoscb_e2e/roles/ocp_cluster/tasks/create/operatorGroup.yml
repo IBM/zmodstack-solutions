@@ -1,0 +1,38 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+- ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/debug_resource.yml"
+  vars:
+    resource_variable: "{{ operator_group }}"
+    resource_variable_kind: OperatorGroup
+    resource_variable_name: "{{ operator_group.name }}"
+  when: seaa_automation.debug | bool
+
+- name: Create operatorGroup with YAML file
+  when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+  block:
+
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/ocp/operator-group.yaml"
+        destination_file: "operator-group.yaml"
+        is_ocp_resource: true
+
+    - name: "Create operatorGroup with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/ocp/operator-group.yaml') | from_yaml }}"
+
+    - name: "Check for creation of OperatorGroup '{{ operator_group.name }}' in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      ansible.builtin.pause:
+        prompt: "Create OperatorGroup resource with Native YAML API, press enter to continue ...:"
+      when:
+        - seaa_automation.prompt_during_automation | bool
+        - seaa_automation.track_resources | bool

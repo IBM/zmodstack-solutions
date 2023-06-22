@@ -1,0 +1,22 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+- name: "Retrieve operator group: '{{ operator_group.name }}' from '{{ project_namespace.name }}\
+    ' on '{{ ocp_cluster.hostname }}'"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: OperatorGroup
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ operator_group.name }}"
+    api_version: "{{ operator_group.apiVersion }}"
+  register: operator_group_info
+
+- name: "Verify operator group: '{{ operator_group.name }}'"
+  ansible.builtin.assert:
+    that:
+      - operator_group_info.resources[0].metadata.creationTimestamp != ""
+      - operator_group_info.resources[0].status.lastUpdated != ""
+      - "'{{ project_namespace.name }}' in operator_group_info.resources[0].status.namespaces"
+  when: info_only is undefined

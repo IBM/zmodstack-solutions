@@ -1,0 +1,11 @@
+#jinja2: lstrip_blocks: True
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "{{ project_namespace.name }}"

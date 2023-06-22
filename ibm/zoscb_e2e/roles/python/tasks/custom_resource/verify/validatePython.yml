@@ -1,0 +1,22 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+- name: "Retrieve sub-operator CR {{ validate_python.kind }}: '{{ validate_python.name }}'"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: "{{ validate_python.kind }}"
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ validate_python.name }}"
+    api_version: "{{ validate_python.apiVersion }}"
+  register: validate_python_info
+  until: "validate_python_info.resources is defined and validate_python_info.resources[0].status.phase !='Running'"
+  retries: "{{ seaa_verify_retries | int }}" # 30
+  delay: "{{ seaa_verify_delay | int }}" # 10
+
+- name: "Verify sub-operator CR {{ validate_python.kind }}: '{{ validate_python.name }}'"
+  ansible.builtin.assert:
+    that:
+      - validate_python_info.resources[0].status.phase == "Succeeded"
+  when: info_only is undefined

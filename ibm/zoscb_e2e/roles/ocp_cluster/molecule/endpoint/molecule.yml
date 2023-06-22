@@ -1,0 +1,52 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    collections-path: "~/.ansible/collections/"
+driver:
+  name: delegated
+  options:
+    managed: True
+    ansible_connection_options: {}
+lint: |
+  set -e
+  ansible-lint
+platforms:
+- name: Ubuntu
+  groups:
+  - k8s
+provisioner:
+  name: ansible
+  env:
+    OCP_CLUSTER_HOSTNAME: ${OCP_CLUSTER_HOSTNAME:-"<host_name>"}
+    OCP_CLUSTER_PORT: ${OCP_CLUSTER_PORT:-6443}
+    OCP_CLUSTER_AUTH_TOKEN: ${OCP_CLUSTER_AUTH_TOKEN:-"default-notoken"}
+
+    ZPM_REGISTRY_HOSTNAME: ${ZPM_REGISTRY_HOSTNAME:-"<registry_host_name>"}
+    ZPM_REGISTRY_USERNAME: ${ZPM_REGISTRY_USERNAME:-"default-nouser"}
+    ZPM_REGISTRY_API_TOKEN: ${ZPM_REGISTRY_API_TOKEN:-"default-notoken"}
+
+    NAMESPACE_NAME: ${NAMESPACE_NAME:-"default-zoscb-e2e"}
+verifier:
+  name: ansible
+scenario:
+  name: endpoint
+  test_sequence:
+    - dependency
+    - lint
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - side_effect
+    - verify
+    - cleanup
+    - destroy

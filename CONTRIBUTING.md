@@ -1,3 +1,7 @@
+<!-- #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+# -->
 ## Contributing
 Our project welcomes external contributions.
 
@@ -32,7 +36,7 @@ For a list of the maintainers, see the [MAINTAINERS.md](MAINTAINERS.md) page.
 
 Each source file must include a license header for the Apache
 Software License 2.0. Using the SPDX format is the simplest approach.
-e.g.
+For example,
 
 ```
 #

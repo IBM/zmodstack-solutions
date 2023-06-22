@@ -1,0 +1,79 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+# Variables file for Java Operator
+# OPERATOR COLLECTION
+oc_product:
+  short_name: "{{ lookup('vars', 'java_short_name') }}"
+  code_name: "{{ lookup('vars', 'java_code_name', default='') }}"
+  name: "{{ lookup('vars', 'java_name') }}"
+  oc_version: "{{ lookup('vars', 'zpm_oc_version') if zpm_consolidated_operator | bool == true else lookup('vars', 'java_oc_version') }}"
+  oci_version: "{{ lookup('vars', 'java_oci_version') }}"
+  apiVersion: "{{ lookup('vars', 'oc_product_api_version') }}"
+  finalizers:
+    - "{{ lookup('vars', 'oc_product_finalizer') }}"
+  import_mode: "{{ lookup('vars', 'java_import_mode') | default('galaxy') }}"
+  import_url: "{{ lookup('vars', 'java_import_url') | default('https://galaxy.ansible.com') }}"
+  git_token: "{{ lookup('vars', 'java_git_token') | default('') }}"
+  delete_collections: "{{ lookup('vars', 'oc_product_delete_collections', errors='ignore') | default(true) }}"
+  signatureFile: "{{  lookup('vars', 'java_signature_file') if lookup('vars', 'java_signature_upload_mode', default='url') == 'url' else
+                          seaa_ansible_directory~'/roles/openshift_cluster/secrets/ibm-'~lookup('vars', 'java_name') |
+                          replace('-', '_')~'_operator-'~lookup('vars', 'java_oci_version')~'.sig'
+                  }}"
+  signatureFileExt: "{{ lookup('vars', 'java_signature_file_ext', default='.sig') }}"
+  signatureUploadMode: "{{ lookup('vars', 'java_signature_upload_mode', default='url') }}"
+  publicKey: "{{ lookup('vars', 'java_public_key') if lookup('vars', 'java_signature_upload_mode', default='url') == 'url' else
+                  seaa_ansible_directory~'/roles/openshift_cluster/secrets/'~lookup('vars', 'java_public_key', default='z-mod-stack.pub')
+              }}"
+  skipVerify: "{{ lookup('vars', 'java_skip_verify') }}"
+  domain: "{{ lookup('vars', 'oc_product_domain') }}"
+  credential_type: "{{ lookup('vars', 'java_credential_type', default='') }}"
+
+# SUB-OPERATOR CONFIG
+subop_config:
+  apiVersion: "{{ lookup('vars', 'subop_config_api_version') }}"
+  endpointNames: "{{ zos_endpoints }}" # "{{ endpoint.name }}"
+  finalizers:
+    - "{{ lookup('vars', 'subop_config_finalizer') }}"
+
+
+##### Edit variables below for any Custom Resources (CRs) #####
+
+# Java Sub-Operator CRs
+java_instance:
+  name: "{{ hostvars[current_ocphost].java_instance_name |
+            default(java_instance_prefix |
+            get_simple_version_string(lookup('vars', 'java_instance_product_version'), seaa_append_version_to_software_instances) |
+            append_str_if_not_null('-'~current_zosendpoint), true)  |
+            default( lookup('vars', 'java_instance_name'), true) }}"
+  kind: "{{ 'ZosProductInstall' if zpm_consolidated_operator | bool == true else lookup('vars', 'java_instance_kind') }}"
+  apiVersion: "{{ broker_sub_operator_api_group~'/'~lookup('vars', 'zpm_oc_version') |
+    get_vmp_string if zpm_consolidated_operator | bool == true else lookup('vars', 'java_instance_api_version') }}"
+  finalizers:
+    - "{{ lookup('vars', 'java_instance_finalizer') }}"
+  zosEndpoint: "{{ endpoint.name }}"
+  licenseAccept: "{{ lookup('vars', 'java_instance_license_accept') | bool }}"
+  productVersion: "{{ lookup('vars', 'java_instance_product_version') }}"
+
+validate_java:
+  name: "{{ hostvars[current_ocphost].validate_java_name |
+            default(validate_java_prefix |
+            get_simple_version_string(lookup('vars', 'java_instance_product_version'), seaa_append_version_to_software_instances) |
+            append_str_if_not_null('-'~current_zosendpoint), true)  |
+            default( lookup('vars', 'validate_java_name'), true) }}"
+  kind: "{{ 'ZosProductValidate' if zpm_consolidated_operator | bool == true else lookup('vars', 'validate_java_kind') }}"
+  apiVersion: "{{ broker_sub_operator_api_group~'/'~lookup('vars', 'zpm_oc_version') |
+    get_vmp_string if zpm_consolidated_operator | bool == true else lookup('vars', 'validate_java_api_version') }}"
+  finalizers:
+    - "{{ lookup('vars', 'validate_java_finalizer') }}"
+  productCRName: "{{ hostvars[current_ocphost].java_instance_name |
+            default(java_instance_prefix |
+            get_simple_version_string(lookup('vars', 'java_instance_product_version'), seaa_append_version_to_software_instances) |
+            append_str_if_not_null('-'~current_zosendpoint), true)  |
+            default( lookup('vars', 'java_instance_name'), true) }}"
+  zosEndpoint: "{{ endpoint.name }}"
+
+product_filename: "{{ oc_product.oci_version if seaa_append_version_to_software_instances | bool == true else oc_product.oc_version }}"

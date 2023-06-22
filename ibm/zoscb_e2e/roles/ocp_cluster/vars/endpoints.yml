@@ -1,0 +1,51 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+endpoint:
+  name: "{{ current_zosendpoint }}"
+  apiVersion: "{{ lookup('vars', 'broker_zosendpoint_api_version') }}" # zoscb.ibm.com/v2beta1
+  kind: "{{ lookup('vars', 'broker_zosendpoint_kind') }}" # ZosEndpoint
+  finalizers:
+    - "{{ lookup('vars', 'broker_zosendpoint_finalizer') }}" # zosendpoints.zoscb.ibm.com/finalizer
+  hostname: "{{ hostvars[current_zosendpoint].ansible_host }}"
+  port: "{{ hostvars[current_zosendpoint].ansible_port }}"
+  username: "{{ hostvars[current_zosendpoint].ansible_user }}"
+  type: "{{ hostvars[current_zosendpoint].type | default('remote', true) }}"
+  SSHKeyFile: "{{ hostvars[current_zosendpoint].ansible_ssh_private_key_file | default('', true) }}"
+  SSHKeyPassPhrase: "{{ hostvars[current_zosendpoint].ssh_passphrase | default('', true) }}"  # "{{ lookup('vars', 'zos_endpoint_ssh_key_passphrase') }}"
+  zpm_bash_dir: "{{ hostvars[current_zosendpoint].zpm_bash_dir | default(lookup('vars', 'zpm_bash_dir'), true) }}"  # "{{ lookup('vars', 'zpm_bash_dir') }}"
+  zpm_le_install_hlq: "{{ hostvars[current_zosendpoint].zpm_le_install_hlq | default(lookup('vars', 'zpm_le_install_hlq'), true) }}"
+  zpm_cbc_install_hlq: "{{ hostvars[current_zosendpoint].zpm_cbc_install_hlq | default(lookup('vars', 'zpm_cbc_install_hlq'), true) }}"
+  zpm_product_hlq: "{{ hostvars[current_zosendpoint].zpm_product_hlq | default(lookup('vars', 'zpm_product_hlq'), true) }}"
+  # Install directory has the following logic
+  # if hostvar 'zpm_install_dir' is provided use it
+  # Or use hostvar 'install_dir' prefix if it exist and append namepace and host information
+  # Or default to 'zpm_install_dir' and default to '/usr/lpp/IBM/zpm'
+  zpm_installation_dir: "{{ hostvars[current_zosendpoint].zpm_install_dir | default(None, true) |
+                             ternary(hostvars[current_zosendpoint].zpm_install_dir,
+                              hostvars[current_zosendpoint].zpm_install_dir_prefix | default(None, true) |
+                                append_host_and_namespace_dir(current_ocphost, zpm_directory_delm, this_project_name, zpm_directory_org_by, None) |
+                                  default(lookup('vars', 'zpm_install_dir'), true)) }}"
+  # State directory has the following logic
+  # if hostvar 'zpm_state_dir' is provided use it
+  # Or use hostvar 'zpm_state_dir_prefix' if it exist and append namepace, host information and zpm_append_to_generated_state_dir
+  # Or default to use hostvar 'zpm_install_dir_prefix' prefix if it exist and append namepace, host information and zpm_append_to_generated_state_dir
+  # Or default to lookup 'zpm_state_dir' and default to '/var/zpm'
+  zpm_state_dir: "{{ hostvars[current_zosendpoint].zpm_state_dir | default(None, true) |
+                          ternary(
+                              hostvars[current_zosendpoint].zpm_state_dir ,
+                              hostvars[current_zosendpoint].zpm_state_dir_prefix | default(None, true) |
+                                append_host_and_namespace_dir(current_ocphost, zpm_directory_delm,
+                                   this_project_name, zpm_directory_org_by, zpm_append_to_generated_state_dir) |
+
+                                default( hostvars[current_zosendpoint].zpm_install_dir_prefix | default(None, true) |
+                                  append_host_and_namespace_dir(current_ocphost, zpm_directory_delm,
+                                      this_project_name, zpm_directory_org_by, zpm_append_to_generated_state_dir), true) |
+
+                                  default( lookup('vars', 'zpm_state_dir'), true))
+                        }}"
+
+registry_password:

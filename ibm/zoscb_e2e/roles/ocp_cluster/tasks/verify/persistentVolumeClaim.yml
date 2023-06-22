@@ -1,0 +1,22 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+- name: "Retrieve persistent volume claim: '{{ persistent_volume_claim.name }}' from '{{ project_namespace.name }}\
+    ' on '{{ ocp_cluster.hostname }}'"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: PersistentVolumeClaim
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ persistent_volume_claim.name }}"
+    api_version: "{{ persistent_volume_claim.apiVersion }}"
+  register: persistent_volume_claim_info
+
+- name: "Verify persistent volume claim: '{{ persistent_volume_claim.name }}'"
+  ansible.builtin.assert:
+    that:
+      - persistent_volume_claim_info.resources[0].status.phase == "Bound"
+      - "'ReadWriteMany' in persistent_volume_claim_info.resources[0].status.accessModes"
+      - "'kubernetes.io/pvc-protection' in persistent_volume_claim_info.resources[0].metadata.finalizers"
+  when: info_only is undefined

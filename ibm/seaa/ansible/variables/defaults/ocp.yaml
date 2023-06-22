@@ -1,0 +1,33 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+# ************************************
+# OpenShift variables defaults can be changed in inventory for OCP hosts
+# *************************************
+
+# *************************************
+# OCP Project/Namespace variables
+# *************************************
+project_description: "Project created via SEAA framework"
+project_displayname: "** seaa automated **"
+
+#This is the default value and only used if authenticated user is not in cache
+project_requesting_user: # no-name
+
+# *************************************
+# PVC
+# *************************************
+pvc_name: zoscloudbroker
+pvc_api_version: v1
+pvc_access_mode: ReadWriteMany
+pvc_storage: 5Gi
+pvc_volume_mode: Filesystem
+pvc_storage_class_name: rook-cephfs
+
+# *************************************
+# Tekton Variables -
+# *************************************
+operator_group_name: se-automation-og

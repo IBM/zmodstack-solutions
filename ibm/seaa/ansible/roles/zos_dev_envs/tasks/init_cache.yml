@@ -1,0 +1,336 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+- name: Set JMES cache queries
+  ansible.builtin.set_fact:
+    jmesq_zoscb_deployed: "cached[? ocp_host=='{{ current_ocphost }}'] | [].zoscb_deployed_on | [?contains(@, '{{ this_project_name }}')][]"
+    jmesq_zpm_deployed: "cached[? ocp_host=='{{ current_ocphost }}'] | [].zpm_deployed_on | [?contains(@, '{{ this_project_name }}')][]"
+    jmesq_script_started: "cached[? ocp_host=='{{ current_ocphost }}'] | [].started_script_gen_on | [?contains(@, '{{ this_project_name }}')][]"
+    jmesq_readme_started: "cached[? ocp_host=='{{ current_ocphost }}'] | [].started_readme_gen_on[].\"{{ this_project_name }}\""
+  no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+- name: Set config variable facts
+  ansible.builtin.set_fact:
+    config_var_seaa_deploy_resource_ifpresent: "{{ lookup('vars', 'seaa_deploy_resource_ifpresent', default=true) | bool }}"
+    config_var_cluster_validate_certs: "{{ lookup('vars', 'cluster_validate_certs', default=false) | bool }}"
+    config_var_cluster_cacert: "{{ lookup('vars', 'cluster_cacert', default='') }}"
+
+- name: Set config variable facts
+  ansible.builtin.set_fact:
+    config_var_seaa_deploy_resource_ifpresent: "{{ hostvars[current_ocphost].seaa_deploy_resource_ifpresent | bool }}"
+  when: hostvars[current_ocphost].seaa_deploy_resource_ifpresent is defined
+
+- name: Set config variable facts
+  ansible.builtin.set_fact:
+    config_var_cluster_validate_certs: "{{ hostvars[current_ocphost].cluster_validate_certs }}"
+  when: hostvars[current_ocphost].cluster_validate_certs is defined
+
+- name: Set config variable facts
+  ansible.builtin.set_fact:
+    config_var_cluster_cacert: "{{ hostvars[current_ocphost].cluster_cacert }}"
+  when: hostvars[current_ocphost].cluster_cacert is defined
+
+- name: Debug authentication status
+  when:
+    - seaa_automation.debug | bool
+  block:
+
+    - name: Debug config_var_cluster_cacert
+      ansible.builtin.debug:
+        var: config_var_cluster_cacert
+    - name: Debug config_var_seaa_deploy_resource_ifpresent
+      ansible.builtin.debug:
+        var: config_var_seaa_deploy_resource_ifpresent
+    - name: Debug config_var_cluster_validate_certs
+      ansible.builtin.debug:
+        var: config_var_cluster_validate_certs
+
+    - name: Waiting for user response
+      ansible.builtin.pause:
+        prompt: Review ocphost '{{ current_ocphost }}' configuration variables, press enter to continue ...
+      when: seaa_automation.prompt_during_automation | bool
+
+- name: Authenticate to '{{ current_ocphost }}'-({{ hostvars[current_ocphost].ansible_host }})
+  when:
+    - hostvars[current_ocphost]._is_active
+    - current_authenticated_host is undefined or current_authenticated_host != current_ocphost
+  tags: always
+  run_once: true
+  block:
+    # Reset Auth results and variables
+    - name: Reset auth results and variables
+      ansible.builtin.set_fact:
+        # Initialize authentication vars
+        openshift_auth_results: {}
+        existing_host_token: []
+        has_existing_host_token: false
+        cluster_auth_token_defined: false
+        should_authenticate: false
+
+        # Set inital empty list for deployed components
+        zoscb_deployed_on: []
+        zpm_deployed_on: []
+
+        # Set generate file list to empty
+        started_script_gen_on: []
+        started_readme_gen_on: []
+
+    - name: Initialize OCP Cluster variables for ocp_cluster
+      ansible.builtin.include_vars: "{{ zoscb_e2e_roles_directory | get_expanded_dir }}/ocp_cluster/vars/main.yml"
+      when: not ocp_cluster_vars_loaded
+
+    - name: Set ocp_cluster_vars_loaded flag
+      ansible.builtin.set_fact:
+        ocp_cluster_vars_loaded: true
+      when: not ocp_cluster_vars_loaded
+
+    # Check ocp_cluster_cache dictionary for existing token for current ocp host
+    - name: Check ocp_cluster_cache dictionary for existing token for current ocp host
+      ansible.builtin.set_fact:
+        existing_host_token: >-
+          {{ ocp_cluster_cache
+            | json_query(jmespath)
+          }}
+      when:
+        - ocp_cluster_cache is defined and ocp_cluster_cache != None
+      vars:
+        jmespath: "cached[? ocp_host=='{{ current_ocphost }}'].token"
+      no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+    - name: Set flag for existing cached host to true
+      ansible.builtin.set_fact:
+        has_existing_host_token: true
+      when:
+        - existing_host_token|type_debug != "NoneType"
+        - existing_host_token | length > 0
+
+    # Set flag for cluster auth token set in inventory
+    - name: Set flag for cluster auth token when it is set in the inventory
+      ansible.builtin.set_fact:
+        cluster_auth_token_defined: true
+      when:
+        - hostvars[current_ocphost].cluster_auth_token is defined
+        - hostvars[current_ocphost].cluster_auth_token|type_debug != "NoneType"
+        - hostvars[current_ocphost].cluster_auth_token | default("") != ""
+
+    # Set should authenticate if there is no existing token in cache or hardcoded defined token
+    - name: Set should authenticate if there is no existing token in cache or inventory defined token
+      ansible.builtin.set_fact:
+        should_authenticate: true
+      when: not has_existing_host_token and not cluster_auth_token_defined
+
+    # Don't Authenticate use token and create cache for host user and token to
+    - name: Initialize cache for existing hostvars auth token
+      when:
+        - not should_authenticate
+        - cluster_auth_token_defined
+        - seaa_automation_strategy != "generate_yaml"
+      block:
+
+        - name: Verify {{ current_ocphost }} host has ansible_user set
+          ansible.builtin.fail:
+            msg: "Error 'ansible_user' is required for logging into {{ current_ocphost }}"
+          when:
+            - hostvars[current_ocphost].ansible_user is undefined or
+              hostvars[current_ocphost].ansible_user == None or
+              hostvars[current_ocphost].ansible_user == ""
+
+        # Add current authenticated cluster to cached list of dictionaries
+        - name: Add '{{ current_ocphost }}' to ocp_cluster_cache with existing hostvars auth token
+          ansible.builtin.set_fact:
+            ocp_cluster_cache: >-
+              {{ ocp_cluster_cache | default([]) | combine(
+                  {
+                    "cached" : [
+                        {
+                        'authenticated': false,
+                        'ocp_host': current_ocphost,
+                        'token': hostvars[current_ocphost].cluster_auth_token ,
+                        'ca_cert': config_var_cluster_cacert,
+                        'host': hostvars[current_ocphost].ansible_host ,
+                        'zoscb_deployed_on': zoscb_deployed_on,
+                        'zpm_deployed_on': zpm_deployed_on,
+                        'username': hostvars[current_ocphost].ansible_user ,
+                        'validate_certs': config_var_cluster_validate_certs,
+                        'started_script_gen_on': started_script_gen_on,
+                        'started_readme_gen_on': started_readme_gen_on
+                        }
+                    ]}
+                    , list_merge='append', recursive=true)
+
+              }}
+          # when: vars[openshift_auth_results] is not none
+          no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+        - name: Waiting for user response
+          ansible.builtin.pause:
+            prompt: Review cache created for ocphost '{{ current_ocphost }}', press enter to continue ...
+          when: seaa_automation.prompt_during_automation | bool
+
+    # Authenticate to Openshift Cluster Block when should authenticate and not "generate_yaml" strategy
+    - name: Authenticate to Openshift Cluster and Initialize cache
+      when:
+        - should_authenticate
+        - seaa_automation_strategy != "generate_yaml"
+      block:
+        # Dynamically INCLUDE ansible role
+        - name: Get Item from 1Password Vault
+          ansible.builtin.include_role:
+            name: password_vault
+            tasks_from: get_1password_creds
+          vars:
+            item_name: "{{ seaa_security_password_vault_item }}"
+            is_login_type_item: true
+
+        # Include authentication role
+        - name: Authenticate to '{{ current_ocphost }}'-({{ hostvars[current_ocphost].ansible_host }})
+          ansible.builtin.include_role:
+            name: openshift_cluster
+            tasks_from: authenticate
+          vars:
+            openshift_host: "https://{{ hostvars[current_ocphost].ansible_host }}:{{ hostvars[current_ocphost].ansible_port }}"
+            openshift_cluster_username: "{{ vault_username }}"
+            openshift_cluster_password: "{{ vault_password }}"
+            validate_certs: "{{ validate_openshift_certs }}"
+            ca_cert: "{{ openshift_cert }}"
+
+        # Add current authenticated cluster to cached list of dictionaries
+        - name: Add authenticated cluster to cached list of dictionaries
+          ansible.builtin.set_fact:
+            ansible_user: "{{ openshift_auth_results['openshift_auth']['username'] }}"
+            ocp_cluster_cache: >-
+              {{ ocp_cluster_cache | default([]) | combine(
+                  {
+                    "cached" : [
+                        {
+                        'authenticated': true,
+                        'ocp_host': current_ocphost,
+                        'token': openshift_auth_results['openshift_auth']['api_key'],
+                        'ca_cert': openshift_auth_results['openshift_auth']['ca_cert'],
+                        'host': openshift_auth_results['openshift_auth']['host'],
+                        'zoscb_deployed_on': zoscb_deployed_on,
+                        'zpm_deployed_on': zpm_deployed_on,
+                        'username': openshift_auth_results['openshift_auth']['username'],
+                        'validate_certs': openshift_auth_results['openshift_auth']['validate_certs'],
+                        'started_script_gen_on': started_script_gen_on,
+                        'started_readme_gen_on': started_readme_gen_on
+                        }
+                    ]}
+                    , list_merge='append', recursive=true)
+
+              }}
+          # when: vars[openshift_auth_results] is not none
+          no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+        - name: Waiting for user response
+          ansible.builtin.pause:
+            prompt: Review cache created for ocphost '{{ current_ocphost }}', press enter to continue ...
+          when: seaa_automation.prompt_during_automation | bool
+
+    - name: Set 'openshift_auth_token' fact with newly authenticated host
+      when:
+        - vars[openshift_auth_results] is not none
+        - openshift_auth_results.openshift_auth is defined
+        - seaa_automation_strategy != "generate_yaml"
+      block:
+        # Debug new authentication status
+        - name: Debug authentication status
+          when:
+            - seaa_automation.debug | bool
+          no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+          block:
+
+            - name: Added new authenticated host '{{ current_ocphost }}' to cache
+              ansible.builtin.debug:
+                var: ocp_cluster_cache
+
+            - name: Waiting for user response
+              ansible.builtin.pause:
+                prompt: Added authenticated host '{{ current_ocphost }}' to cache, press enter to continue ...
+              when: seaa_automation.prompt_during_automation | bool
+
+        # Set auth token from newly authenticated results
+        - name: Set auth token from newly authenticated results
+          ansible.builtin.set_fact:
+            openshift_auth_token: "{{ openshift_auth_results.openshift_auth.api_key }}"
+          no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+    - name: Login to authenticated host
+      when:
+        - seaa_automation_strategy != "generate_yaml"
+      block:
+        # Set auth token from existing token
+        - name: Set auth token from existing token
+          ansible.builtin.set_fact:
+            openshift_auth_token: "{{ existing_host_token | first }}"
+          when: has_existing_host_token
+          no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+        # Login to OCP cluster
+        - name: Login to '{{ current_ocphost }}'-({{ hostvars[current_ocphost].ansible_host }})
+          ansible.builtin.include_role:
+            name: "common"
+            tasks_from: "clusterLogin.yml"
+
+    - name: Initialize cache to track generating YAML files
+      when:
+        - seaa_automation_strategy == "generate_yaml" #  or seaa_automation_strategy == "generate_deploy_yaml"
+      block:
+
+        # Check if current ocp host already exist on generated host list
+        - name: Check ocp_cluster_cache dictionary for existing token for current ocphost '{{ current_ocphost }}'
+          ansible.builtin.set_fact:
+            existing_host_token: >-
+              {{ ocp_cluster_cache
+                | json_query(jmespath)
+              }}
+          when:
+            - ocp_cluster_cache is defined and ocp_cluster_cache != None
+          vars:
+            jmespath: "cached[? ocp_host=='{{ current_ocphost }}']"
+
+        - name: Set flag for existing cached host to true
+          ansible.builtin.set_fact:
+            has_existing_host_token: true
+          when:
+            - existing_host_token|type_debug != "NoneType"
+            - existing_host_token | length > 0
+
+        - name: Block for adding new OCP host to cache
+          when: has_existing_host_token is undefined or not has_existing_host_token
+          block:
+            # Add current authenticated cluster to cached list of dictionaries
+            - name: Add generating cluster to cached list of dictionaries
+              ansible.builtin.set_fact:
+                ocp_cluster_cache: >-
+                  {{ ocp_cluster_cache | default([]) | combine(
+                      {
+                        "cached" : [
+                            {
+                            'authenticated': false,
+                            'ocp_host': current_ocphost,
+                            'zoscb_deployed_on': zoscb_deployed_on,
+                            'zpm_deployed_on': zpm_deployed_on,
+                            'started_script_gen_on': started_script_gen_on,
+                            'started_readme_gen_on': started_readme_gen_on
+                            }
+                        ]}
+                        , list_merge='append', recursive=true)
+
+                  }}
+
+            - name: Waiting for user response
+              ansible.builtin.pause:
+                prompt: Added generating host '{{ current_ocphost }}' to cache, press enter to continue ...
+              when: seaa_automation.prompt_during_automation | bool
+
+  always:
+    # Set authenticated host and clear authentication results an exiting host token
+    - name: Set authenticated host and clear authentication results an exiting host token
+      ansible.builtin.set_fact:
+        current_authenticated_host: "{{ current_ocphost }}"
+        openshift_auth_results: {}
+        existing_host_token: []

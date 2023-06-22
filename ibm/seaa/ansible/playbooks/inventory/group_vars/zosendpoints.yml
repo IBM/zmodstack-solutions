@@ -1,0 +1,17 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+# Default Ansible Connection used for a/OS Endpoint points host
+ansible_connection: ssh
+
+# Use this if all endpoint have same bash executable
+# zpm_bash_dir: /rsusr/ported/bin
+
+# LE HLQ
+zpm_le_install_hlq: CEE
+
+# CBC HLQ
+zpm_cbc_install_hlq: CBC

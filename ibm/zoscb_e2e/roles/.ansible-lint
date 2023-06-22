@@ -1,0 +1,12 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+exclude_paths:
+  - molecule
+  
+# .ansible-lint
+skip_list:
+  - name[template]

@@ -1,0 +1,10 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+kind: ClusterServiceVersion
+apiVersion: "{{ broker_subscription.apiVersion }}"
+metadata:
+  name: "{{ broker_subscription.name }}.v{{ broker_subscription.version }}"

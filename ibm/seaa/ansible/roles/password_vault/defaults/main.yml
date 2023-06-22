@@ -1,0 +1,18 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+# Name of the password vault item
+item_name:
+
+# Flag that specifies if item is a login type
+is_login_type_item:
+
+# Updated values below to cofigure local values for 1password vault without biometrics
+# account: # <your-1password-account> #IBM
+# address: # <your-1password-address> #https://ibm.ent.1password.com/
+# email: # <your-email>
+# master_password: # <your-masterpassword>> # Encrypt with Ansible Vault
+# op_secret_key: # <you-1password-secret-key> # Encrpt with Ansible Vault

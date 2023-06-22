@@ -1,0 +1,76 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+# DELETE ENDPOINT
+- name: Destroy zosendpoints
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/destroy/endpoint.yml"
+  when:
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_role == "admin"
+    - seaa_deploy_zosendpoints | bool
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint
+
+# DELETE Z CLOUD BROKER INSTANCE
+- name: Destroy broker instance
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/destroy/brokerInstance.yml"
+  when:
+    - seaa_deploy_role == "admin"
+
+# DELETE Z CLOUD BROKER SUBSCRIPTION
+- name: Destroy broker subscription
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/destroy/brokerSubscription.yml"
+  when:
+    - seaa_deploy_role == "admin"
+
+# DELETE CLUSTER SERVICE VERSION (OPERATOR)
+- name: Destroy broker CSV
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/destroy/clusterServiceVersion.yml"
+  when:
+    - seaa_deploy_role == "admin"
+
+# DELETE OPERATOR GROUP
+- name: Destroy operator group
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/destroy/operatorGroup.yml"
+  when:
+    - seaa_deploy_role == "admin" or seaa_developer_deploys_project | bool
+
+# DELETE PERSISTENT VOLUME CLAIM
+- name: Destroy PVC
+  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/destroy/persistentVolumeClaim.yml"
+  when:
+    - broker_instance.storage.configure
+    - not broker_instance.storage.enabled
+    - seaa_deploy_role == "admin"
+
+- name: Block to delete project and namespace
+  when:
+    - seaa_deploy_role == "admin" or seaa_developer_deploys_project | bool
+  block:
+
+    # DELETE NAMESPACE
+    - name: Destroy namespace
+      ansible.builtin.include_tasks: "{{ ocp_task_dir }}/destroy/namespace.yml"
+
+    # DELETE PROJECT
+    - name: Destroy project
+      ansible.builtin.include_tasks: "{{ ocp_task_dir }}/destroy/project.yml"
+    # Sleep for 2 mins and delete project again to avoid projects that get recreate currently
+    - name: Block to workaround issue with projects being recreated
+      when:
+        - seaa_automation_strategy != "generate_yaml"
+        - seaa_delete_project_twice is defined and seaa_delete_project_twice
+      block:
+        # Sleep for 2 mins and delete project again to avoid projects that get recreate currently
+        - name: Pause to make sure projects gets delete
+          ansible.builtin.pause:
+            minutes: 2
+
+        # DELETE PROJECT
+        - name: Destroy project for second time
+          ansible.builtin.include_tasks: "{{ ocp_task_dir }}/destroy/project.yml"
