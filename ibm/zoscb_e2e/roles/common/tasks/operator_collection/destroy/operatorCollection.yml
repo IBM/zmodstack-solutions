@@ -1,0 +1,73 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+- name: Delete operator collection with YAML
+  when:
+    - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+    - not oc_product.import_mode == 'upload'
+  block:
+
+    - name: Set zProduct Operator name
+      when: oc_product.name != sub_operators.zpm.name
+      ansible.builtin.set_fact:
+        operator_name: ibm-{{ oc_product.name | replace('-', '_') }}_operator-{{ oc_product.oc_version }}
+
+    - name: Set ZPM operator name
+      when: oc_product.name == sub_operators.zpm.name
+      ansible.builtin.set_fact:
+        operator_name: ibm-{{ oc_product.name | replace('-', '_') }}-{{ oc_product.oc_version }}
+
+    - name: Undeploy Operator Collection
+      block:
+        - name: Set uri for Galaxy Collection {{ oc_product.name }}
+          when: oc_product.import_mode == 'galaxy'
+          ansible.builtin.set_fact:
+            oc_download_uri: "{{ oc_product.import_url }}/download/{{ operator_name }}.tar.gz"
+        # TODO Assert Ansible Error when  oc_product.import_mode != galaxy
+
+    - name: Undeploy Signed Operator Collection
+      when: not oc_product.skipVerify | bool
+      block:
+        - name: Set uri for Galaxy Signed Collection {{ oc_product.name }}
+          ansible.builtin.set_fact:
+            oc_signature_uri: "{{ oc_product.signatureFile }}"
+
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/operators/operator-collection.yaml"
+        destination_file: "{{ oc_product.short_name }}-{{ oc_product.oc_version }}_oc.yaml"
+        is_operator_collection: true
+
+    - name: "Undeploy Operator Collection {{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }} \
+            with Native YAML API from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: absent
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/operator-collection.yaml') | from_yaml }}"
+        label_selectors:
+          - "instance-name={{ broker_instance.name }}"
+          - "operator-domain={{ oc_product.domain }}"
+          - "operator-name={{ oc_product.name }}"
+          - "operator-version={{ oc_product.oc_version }}"
+        wait: "{{ seaa_undeploy_wait | bool }}" # yes
+        wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}" # 600
+        continue_on_error: "{{ seaa_undeploy_continue_on_error | bool }}"
+      ignore_errors: "{{ seaa_undeploy_continue_on_error | bool }}"
+      register: delete_collection_output
+
+    - name: Undeploy Signature for Signed Operator
+      when: not oc_product.skipVerify | bool
+      block:
+        - name: Undeploy signature file for OC
+          ansible.builtin.include_role:
+            name: openshift_cluster
+            tasks_from: manage_signature
+          vars:
+            iscleanup: true

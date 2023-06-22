@@ -1,0 +1,61 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+driver:
+  name: delegated
+  options:
+    managed: True
+    ansible_connection_options: {}
+lint: |
+  set -e
+  ansible-lint
+platforms:
+- name: Ubuntu
+  groups:
+  - k8s
+provisioner:
+  name: ansible
+  env:
+    OCP_CLUSTER_HOSTNAME: ${OCP_CLUSTER_HOSTNAME:-"<host_name>"}
+    OCP_CLUSTER_PORT: ${OCP_CLUSTER_PORT:-6443}
+    OCP_CLUSTER_AUTH_TOKEN: ${OCP_CLUSTER_AUTH_TOKEN:-"default-notoken"}
+
+    ZPM_REGISTRY_HOSTNAME: ${ZPM_REGISTRY_HOSTNAME:-"<registry_host_name>"}
+    ZPM_REGISTRY_USERNAME: ${ZPM_REGISTRY_USERNAME:-"default-nouser"}
+    ZPM_REGISTRY_API_TOKEN: ${ZPM_REGISTRY_API_TOKEN:-"default-notoken"}
+
+    NAMESPACE_NAME: ${NAMESPACE_NAME:-"default-zoscb-e2e"}
+    NAMESPACE_API_VERSION: ${NAMESPACE_API_VERSION:-"project.openshift.io/v1"}
+
+    ZPM_INSTANCE_NAME: ${ZPM_INSTANCE_NAME:-"example-zpm"}
+    ZPM_INSTANCE_KIND: ${ZPM_INSTANCE_KIND:-"ZosPackageManager"}
+    ZPM_INSTANCE_API_VERSION: ${ZPM_INSTANCE_API_VERSION:-"zos-package-manager.zpm.zoscb.ibm.com/v0minor1patch9"}
+    ZPM_INSTANCE_FINALIZER: ${ZPM_INSTANCE_FINALIZER:-"zos-package-manager.zpm.zoscb.ibm.com/finalizer"}
+    DATA_VOLUME_DIR: ${DATA_VOLUME_DIR:-"/u/zaas1/ibmuser-workdir/usr/lpp/IBM/"} # /u/zaas1/ibmuser-workdir/usr/lpp/IBM/zpm # /SYSTEM/tmp/z-stack
+    ZPM_JAVA_HOME_DIRECTORY: ${ZPM_JAVA_HOME_DIRECTORY:-"/usr/lpp/java/J8.0_64"}
+    ZPM_PRODUCT_HLQ: ${ZPM_PRODUCT_HLQ:-"ZPM"}
+    ZPM_REGISTRY_PROXY_HOST: ${ZPM_REGISTRY_PROXY_HOST:-""}
+    ZPM_REGISTRY_PROXY_PORT: ${ZPM_REGISTRY_PROXY_PORT:-""}
+    ZPM_INSTANCE_LICENSE_ACCEPT: ${ZPM_INSTANCE_LICENSE_ACCEPT:-true}
+verifier:
+  name: ansible
+scenario:
+  name: cr_zpm
+  test_sequence:
+    - dependency
+    - lint
+    - syntax
+    - create
+    - prepare
+    - converge
+    - side_effect
+    - verify
+    - cleanup
+    - destroy

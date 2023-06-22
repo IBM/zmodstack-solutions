@@ -1,0 +1,27 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+# This variable is use if local machine needs to connect to OCP host via IP address.
+# To avoid using ip connection to OCP host make sure the 'ansible_host' specified in the inventory file
+# can be reached from the Ansible Controller. For macOS you can add an entry to the '/etc/hosts' file
+# for each OCP host that needs to be connected to.
+cluster_ip_address:
+
+# Flag to use validate cacerts for ocphost
+cluster_validate_certs: false
+
+# The cacert to use if 'cluster_validate_certs' is set to true for the ocphost
+cluster_cacert:
+
+# # Default OCP Cluster user id
+# ansible_user:
+
+# # Used if 1Password is not configured to authenticate to OCP host to provie login token
+# cluster_auth_token:
+
+# Used if running in CI/CD pipeline to use an ENV variable with OCP login token for different OCP clusters
+# cluster_auth_token: "{{ lookup('env', host_cluster_auth_token) }}"
+# host_cluster_auth_token: "{{ inventory_hostname | replace('-', '_') | upper }}_AUTHTOKEN" # <OCP_HOST>_AUTHTOKEN example 'OCP_CLUSTER_AUTHTOKEN'

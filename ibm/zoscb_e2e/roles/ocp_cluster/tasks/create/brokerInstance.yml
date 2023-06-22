@@ -1,0 +1,70 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+- name: Debug resource
+  ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/debug_resource.yml"
+  vars:
+    resource_variable: "{{ broker_instance }}"
+  when: seaa_automation.debug | bool
+
+- name: Create brokerInstance with YAML file
+  when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+  block:
+
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/zoscb/broker-instance.yaml"
+        destination_file: "broker-instance.yaml"
+        is_ocp_resource: true
+
+    # Capture start time when seaa_capture_deployment_wait_time flag set
+    - name: Get timestamp from the system
+      when:
+        - seaa_capture_deployment_wait_time | bool
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.shell: "echo $(($(date +'%s * 1000 + %-N / 1000000')))"
+      register: start_tstamp_ns
+      no_log: "{{ not seaa_automation.debug }}"
+      changed_when: start_tstamp_ns != 0
+
+    - name: "Create brokerInstance '{{ broker_instance.name }}' with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/zoscb/broker-instance.yaml') | from_yaml }}"
+        wait: true
+        wait_condition:
+          type: Succeeded
+          status: 'True'
+          reason: Success
+        wait_timeout: "{{ seaa_zoscb_deploy_wait_timeout }}" # 600
+
+    # Block to capture wait time to add to deploy script
+    - name: Capture Deploy Wait time
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+        - seaa_capture_deployment_wait_time | bool and start_tstamp_ns is defined
+      block:
+        - name: Capture wait time and add to deploy script
+          ansible.builtin.include_role:
+            name: zos_dev_envs
+            tasks_from: capture_deploy_time
+          vars:
+            resource_kind: "{{ broker_instance.kind }}"
+            _script_command_comment: "Wait for '{{ broker_instance.name }}' '{{ broker_instance.kind }}' {{ deploy_type }}ment"
+            _deployment_file: "{{ seaa_yaml_single_deployment_file }}"
+            _deploy_name: "{{ broker_instance.name }}"
+            _deploy_file: "broker-instance.yaml"
+
+    - name: Check for creation of Broker Instance '{{ broker_instance.name }}' in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      ansible.builtin.pause:
+        prompt: "Create brokerInstance resource with Native YAML API, press enter to continue ...:"
+      when:
+        - seaa_automation.prompt_during_automation | bool
+        - seaa_automation.track_resources | bool

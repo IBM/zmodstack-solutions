@@ -1,0 +1,61 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+# Include ansible variables for product sub-operator being undeployed
+- name: Include ZPM vars
+  ansible.builtin.include_vars:
+    file: "{{ zoscb_e2e_roles_directory }}/zpm/vars/main.yml"
+  when: not zpm_vars_loaded
+
+- name: Set zpm_vars_loaded flag
+  ansible.builtin.set_fact:
+    zpm_vars_loaded: true
+  when: not zpm_vars_loaded
+
+# Include sub operator role
+- name: "Include role: 'zpm'"
+  ansible.builtin.include_role:
+    name: "zpm"
+
+# Undeploy ZPM SUB-OPERATOR CUSTOM RESOURCES
+- name: Uninstall zpmDiagnostics instance
+  ansible.builtin.include_tasks: "{{ zpm_cr_task_dir }}/uninstall/zpmDiagnostics.yml"
+  when:
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_validate_crs | bool
+    - zpm_create_diagnostics_cr | bool
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint
+
+- name: Uninstall zpm instance
+  ansible.builtin.include_tasks: "{{ zpm_cr_task_dir }}/uninstall/zpm.yml"
+  when:
+    - hostvars[current_zosendpoint]._is_active
+    - seaa_deploy_software_instances | bool
+  with_items:
+    - "{{ groups['zosendpoints'] }}"
+  loop_control:
+    loop_var: current_zosendpoint
+
+- name: Undeploy Operator Collection and SubOperator
+  block:
+
+    # DELETE SUB-OPERATOR
+    - name: Destroy subOperatorConfig yaml
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/destroy/subOperatorConfig.yml"
+      when:
+        - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+        - seaa_deploy_role == "admin"
+        - seaa_deploy_suboperator | bool
+
+    # IMPORT OPERATOR COLLECTION
+    - name: Destroy operatorCollection
+      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/destroy/operatorCollection.yml"
+      when:
+        - seaa_deploy_role == "admin"
+        - seaa_deploy_operator_collections | bool

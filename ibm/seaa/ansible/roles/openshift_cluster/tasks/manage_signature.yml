@@ -1,0 +1,36 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+- name: Include task to generate yaml file
+  when:
+    - seaa_automation_strategy != "deploy_yaml"
+    - seaa_deploy_strategy != "testing"
+  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+  vars:
+    src: "{{ seaa_ansible_directory }}/yamls/secrets/oc-signature.yaml"
+    destination_file: "signature-{{ oc_product.short_name }}-{{ oc_product.oc_version }}.yaml"
+    is_secret: true
+    is_ocp_resource: true
+
+- name: "Deploy signature-{{ oc_product.short_name }}-{{ oc_product.oc_version }} for Operator Collection with Native YAML API"
+  when:
+    - seaa_automation_strategy != "generate_yaml"
+    - seaa_deploy_strategy == "deploy" or seaa_deploy_strategy == "testing"
+    - iscleanup is undefined or not iscleanup
+  kubernetes.core.k8s:
+    state: present
+    namespace: "{{ project_namespace.name }}"
+    definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/secrets/oc-signature.yaml') | from_yaml }}"
+
+- name: "Undeploy signature-{{ oc_product.short_name }}-{{ oc_product.oc_version }} for Operator Collection with Native YAML API"
+  when:
+    - seaa_automation_strategy != "generate_yaml"
+    - seaa_deploy_strategy == "undeploy"
+    - iscleanup is defined and iscleanup
+  kubernetes.core.k8s:
+    state: absent
+    namespace: "{{ project_namespace.name }}"
+    definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/secrets/oc-signature.yaml') | from_yaml }}"

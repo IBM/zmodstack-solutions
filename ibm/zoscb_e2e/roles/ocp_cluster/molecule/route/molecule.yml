@@ -1,0 +1,58 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+    collections-path: "~/.ansible/collections/"
+driver:
+  name: delegated
+  options:
+    managed: True
+    ansible_connection_options: {}
+lint: |
+  set -e
+  ansible-lint
+platforms:
+- name: Ubuntu
+  groups:
+  - k8s
+provisioner:
+  name: ansible
+  env:
+    OCP_CLUSTER_HOSTNAME: ${OCP_CLUSTER_HOSTNAME:-"<host_name>"}
+    OCP_CLUSTER_PORT: ${OCP_CLUSTER_PORT:-6443}
+    OCP_CLUSTER_AUTH_TOKEN: ${OCP_CLUSTER_AUTH_TOKEN:-"default-notoken"}
+
+    NAMESPACE_NAME: ${NAMESPACE_NAME:-"default-zoscb-e2e"}
+
+    ROUTE_NAME: ${ROUTE_NAME:-"e2e-automation-route"}
+    ROUTE_API_VERSION: ${ROUTE_API_VERSION:-"route.openshift.io/v1"}
+    ROUTE_TO_KIND: ${ROUTE_TO_KIND:-"Service"}
+    ROUTE_TO_NAME: ${ROUTE_TO_NAME:-"ibm-zoscb-ui-zoscloudbroker"}
+    ROUTE_TARGET_PORT: ${ROUTE_TARGET_PORT:-"ui-port"}
+    ROUTE_TLS_TERMINATION: ${ROUTE_TLS_TERMINATION:-"passthrough"}
+    ROUTE_TLS_INSECURE_EDGE_TERMINATION_POLICY: ${ROUTE_TLS_INSECURE_EDGE_TERMINATION_POLICY:-"Redirect"}
+    ROUTE_WILDCARD_POLICY: ${ROUTE_WILDCARD_POLICY:-"None"}
+    ROUTE_WEIGHT: ${ROUTE_WEIGHT:-100}
+verifier:
+  name: ansible
+scenario:
+  name: route
+  test_sequence:
+    - dependency
+    - lint
+    - cleanup
+    - destroy
+    - syntax
+    - create
+    - prepare
+    - converge
+    - side_effect
+    - verify
+    - cleanup
+    - destroy

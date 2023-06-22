@@ -1,0 +1,37 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+- name: "Info Only Retrieve cluster service version (operator): '{{ broker_subscription.name }}.v{{ broker_subscription.version }}' on '\
+   {{ ocp_cluster.hostname }}'"
+  when: info_only is defined
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: ClusterServiceVersion
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ broker_subscription.name }}.v{{ broker_subscription.version }}"
+    api_version: "{{ broker_subscription.apiVersion }}"
+  register: operator_info_only
+
+- name: "Retrieve cluster service version (operator): '{{ broker_subscription.name }}.v{{ broker_subscription.version }}' on '{{ ocp_cluster.hostname }}'"
+  when: info_only is undefined
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: ClusterServiceVersion
+    namespace: "{{ project_namespace.name }}"
+    name: "{{ broker_subscription.name }}.v{{ broker_subscription.version }}"
+    api_version: "{{ broker_subscription.apiVersion }}"
+  register: operator_info
+  until: "'phase' in operator_info.resources[0].status and operator_info.resources[0].status.phase == 'Succeeded'"
+  retries: "{{ seaa_verify_retries | int }}" # 30
+  delay: "{{ seaa_verify_delay | int }}" # 10
+
+
+- name: "Verify cluster service version (operator): '{{ broker_subscription.name }}.v{{ broker_subscription.version }}'"
+  when: info_only is undefined
+  ansible.builtin.assert:
+    that:
+      - operator_info.resources[0].metadata.creationTimestamp != ""
+      - operator_info.resources[0].status.phase == 'Succeeded'
+      - operator_info.resources[0].status.reason == 'InstallSucceeded'

@@ -1,0 +1,52 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+# NOTE: The removal of the namespace should fail regardless of the configuration of "seaa_undeploy_continue_on_error"
+- name: Delete Project namespace with YAML file
+  when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+  block:
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/ocp/project.yaml"
+        destination_file: "project.yaml"
+        is_ocp_resource: true
+
+    - name: "Delete Project with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: absent
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/ocp/project.yaml') | from_yaml }}"
+        wait: true
+        wait_timeout: "{{ seaa_undeploy_namespace_wait_timeout | int }}"  # 600
+        continue_on_error: false
+
+    - name: "Delete Project for Multiple-Namespace projects on '{{ ocp_cluster.hostname }}'"
+      when:
+        - seaa_automation_strategy != "generate_yaml"
+        - multi_namespaces | length > 0
+        - broker_instance.multiNamespace is defined and broker_instance.multiNamespace | bool
+        - not seaa_developer_deploys_project | bool
+      block:
+
+        - name: "Delete Multi-Namespace Projects with Native YAML API: '{{ m_namespace }}' on '{{ ocp_cluster.hostname }}'"
+          kubernetes.core.k8s:
+            state: absent
+            definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/ocp/project.yaml') | from_yaml }}"
+            wait: true
+            wait_timeout: "{{ seaa_undeploy_namespace_wait_timeout | int }}"  # 600
+            continue_on_error: false
+          loop: "{{ multi_namespaces }}"
+          loop_control:
+            loop_var: m_namespace
+
+    - name: Check for deletion of Project namespace
+      ansible.builtin.pause:
+        prompt: "Delete YAML for Project resource, press enter to continue ...:"
+      when:
+        - seaa_automation.prompt_during_automation | bool
+        - seaa_automation.track_resources | bool

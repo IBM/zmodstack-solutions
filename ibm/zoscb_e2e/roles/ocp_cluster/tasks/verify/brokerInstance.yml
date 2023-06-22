@@ -1,0 +1,47 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+- name: "Info Only Retrieve broker instance: '{{ broker_instance.name }}' on '{{ ocp_cluster.hostname }}'"
+  when: info_only is defined
+  block:
+
+    - name: "Info Only Retrieve broker instance: '{{ broker_instance.name }}' on '{{ ocp_cluster.hostname }}'"
+      kubernetes.core.k8s_info:
+        api_key: "{{ ocp_cluster.auth_token }}"
+        kind: "{{ broker_instance.kind }}"
+        namespace: "{{ project_namespace.name }}"
+        name: "{{ broker_instance.name }}"
+        api_version: "{{ broker_instance.apiVersion }}"
+      register: broker_instance_info_only
+
+- name: Block for verifying Broker Instance
+  when: info_only is undefined
+  block:
+
+    - name: "Retrieve broker instance: '{{ broker_instance.name }}' on '{{ ocp_cluster.hostname }}'"
+      # when: info_only is undefined
+      kubernetes.core.k8s_info:
+        api_key: "{{ ocp_cluster.auth_token }}"
+        kind: "{{ broker_instance.kind }}"
+        namespace: "{{ project_namespace.name }}"
+        name: "{{ broker_instance.name }}"
+        api_version: "{{ broker_instance.apiVersion }}"
+      register: broker_instance_info
+      until:
+        - "broker_subscription_info.resources is defined and broker_subscription_info.resources | length > 0"
+        - "broker_instance_info.resources[0].status.phase !='Running'"
+      retries: "{{ seaa_verify_retries | int }}" # 30
+      delay: "{{ seaa_verify_delay | int }}" # 10
+
+    - name: "Verify broker instance: '{{ broker_instance.name }}'"
+      ansible.builtin.assert:
+        that:
+          - "'ibm-zoscb-manager-{{ broker_instance.name }}' in broker_instance_info.resources[0].status.deployment.ready"
+          - "'ibm-zoscb-registry-{{ broker_instance.name }}-{{ project_namespace.name }}' in broker_instance_info.resources[0].status.deployment.ready
+            or 'ibm-zoscb-registry-{{ broker_instance.name }}' in broker_instance_info.resources[0].status.deployment.ready"
+          - "'ibm-zoscb-ui-{{ broker_instance.name }}' in broker_instance_info.resources[0].status.deployment.ready"
+          - broker_instance_info.resources[0].status.licenseacceptance == "Accepted"
+          - broker_instance_info.resources[0].status.phase == "Successful"
+

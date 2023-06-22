@@ -1,0 +1,87 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+- name: Smart deploy pre-run steps
+  when: seaa_smart_deploy | bool
+  tags:
+    - always
+  block:
+
+    # Set flags to check if ZOSCB and ZPM are deployed to namespace
+    - name: Set flags to check if ZOSCB and ZPM are deployed to namespace
+      ansible.builtin.set_fact:
+        zoscb_deployed: false
+        zpm_deployed: false
+
+    # Include task to set project namespace
+    - name: Set project name
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_the_project_name.yml"
+
+    # Check ocp_cluster_cache dictionary to see if Broker has been verified to be installed on current namespace
+    - name: Check if zoscb is deploy in "{{ this_project_name }} on '{{ current_ocphost }}'"
+      ansible.builtin.set_fact:
+        check_is_zoscb_deployed: >-
+          {{ ocp_cluster_cache
+            | json_query(jmespath)
+          }}
+      when: ocp_cluster_cache is defined
+      vars:
+        jmespath: "cached[? ocp_host=='{{ current_ocphost }}'].zoscb_deployed_on[][@=='{{ this_project_name }}'] "
+
+    - name: Set zoscb_deployed fact from cache
+      ansible.builtin.set_fact:
+        zoscb_deployed: true
+      when:
+        - check_is_zoscb_deployed|type_debug != "NoneType"
+        - check_is_zoscb_deployed is not none
+        - check_is_zoscb_deployed | length > 0
+
+    # Check ocp_cluster_cache dictionary to see if ZPM has been verified to be installed on current namespace
+    - name: Check if zpm is deploy in "{{ this_project_name }} on '{{ current_ocphost }}'"
+      ansible.builtin.set_fact:
+        check_is_zpm_deployed: >-
+          {{ ocp_cluster_cache
+            | json_query(jmespath)
+          }}
+      when: ocp_cluster_cache is defined
+      vars:
+        jmespath: "cached[? ocp_host=='{{ current_ocphost }}'].zpm_deployed_on[][@=='{{ this_project_name }}'] "
+
+    - name: Set zpm_deployed fact from cache
+      ansible.builtin.set_fact:
+        zpm_deployed: true
+      when:
+        - check_is_zpm_deployed | type_debug != "NoneType"
+        - check_is_zpm_deployed is not none
+        - check_is_zpm_deployed | length > 0
+
+    # Debug automation deployed status
+    - name: Debug '{{ seaa_deploy_strategy }}' variables
+      when: seaa_automation.debug | bool
+      block:
+        - name: Debug var ocp_cluster_cache
+          ansible.builtin.debug:
+            var: ocp_cluster_cache
+          no_log: "{{ seaa_security_secure_log | bool }}"
+
+        - name: Debug var current_authenticated_host
+          ansible.builtin.debug:
+            var: current_authenticated_host
+
+        - name: Debug var current_ocphost
+          ansible.builtin.debug:
+            var: current_ocphost
+        - name: Debug var zoscb_deployed
+          ansible.builtin.debug:
+            var: zoscb_deployed
+        - name: Debug var zpm_deployed
+          ansible.builtin.debug:
+            var: zpm_deployed
+
+        - name: Waiting for user response
+          ansible.builtin.pause:
+            prompt: PRE-Check '{{ seaa_deploy_strategy }}' of '{{ seaa_product }}' in '{{ this_project_name }}' on '{{ current_ocphost }}', enter to continue...
+          when: seaa_automation.prompt_during_automation | bool

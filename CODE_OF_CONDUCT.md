@@ -1,3 +1,7 @@
+<!-- #
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+# -->
 # Contributor Covenant Code of Conduct
 
 ## Our Pledge

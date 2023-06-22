@@ -1,0 +1,51 @@
+#jinja2: lstrip_blocks: True
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+apiVersion: "{{ oc_product.apiVersion }}"
+kind: SubOperatorConfig
+metadata:
+  name: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_version }}"
+  labels:
+    instance-name: "{{ broker_instance.name }}"
+spec:
+  credentialType: "{{ oc_product.credential_type }}"
+  operatorCollection: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_version }}"
+  mapping:
+    {% if seaa_deploy_suboc_to_admin_namespaces == true %}
+    - namespace: "{{ project_namespace.name }}"
+      # z/OS Endpoints
+      zosendpoints:
+      {% for zosendpoint in groups['zosendpoints'] %}
+        {% if oc_product.credential_type == "shared" and hostvars[zosendpoint]._is_active %}
+        # shared creds
+        - credentialName: "ssh-key-{{ hostvars[zosendpoint].ansible_user }}-{{ zosendpoint }}"
+          name: "{{ zosendpoint }}"
+        {% elif hostvars[zosendpoint]._is_active %}
+        # personal creds
+        - name: "{{ zosendpoint }}"
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+    {% if broker_instance.multiNamespace is defined and broker_instance.multiNamespace == true and multi_namespaces | length > 0 %}
+    # Multi-Namespace support enabled and list multi_namespaces provided
+    {% for namespace in multi_namespaces %}
+    - namespace: '{{ namespace }}'
+      # z/OS Endpoints
+      zosendpoints:
+      {% for zosendpoint in groups['zosendpoints'] %}
+        {% if oc_product.credential_type == "shared" and hostvars[zosendpoint]._is_active %}
+        # shared creds
+        - credentialName: "ssh-key-{{ hostvars[zosendpoint].ansible_user }}-{{ zosendpoint }}"
+          name: "{{ zosendpoint }}"
+        {% elif hostvars[zosendpoint]._is_active %}
+        # personal creds
+        - name: "{{ zosendpoint }}"
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+    {% else %}
+    {% endif %}

@@ -1,0 +1,13 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+collections:
+  - name: kubernetes.core
+    version: 2.3.2
+  - name: community.general
+    version: 6.3.0
+  - name: community.okd
+    version: 2.2.0

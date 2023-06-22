@@ -1,0 +1,245 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+# ************************************
+# zProduct variable defaults
+# *************************************
+
+
+# *************************************
+# GO Operator Collection & Sub Operator
+# *************************************
+go_short_name: "{{ sub_operators.go.short_name }}" #go
+go_code_name: "{{ sub_operators.go.code_name }}"
+go_name: "{{ sub_operators.go.name }}" #zos-go
+go_oc_version: "{{ oc_product_oc_version }}"
+go_oci_version: 1.20.0.1 # 2023.2.1 GA
+go_product_version: 1.20.0 # 2023.2.1 GA
+# *************************************
+# Secure Operator Collection
+# *************************************
+go_signature_file: "{{ oc_product_sigfile_domain }}/{{ sub_operators.go.name | replace('-', '_') }}_operator/releases/download"
+go_signature_file_ext: "{{ oc_product_signature_file_ext }}"
+go_public_key: "{{ oc_product_public_key }}"  #publicKey
+go_skip_verify: "{{ oc_product_skip_verify }}" #skipVerify
+go_credential_type: "{{ oc_product_credential_type }}"
+go_signature_upload_mode: "{{ oc_product_signature_upload_mode }}"
+
+#Install Modes - "galaxy | url | upload"
+go_import_mode: "{{ oc_product_import_mode }}"
+go_import_url: "{{ oc_product_import_url }}"
+go_git_token: "{{ oc_product_git_token }}"
+
+go_instance_name: go-instance
+go_instance_kind: GoInstance
+go_instance_api_version: "{{ broker_sub_operator_api_group }}/{{ go_oc_version | get_vmp_string }}"
+
+go_instance_finalizer: zos-go.zpm.zoscb.ibm.com/finalizer
+go_instance_license_accept: true
+
+go_instance_product_version: "{{ go_oci_version }}"
+
+
+validate_go_name: validate-go
+validate_go_kind: ValidateGo
+validate_go_api_version: "{{ broker_sub_operator_api_group }}/{{ go_oc_version | get_vmp_string }}"
+
+validate_go_finalizer: zos-go.zpm.zoscb.ibm.com/finalizer
+
+# *************************************
+# Java Operator Collection & Sub Operator
+# *************************************
+java_short_name: "{{ sub_operators.java.short_name }}" #java
+java_code_name: "{{ sub_operators.java.code_name }}"
+java_name: "{{ sub_operators.java.name }}" #zos-java
+java_oc_version: "{{ oc_product_oc_version }}"
+java_oci_version: 8.0.8.5 # 2023.2.1 GA
+java_product_version: 8.0.8
+
+# *************************************
+# Secure Operator Collection
+# *************************************
+java_signature_file: "{{ oc_product_sigfile_domain }}/{{ sub_operators.java.name | replace('-', '_') }}_operator/releases/download"
+java_signature_file_ext: "{{ oc_product_signature_file_ext }}"
+java_public_key: "{{ oc_product_public_key }}"  #publicKey
+java_skip_verify: "{{ oc_product_skip_verify }}" #skipVerify
+java_credential_type: "{{ oc_product_credential_type }}"
+java_signature_upload_mode: "{{ oc_product_signature_upload_mode }}"
+
+#Install Modes - "galaxy | url | upload"
+java_import_mode: "{{ oc_product_import_mode }}"
+java_import_url: "{{ oc_product_import_url }}"
+java_git_token: "{{ oc_product_git_token }}"
+
+java_instance_name: java-instance
+java_instance_kind: JavaInstance
+java_instance_api_version: "{{ broker_sub_operator_api_group }}/{{ java_oc_version | get_vmp_string }}"
+
+java_instance_finalizer: zos-java.zpm.zoscb.ibm.com/finalizer
+java_instance_license_accept: true
+java_instance_product_version: "{{ java_oci_version }}"
+
+validate_java_name: validate-java
+validate_java_kind: ValidateJava
+validate_java_api_version: "{{ broker_sub_operator_api_group }}/{{ java_oc_version | get_vmp_string }}"
+
+validate_java_finalizer: zos-java.zpm.zoscb.ibm.com/finalizer
+
+# *************************************
+# NodeJs Operator Collection & Sub Operator
+# *************************************
+nodejs_short_name: "{{ sub_operators.nodejs.short_name }}" #nodejs
+nodejs_code_name: "{{ sub_operators.nodejs.code_name }}"
+nodejs_name: "{{ sub_operators.nodejs.name }}" #zos-nodejs
+nodejs_oc_version: "{{ oc_product_oc_version }}"
+nodejs_oci_version: 18.0.0.2 # 2023.2.1 GA
+nodejs_product_version: 18.0.0
+
+# *************************************
+# Secure Operator Collection
+# *************************************
+nodejs_signature_file: "{{ oc_product_sigfile_domain }}/{{ sub_operators.nodejs.name | replace('-', '_') }}_operator/releases/download"
+nodejs_signature_file_ext: "{{ oc_product_signature_file_ext }}"
+nodejs_public_key: "{{ oc_product_public_key }}"  #publicKey
+nodejs_skip_verify: "{{ oc_product_skip_verify }}" #skipVerify
+nodejs_credential_type: "{{ oc_product_credential_type }}"
+nodejs_signature_upload_mode: "{{ oc_product_signature_upload_mode }}"
+
+#Install Modes - "galaxy | url | upload"
+nodejs_import_mode: "{{ oc_product_import_mode }}"
+nodejs_import_url: "{{ oc_product_import_url }}"
+nodejs_git_token: "{{ oc_product_git_token }}"
+
+nodejs_instance_name: nodejs-instance
+nodejs_instance_kind: NodejsInstance
+nodejs_instance_api_version: "{{ broker_sub_operator_api_group }}/{{ nodejs_oc_version | get_vmp_string }}"
+
+nodejs_instance_finalizer: zos-nodejs.zpm.zoscb.ibm.com/finalizer
+nodejs_instance_license_accept: true
+nodejs_instance_product_version: "{{ nodejs_oci_version }}"
+
+validate_nodejs_name: validate-nodejs
+validate_nodejs_kind: ValidateNodejs
+validate_nodejs_api_version: "{{ broker_sub_operator_api_group }}/{{ nodejs_oc_version | get_vmp_string }}"
+
+validate_nodejs_finalizer: zos-nodejs.zpm.zoscb.ibm.com/finalizer
+
+# *************************************
+# OelCpp Operator Collection & Sub Operator
+# *************************************
+oelcpp_short_name: "{{ sub_operators.oelcpp.short_name }}" #oelcpp
+oelcpp_code_name: "{{ sub_operators.oelcpp.code_name }}"
+oelcpp_name: "{{ sub_operators.oelcpp.name }}" #zos-oelcpp
+oelcpp_oc_version: "{{ oc_product_oc_version }}"
+oelcpp_oci_version: 2.0.0.1 # 2023.2.1 GA
+oelcpp_product_version: 2.0.0
+
+# *************************************
+# Secure Operator Collection
+# *************************************
+oelcpp_signature_file: "{{ oc_product_sigfile_domain }}/{{ sub_operators.oelcpp.name | replace('-', '_') }}_operator/releases/download"
+oelcpp_signature_file_ext: "{{ oc_product_signature_file_ext }}"
+oelcpp_public_key: "{{ oc_product_public_key }}"  #publicKey
+oelcpp_skip_verify: "{{ oc_product_skip_verify }}" #skipVerify
+oelcpp_credential_type: "{{ oc_product_credential_type }}"
+oelcpp_signature_upload_mode: "{{ oc_product_signature_upload_mode }}"
+
+#Install Modes - "galaxy | url | upload"
+oelcpp_import_mode: "{{ oc_product_import_mode }}"
+oelcpp_import_url: "{{ oc_product_import_url }}"
+oelcpp_git_token: "{{ oc_product_git_token }}"
+
+oelcpp_instance_name: oelcpp-instance
+oelcpp_instance_kind: OelCPPInstance
+oelcpp_instance_api_version: "{{ broker_sub_operator_api_group }}/{{ oelcpp_oc_version | get_vmp_string }}"
+
+oelcpp_instance_finalizer: zos-oelcpp.zpm.zoscb.ibm.com/finalizer
+oelcpp_instance_license_accept: true
+oelcpp_instance_product_version: "{{ oelcpp_oci_version }}"
+
+validate_oelcpp_name: validate-oelcpp
+validate_oelcpp_kind: ValidateOelCPP
+validate_oelcpp_api_version: "{{ broker_sub_operator_api_group }}/{{ oelcpp_oc_version | get_vmp_string }}"
+
+validate_oelcpp_finalizer: zos-oelcpp.zpm.zoscb.ibm.com/finalizer
+
+# *************************************
+# Python Operator Collection & Sub Operator
+# *************************************
+python_short_name: "{{ sub_operators.python.short_name }}" #python
+python_code_name: "{{ sub_operators.python.code_name }}"
+python_name: "{{ sub_operators.python.name }}" #zos-python
+python_oc_version: "{{ oc_product_oc_version }}"
+python_oci_version: 3.11.0.1 # 2023.1.1 GA
+python_product_version: 3.11.0
+
+# *************************************
+# Secure Operator Collection
+# *************************************
+python_signature_file: "{{ oc_product_sigfile_domain }}/{{ sub_operators.python.name | replace('-', '_') }}_operator/releases/download"
+python_signature_file_ext: "{{ oc_product_signature_file_ext }}"
+python_public_key: "{{ oc_product_public_key }}"  #publicKey
+python_skip_verify: "{{ oc_product_skip_verify }}" #skipVerify
+python_credential_type: "{{ oc_product_credential_type }}"
+python_signature_upload_mode: "{{ oc_product_signature_upload_mode }}"
+
+#Install Modes - "galaxy | url | upload"
+python_import_mode: "{{ oc_product_import_mode }}"
+python_import_url: "{{ oc_product_import_url }}"
+python_git_token: "{{ oc_product_git_token }}"
+
+python_instance_name: python-instance
+python_instance_kind: PythonInstance
+python_instance_api_version: "{{ broker_sub_operator_api_group }}/{{ python_oc_version | get_vmp_string }}"
+
+python_instance_finalizer: zos-python.zpm.zoscb.ibm.com/finalizer
+python_instance_license_accept: true
+python_instance_product_version: "{{ python_oci_version }}"
+
+validate_python_name: validate-python
+validate_python_kind: ValidatePython
+validate_python_api_version: "{{ broker_sub_operator_api_group }}/{{ python_oc_version | get_vmp_string }}"
+
+validate_python_finalizer: zos-python.zpm.zoscb.ibm.com/finalizer
+
+# *************************************
+# ZOAU Operator Collection & Sub Operator
+# *************************************
+zoau_short_name: "{{ sub_operators.zoau.short_name }}" #zoau
+zoau_code_name: "{{ sub_operators.zoau.code_name }}"
+zoau_name: "{{ sub_operators.zoau.name }}" #zos-zoau
+zoau_oc_version: "{{ oc_product_oc_version }}"
+zoau_oci_version: 1.2.3.2 # 2023.2.1 GA
+zoau_product_version: 1.2.3 # 2023.2.1 GA
+
+# *************************************
+# Secure Operator Collection
+# *************************************
+zoau_signature_file: "{{ oc_product_sigfile_domain }}/{{ sub_operators.zoau.name | replace('-', '_') }}_operator/releases/download"
+zoau_signature_file_ext: "{{ oc_product_signature_file_ext }}"
+zoau_public_key: "{{ oc_product_public_key }}"  #publicKey
+zoau_skip_verify: "{{ oc_product_skip_verify }}" #skipVerify
+zoau_credential_type: "{{ oc_product_credential_type }}"
+zoau_signature_upload_mode: "{{ oc_product_signature_upload_mode }}"
+
+#Install Modes - "galaxy | url | upload"
+zoau_import_mode: "{{ oc_product_import_mode }}"
+zoau_import_url: "{{ oc_product_import_url }}"
+zoau_git_token: "{{ oc_product_git_token }}"
+
+zoau_instance_name: zoau-instance
+zoau_instance_kind: ZOAUInstance
+zoau_instance_api_version: "{{ broker_sub_operator_api_group }}/{{ zoau_oc_version | get_vmp_string }}"
+
+zoau_instance_finalizer: zos-zoau.zpm.zoscb.ibm.com/finalizer
+zoau_instance_license_accept: true
+zoau_instance_product_version: "{{ zoau_oci_version }}"
+
+validate_zoau_name: validate-zoau
+validate_zoau_kind: ValidateZOAU
+validate_zoau_api_version: "{{ broker_sub_operator_api_group }}/{{ zoau_oc_version | get_vmp_string }}"
+
+validate_zoau_finalizer: zos-zoau.zpm.zoscb.ibm.com/finalizer

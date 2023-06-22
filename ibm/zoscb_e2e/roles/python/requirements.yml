@@ -1,0 +1,12 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+collections:
+  # Install a collection from Ansible Galaxy
+  - name: kubernetes.core
+    version: 2.2.3
+    type: galaxy
+    source: https://galaxy.ansible.com

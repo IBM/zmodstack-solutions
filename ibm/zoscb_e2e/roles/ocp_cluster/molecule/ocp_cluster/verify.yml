@@ -1,0 +1,45 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+- name: "Verify: Validate OpenShift Cluster Resources"
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../../vars/main.yml
+    - ../../vars/endpoints.yml
+
+  tasks:
+    - name: "Include role: 'ocp_cluster'"
+      ansible.builtin.include_role:
+        name: "ocp_cluster"
+
+    # LOGIN TO THE OPENSHIFT CLUSTER
+    - import_tasks: ../../../../common/tasks/clusterLogin.yml
+
+    # VERIFY NAMESPACE
+    - import_tasks: ../../tasks/verify/namespace.yml
+
+    # VERIFY PERSISTENT VOLUME CLAIM
+    - import_tasks: ../../tasks/verify/persistentVolumeClaim.yml
+
+    # VERIFY OPERATOR GROUP
+    - import_tasks: ../../tasks/verify/operatorGroup.yml
+
+    # VERIFY Z CLOUD BROKER SUBSCRIPTION
+    - import_tasks: ../../tasks/verify/brokerSubscription.yml
+
+    # VERIFY CLUSTER SERVICE VERSION (OPERATOR)
+    - import_tasks: ../../tasks/verify/clusterServiceVersion.yml
+
+    # VERIFY Z CLOUD BROKER INSTANCE
+    - import_tasks: ../../tasks/verify/brokerInstance.yml
+
+    # VERIFY INSECURE ROUTE
+    - import_tasks: ../../tasks/verify/route.yml
+
+    # VERIFY ENDPOINT
+    - import_tasks: ../../tasks/verify/endpoint.yml

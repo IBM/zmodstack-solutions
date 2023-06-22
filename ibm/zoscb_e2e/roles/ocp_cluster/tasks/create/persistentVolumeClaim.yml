@@ -1,0 +1,40 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+- ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/debug_resource.yml"
+  vars:
+    resource_variable: "{{ persistent_volume_claim }}"
+    resource_variable_kind: PersistentVolumeClaim
+    resource_variable_name: "{{ persistent_volume_claim.name }}"
+  when: seaa_automation.debug | bool
+
+- name: Create persistentVolumeClaim with YAML file
+  when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
+  block:
+
+    - name: Include task to generate yaml file
+      when:
+        - seaa_automation_strategy != "deploy_yaml"
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_yaml.yml"
+      vars:
+        src: "{{ seaa_ansible_directory }}/yamls/ocp/persistent-volume-claim.yaml"
+        destination_file: "persistent-volume-claim.yaml"
+        is_ocp_resource: true
+
+    - name: "Create persistentVolumeClaim with Native YAML API: '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      when: seaa_automation_strategy != "generate_yaml"
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/ocp/persistent-volume-claim.yaml') | from_yaml }}"
+
+    - name: "Check for creation of PVC '{{ persistent_volume_claim.name }}' in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      ansible.builtin.pause:
+        prompt: "Create PersistentVolumeClaim resource with Native YAML API, press enter to continue ...:"
+      when:
+        - seaa_automation.prompt_during_automation | bool
+        - seaa_automation.track_resources | bool
+
+

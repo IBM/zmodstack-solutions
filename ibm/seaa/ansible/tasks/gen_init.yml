@@ -1,0 +1,106 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+- name: Set YAML output directory
+  ansible.builtin.set_fact:
+    _seaa_yaml_output_dir: "{{ seaa_yaml_output_dir }}/{{ seaa_generated_content_dirname }}"
+
+- name: Set fact to check if YAML output can be cleaned
+  ansible.builtin.set_fact:
+    can_clean_output_dir: true
+  when:
+    - can_clean_output_dir is undefined
+    - seaa_clean_yaml_output_dir | bool
+
+- name: Set stats of '{{ _seaa_yaml_output_dir }}/clone_project.sh' script.
+  ansible.builtin.stat:
+    path: "{{ _seaa_yaml_output_dir }}/clone_project.sh"
+  register: clone_script
+
+- name: Check Clone script exist and copy if it doesn't
+  when: not clone_script.stat.exists
+  block:
+
+    - name: Make sure parent directory for {{ _seaa_yaml_output_dir }} exists
+      ansible.builtin.file:
+        path: "{{ _seaa_yaml_output_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Copy util script
+      ansible.builtin.copy:
+        src: "{{ seaa_ansible_directory }}/../scripts/admin/clone_project.sh"
+        dest: "{{ _seaa_yaml_output_dir }}/clone_project.sh"
+        mode: '0755'
+      register: copied_command_file
+
+    - name: Wait until the CMD file is present before continuing
+      ansible.builtin.wait_for:
+        path: "{{ _seaa_yaml_output_dir }}/clone_project.sh"
+        timeout: 300
+
+# Set output directory 'yaml_output/project' or 'yaml_output/ocphost/project' by appending ocphost/projectname if more than one host in inventory and
+# seaa_separate_generation_by_ocphost_dir is true else just appending 'projectname'
+- name: Set YAML project output directories
+  ansible.builtin.set_fact:
+    _seaa_bin_output_dir: "{{ seaa_yaml_output_dir }}/{{ seaa_generated_content_dirname }}/bin"
+    _seaa_yaml_output_dir: "{{ _seaa_yaml_output_dir }}/{{ current_ocphost~'/' if seaa_separate_generation_by_ocphost_dir and \
+     groups['ocphosts']|length > 1 else '' }}{{ project_namespace.name }}"
+
+# Set output directory append hostname__projectname if more than one host in inventory and not 'seaa_separate_generation_by_ocphost_dir'
+# to avoid collisions in generated outputs for different host
+- name: Check if YAML output needs to be seperated for multiple OCP host
+  when:
+    - not seaa_separate_generation_by_ocphost_dir | bool
+    - groups['ocphosts']|length > 1
+  ansible.builtin.set_fact:
+    _seaa_yaml_output_dir: "{{ _seaa_yaml_output_dir }}/{{ current_ocphost~'__'~project_namespace.name }}"
+
+- name: Set stats of '{{ _seaa_yaml_output_dir }}' YAML output dir.
+  ansible.builtin.stat:
+    path: "{{ _seaa_yaml_output_dir }}"
+  register: yaml_outdir
+
+- name: Check if YAML output dir does NOT exist create it and set can clean to false
+  when:
+    - not yaml_outdir.stat.exists
+  block:
+
+    - name: Make sure YAML directory for {{ yaml_dir }} exists
+      ansible.builtin.file:
+        path: "{{ _seaa_yaml_output_dir }}"
+        state: directory
+        mode: '0755'
+      register: create_new_yaml_dir
+
+    - name: Set flag to not clean new Output directory
+      ansible.builtin.set_fact:
+        can_clean_output_dir: false
+      when: not create_new_yaml_dir.failed
+
+- name: Check YAML output exist and if should be cleaned
+  when:
+    - yaml_outdir.stat.exists
+    - not seaa_append_to_deployment_script | bool
+    - output_dir_cleaned is undefined or not output_dir_cleaned
+    - can_clean_output_dir is defined and can_clean_output_dir
+  block:
+
+    - name: Delete existing output directory
+      ansible.builtin.file:
+        path: "{{ _seaa_yaml_output_dir }}"
+        state: absent
+
+    - name: Create new output directory
+      ansible.builtin.file:
+        path: "{{ _seaa_yaml_output_dir }}"
+        state: directory
+        mode: '0755'
+
+    - name: Set flag for output_dir_cleaned to true
+      ansible.builtin.set_fact:
+        output_dir_cleaned: true
+      when: output_dir_cleaned is undefined

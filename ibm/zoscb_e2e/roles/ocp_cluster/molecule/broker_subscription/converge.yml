@@ -1,0 +1,20 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+- name: "Converge: Create cloud broker subscription"
+  hosts: localhost
+  gather_facts: false
+
+  vars_files:
+    - ../../vars/main.yml
+    - ../../vars/endpoints.yml
+
+  tasks:
+    - name: "Include role: 'ocp_cluster'"
+      ansible.builtin.include_role:
+        name: "ocp_cluster"
+
+    - import_tasks: ../../tasks/create/brokerSubscription.yml

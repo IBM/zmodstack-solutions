@@ -1,0 +1,27 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+- name: Set the project name used in deployment task
+  tags: always
+  when:
+    - hostvars[current_ocphost]._is_active
+  block:
+    - name: Reset this_project_name fact from inventory
+      ansible.builtin.set_fact:
+        this_project_name: ""
+      when: this_project_name is defined and this_project_name is not none
+
+    - name: Set this_project_name fact from looping of namespaces if this_project_name not set from
+      ansible.builtin.set_fact:
+        this_project_name: "{{ current_namespace }}"
+      when:
+        - this_project_name is undefined or this_project_name == None or this_project_name == ""
+
+    - name: Fail task no project name specified
+      ansible.builtin.fail:
+        msg: A project name is required, specify at least one project value in 'project_names' arraylist,
+            in the inventory file or as extra-vars to the running playbook.
+      when: this_project_name is undefined or this_project_name is none or this_project_name == None or this_project_name == ""

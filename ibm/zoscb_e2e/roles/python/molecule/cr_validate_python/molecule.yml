@@ -1,0 +1,55 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+dependency:
+  name: galaxy
+  options:
+    requirements-file: requirements.yml
+driver:
+  name: delegated
+  options:
+    managed: True
+    ansible_connection_options: {}
+lint: |
+  set -e
+  ansible-lint
+platforms:
+- name: Ubuntu
+  groups:
+  - k8s
+provisioner:
+  name: ansible
+  env:
+    OCP_CLUSTER_HOSTNAME: ${OCP_CLUSTER_HOSTNAME:-"<host_name>"}
+    OCP_CLUSTER_PORT: ${OCP_CLUSTER_PORT:-6443}
+    OCP_CLUSTER_AUTH_TOKEN: ${OCP_CLUSTER_AUTH_TOKEN:-"default-notoken"}
+
+    ZPM_REGISTRY_HOSTNAME: ${ZPM_REGISTRY_HOSTNAME:-"<registry_host_name>"}
+    ZPM_REGISTRY_USERNAME: ${ZPM_REGISTRY_USERNAME:-"default-nouser"}
+    ZPM_REGISTRY_API_TOKEN: ${ZPM_REGISTRY_API_TOKEN:-"default-notoken"}
+
+    NAMESPACE_NAME: ${NAMESPACE_NAME:-"default-zoscb-e2e"}
+    NAMESPACE_API_VERSION: ${NAMESPACE_API_VERSION:-"project.openshift.io/v1"}
+
+    VALIDATE_PYTHON_NAME: ${VALIDATE_PYTHON_NAME:-"example-validate-python"}
+    VALIDATE_PYTHON_KIND: ${VALIDATE_PYTHON_KIND:-"ValidatePython"}
+    VALIDATE_PYTHON_API_VERSION: ${VALIDATE_PYTHON_API_VERSION:-"zos-python.zpm.zoscb.ibm.com/v0minor1patch9"}
+    VALIDATE_PYTHON_FINALIZER: ${VALIDATE_PYTHON_FINALIZER:-"zos-python.zpm.zoscb.ibm.com/finalizer"}
+verifier:
+  name: ansible
+scenario:
+  name: cr_validate_python
+  test_sequence:
+    - dependency
+    - lint
+    - syntax
+    - create
+    - prepare
+    - converge
+    - side_effect
+    - verify
+    - cleanup
+    - destroy

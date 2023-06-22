@@ -1,0 +1,18 @@
+#jinja2: lstrip_blocks: True
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+kind: Project
+apiVersion: "{{ project_namespace.apiVersion }}"
+metadata:
+  name: "{{ m_namespace }}"
+  annotations:
+    openshift.io/description: "{{ project_namespace.description }} {multi-namespace}" #${project_description}
+    openshift.io/display-name: "{{ project_namespace.display_name }}" #${project_displayname}
+    openshift.io/requester: "{{ authenticated_user | default(project_namespace.requester, true) | trim }}" #${project_requesting_user}
+spec:
+  finalizers:
+    - kubernetes
