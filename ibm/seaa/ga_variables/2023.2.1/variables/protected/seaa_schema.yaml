@@ -1,0 +1,469 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+#****************************************************************************************
+# Complex Schema IMPLEMENTATION
+# Define variable based on the following 
+#     'variable_name':
+#         data_type: <list_variable_types>,
+#         enums: <accepted values list> #TODO
+#         host_group:
+#           name: (* | <group name>)
+#           required: (true | false)
+#         domain: # Not used for validation but maybe for generating var files, Where the variable can be defined 
+#               [ all ( default) | inventory (group and host vars) | config (seaa and component default vars) ) 
+# Simple schema validation - 
+# Define variable based on the following 
+# Variable listed has to exist for * host groups and is always required if listed
+# variable_name: <list_variable_types>
+
+# TODO
+# 1) Need to add SEAA config values 
+# 2) Add skip_validate list
+# 3) Merge simple schema validation with new schema data structure
+#     'variable_name':
+#         data_type: <list_variable_types>,
+# 4) Add enum support
+
+# Possible data types: https://docs.ansible.com/ansible/latest/dev_guide/developing_program_flow_modules.html#argument-spec
+# str
+# list
+# dict
+# bool
+# int
+# float
+# str
+# raw
+# jsonarg
+# json
+# bytes
+# bits
+---
+#****************************************************************************************
+# Inventory groups validated with complex schema
+#****************************************************************************************
+# List 'anchor' for all inventory groups names to validate
+all_groups: &id_all_groups
+  - ocphosts
+  - zosendpoints
+
+#****************************************************************************************
+# SEAA framework inventory vars
+#****************************************************************************************
+
+# OCP Project names
+project_names: 
+  data_type:
+    - list
+    - str
+  host_group:
+    name: ocphosts # *id_all_groups
+    required: true
+  domain: inventory
+    
+# Flag to check if the host is active
+_is_active: 
+  data_type: bool
+  host_group:
+    name: *id_all_groups
+    required: true
+  domain: inventory
+
+#****************************************************************************************
+# SEAA framework config vars
+#****************************************************************************************
+# # Define the automation strategy for k8s resources  default(deploy_yaml)
+# # Set automation strategy using values generate_deploy_yaml, deploy_yaml, generate_yaml
+# # - "deploy_yaml" (default) - deploy or undeploy resources using native YAML API
+# # - "generate_yaml" - generate Native YAML, script and readme files for deployment or undeployment
+# # - "generate_deploy_yaml" - generate Native YAML, script and readme files and deploy or undeploy resources using native YAML API
+# seaa_automation_strategy: deploy_yaml # deploy_yaml | generate_yaml | generate_deploy_yaml
+#   data_type: str
+#   enum: deploy_yaml | generate_yaml | generate_deploy_yaml
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # Auto deploy or undeploy z/OS Cloud Broker if it is deployed or not deployed
+# # for seaa_deploy_strategy = 'undeploy' if this and 'seaa_purge_namespace' ZOSCB and ZPM will be undeployed
+# seaa_zoscb_smart_deploy: true
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # Auto deploy z/OS Package Manager if it is not deployed
+# # for seaa_deploy_strategy = 'deploy' this will only deploy if 'seaa_zoscb_smart_deploy' is set to true and broker is deployed
+# # for seaa_deploy_strategy = 'undeploy' if this and 'seaa_purge_namespace' is true ZPM can be deployed without undeploying ZOSCB
+# seaa_zpm_smart_deploy: true
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # Auto purge zpm, broker and OCP project namespace when undeploying and smart deploy is enabled
+# seaa_purge_namespace: false
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # Set strategy of deployment possible values are deploy | undeploy | verify | testing (deploy, verify and undeploy)
+# # "testing" deploy strategy only supported with deploy_yaml 'seaa_automation_strategy'
+# seaa_deploy_strategy: deploy # deploy | undeploy | verify | testing
+#   data_type: str
+#   enum: deploy | undeploy | verify | testing
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # Users deployment role admin (default) | developer (can deploy projects, secrets, SubOp, software and validate instances)
+# seaa_deploy_role: admin
+#   data_type: str
+#   enum: admin | developer
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # Boolean to control if ZosEndpoints should be deployed default(true)
+# seaa_deploy_zosendpoints: true
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # Boolean to control if operator collection should be deployed default(true)
+# seaa_deploy_operator_collections: true
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # Boolean to control if sub-operator should be deployed default(true)
+# seaa_deploy_suboperator: true
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # Boolean to control if product software instances should be deployed default(true)
+# seaa_deploy_software_instances: true
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # Boolean to control if Validate Product software instances should be deployed default(false)
+# seaa_deploy_validate_crs: true
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # Deploy SubOp Config to admin project (namespace) that is deploying broker instance
+# seaa_deploy_suboc_to_admin_namespaces: true
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # IfNotPresent - create CRs only if state and object are not present otherwise use what is there, if it matches k8s verification/retrieve
+# # Deploy resources (currently only implemented for OCP Projects because of issue on OCP 4.12) if they already present
+# seaa_deploy_resource_ifpresent: true # Can be set in inventory per ocphost group
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # Flag to determine if developer 'seaa_deploy_role' developer role are able to deploy their own namespaces
+# seaa_developer_deploys_project: false
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+# # Flag to deploy SSH Key secrets
+# seaa_deploy_secrets: true
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: true
+#   domain: config
+
+
+
+# # *******************************************************************************
+# # Security related automation properties
+# # *******************************************************************************
+
+# # Default password vault item name default(se-login)
+# seaa_security_password_vault_item: se-login
+#   data_type: str
+#   host_group:
+#     name: ocphost
+#     required: false
+#   domain: config
+
+# # Encrypt secrets during deployment default(true)
+# seaa_encrypt_secrets: true
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups #ocphosts
+#     required: true
+#   domain: config
+
+# # Encrypt sensitive endpoint variables
+# seaa_encrypt_sensitive_endpoint_vars: true
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups  #ocphosts
+#     required: true
+#   domain: config
+
+#  # Ansible Vault ID
+#  # seaa_ansible_vault_id: "{{ lookup('env', 'SEAA_ANSIBLE_VAULT_ID') }}" #TODO and use with env var - ANSIBLE_VAULT_ID_MATCH
+#  # data_type: str
+#  # host_group:
+#  #   name: *id_all_groups  
+#  #   required: false
+#  # domain: config
+
+# # Path to ansible-vault password file used to encrypted content used in playbook
+# seaa_ansible_vault_password_file: "{{ lookup('env', 'SEAA_ANSIBLE_VAULT_PASSWORD_FILE') }}"
+#   data_type: str
+#   host_group:
+#     name: *id_all_groups
+#     required: seaa_ansible_vault_id not null
+#   domain: config
+
+# # Path to encrypted SSH Key file
+# seaa_path_to_encrypted_files: "{{ seaa_ansible_directory }}/secrets"
+#   data_type: str
+#   host_group:
+#     name: *id_all_groups
+#     required: false
+#   domain: config
+
+# # Flag to use TLS with OCP login
+# cluster_validate_certs: false  # Can be set in inventory per ocphost group
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: false
+#   domain: all
+
+# # OCP cert to use for host when 'cluster_validate_certs' is true
+# cluster_cacert: # "{{ lookup('env', 'KUBE_LB_SIGNER') }}"  # Can be set in inventory per ocphost group
+#   data_type: bool
+#   host_group:
+#     name: *id_all_groups
+#     required: cluster_validate_certs
+#   domain: config
+
+
+
+
+# # *******************************************************************************
+# # Generated YAML deployment files properties
+# # *******************************************************************************
+
+# # Define the automation strategy for k8s resources  default(deploy_yaml)
+# # Set automation strategy using values generate_deploy_yaml, deploy_yaml, generate_yaml
+# # - "deploy_yaml" (default) - deploy or undeploy resources using native YAML API
+# # - "generate_yaml" - generate Native YAML, script and readme files for deployment or undeployment
+# # - "generate_deploy_yaml" - generate Native YAML, script and readme files and deploy or undeploy resources using native YAML API
+# seaa_automation_strategy: deploy_yaml # deploy_yaml | generate_yaml | generate_deploy_yaml
+
+# # Output Directory for generated YAML files default(se ansible directory /yamls)
+# seaa_yaml_output_dir: "{{ seaa_ansible_directory }}/yamls"
+
+# # Name of top-level directory for generated content in the seaa_yaml_output_dir
+# seaa_generated_content_dirname: _seaa_
+
+# # Use the OCP host name in the generated YAML output directory if more than one ocphost is defined. default(true)
+# # Note: if this is set to false and more than one host exist for the 'ocphost' then the ocphost name is appended to the
+# # YAML output directory name - with the following naming convention: '{{ current_ocphost~'__'~project_namespace.name }}''
+# seaa_separate_generation_by_ocphost_dir: true # true | false | always
+
+# # If deployment script exist append deployment steps, if false clear deployment steps default(false)
+# seaa_append_to_deployment_script: false
+
+# # Boolean to add the zProduct version number to the instance being deployed
+# seaa_append_version_to_software_instances: true
+
+# # Always delete the output directory if it exist and 'seaa_append_to_deployment_script' flag is not 'true'
+# seaa_clean_yaml_output_dir: true
+
+# # Continue deployment script on errors default(false)
+# seaa_deployment_script_continue_on_error: false
+
+# # Prompt during deployment executing steps default(true)
+# seaa_prompt_during_deploy_script_run: true
+
+# # Capture time to wait on deploying Operators and Sub-Operators in deploy scripts default(true)
+# seaa_capture_deployment_wait_time: true
+
+
+
+
+# *******************************************************************************
+# ZOSCB automation properties
+# *******************************************************************************
+
+# *******************************************************************************
+# ZPM and Sub operator automation properties
+# *******************************************************************************
+
+# Flag to determine if deploying consolidated ZPM operator (no additional SUB-Operators for zProducts)
+#  if this is set to "true the 'seaa_deploy_operator_collections' and 'seaa_deploy_suboperator' variables are ignored for
+#  deploying/undeploying Operator Collections or Sub-operators for zProducts that have Broker v2.1 operators
+# zpm_consolidated_operator: true
+
+# # Delimiter to use when generating zpm directories with zpm_install_dir_prefix
+# # Default - '/' creates a subdirectory for each ocp host that is deploying to the zos endpoint
+# zpm_directory_delm: /
+
+# # Used to determine how to organize directories on endpoints for deployed resources
+# # host (default) - <INSTALL_DIR>/host/namespace
+# # namespace - <INSTALL_DIR>/namespace/host
+# zpm_directory_org_by: host # host | namespace
+
+
+# # Name to append to zpm_install_dir for state directory if zpm_state_dir not specified
+# zpm_append_to_generated_state_dir: state
+# domain: config 
+
+# # Writable prefix on USS directory z/OS Endpoint for ZPM to state dir, default "{{zpm_install_dir_prefix}}"
+# # If zpm_state_dir not specified this and 'zpm_append_to_generated_state_dir' are used to determine generated ZPM state directory
+# zpm_state_dir_prefix:
+# domain: inventory 
+
+# zpm_install_dir_prefix
+# domain: inventory 
+
+
+#****************************************************************************************
+# Ansible Inventory vars
+#****************************************************************************************
+
+ansible_connection: 
+  data_type: str
+  # Todo Add
+  # enums:
+  #   - ssh 
+  #   - local
+  host_group:
+    name: *id_all_groups
+    required: true
+  domain: inventory
+
+# Ansible host to connect/login 
+ansible_host: 
+  data_type: str
+  host_group:
+    name: *id_all_groups
+    required: true
+  domain: inventory
+
+# Ansible python interpreter used to run ansible 
+ansible_python_interpreter:  
+  data_type: str
+  host_group:
+    name: ocphost
+    required: true
+  domain: inventory
+
+# Ansible port used to connect/login 
+ansible_port:  
+  data_type: int
+  host_group:
+    name: *id_all_groups
+    required: true
+  domain: inventory
+
+# Ansible user to connect/login 
+ansible_user:  #<z/OS user id>
+  data_type: str
+  host_group:
+    name: *id_all_groups
+    required: true
+  domain: inventory
+    
+#****************************************************************************************
+# 'OCPHOSTS' - INVENTORY GROUP 
+#****************************************************************************************
+
+# Openshift auth token
+# (Optional) Provide this token for the 'ansible_user' defined if 1Password is not configured to authenticate to the OCP host.
+cluster_auth_token:
+  data_type: str
+  host_group:
+    name: ocphosts
+    required: false
+  domain: inventory
+
+# PVC class used on OpenShift cluster
+pvc_storage_class_name:
+  data_type: str
+  host_group:
+    name: ocphosts
+    required: false
+  domain: all
+
+#****************************************************************************************
+# 'ZOSENDPOINTS' - INVENTORY GROUP 
+#****************************************************************************************
+
+# zpm_bash_dir - Condition with 'go' tag
+
+
+# Filepath to SSH key used to connect from OCP to z/OS endpoint
+# example: "{{ lookup('env', 'HOME') }}/.ssh/id_zstack"
+ansible_ssh_private_key_file:  #<LOCAL_PATH_TO_SSH_PRIVATE_KEY_USED_CONNECT_TO_ZOS_ENDPOINT>
+  data_type: str
+  host_group:
+    name: zosendpoints
+    required: true
+  domain: inventory
+
+# (Optional) Passphrase for SSH key used to connect from OCP to z/OS endpoint
+ssh_passphrase: # <ADD_PASSPHRASE_FOR_SSH_KEY_TO_CONNECT_TO_ZOS_ENDPOINT_IF_SET>
+  data_type: str
+  host_group:
+    name: zosendpoints
+    required: false
+  domain: inventory
+#
+# ZPM install directory not used if zpm_install_dir_prefix is provided
+# (Optional) default '/usr/lpp/IBM/zpm' located in <se-ansible-dir>/variables/defaults/zpm.yaml
+zpm_install_dir: # <Fully qualified location to ZPM install directory>
+  data_type: str
+  host_group:
+    name: zosendpoints
+    required: false #?? mutually exclusive with install_dir_prefix
+  domain: all
+
+# ZPM state directory not used if zpm_install_dir_prefix is provided
+# (Optional)-  default '/var/zpm' located in <se-ansible-dir>/variables/defaults/zpm.yaml
+zpm_state_dir: # <Fully qualified location to ZPM state directory>
+  data_type: str
+  host_group:
+    name: zosendpoints
+    required: false
+  domain: all

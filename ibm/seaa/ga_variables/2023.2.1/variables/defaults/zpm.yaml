@@ -1,0 +1,77 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+# ************************************
+# ZPM variables defaults can be changed
+# in inventory for OCP Hosts or z/OS Endpoints
+# *************************************
+
+# *************************************
+# Artifact directory for pulling OCI Images
+# *************************************
+zpm_registry_host: icr.io/zpm
+zpm_registry_user:
+zpm_registry_password:
+
+# *************************************
+# ZPM Operator Collection Variables
+# *************************************
+zpm_product_short_name: "{{ sub_operators.zpm.short_name }}" # zpm
+zpm_product_code_name: "{{ sub_operators.zpm.code_name }}"
+zpm_product_name: "{{ sub_operators.zpm.name }}" #zos-package-manager
+zpm_oc_version: 2.0.1 # GA 2023.2.1
+zpm_oc_vrm_string: "{{ zpm_oc_version | get_vmp_string }}" #v2minor0patch0
+zpm_api_version_string: "{{ broker_sub_operator_api_group }}/{{ zpm_oc_vrm_string }}"
+zpm_oci_version: "{{ zpm_oc_version }}"
+
+# *************************************
+# ZPM Secure Operator Collection
+# *************************************
+zpm_signature_file: "{{ oc_product_sigfile_domain }}/{{ sub_operators.zpm.name | replace('-', '_') }}_operator/releases/download"
+zpm_signature_file_ext: "{{ oc_product_signature_file_ext }}"
+zpm_public_key: "{{ oc_product_public_key }}"  # publicKey
+zpm_skip_verify: "{{ oc_product_skip_verify }}" # skipVerify
+zpm_credential_type: "{{ oc_product_credential_type }}"
+zpm_signature_upload_mode: "{{ oc_product_signature_upload_mode }}"
+
+# *************************************
+#Install Modes - "galaxy | url | upload"
+# *************************************
+zpm_import_mode: "{{ oc_product_import_mode }}"
+zpm_import_url: "{{ oc_product_import_url }}"
+zpm_git_token: "{{ oc_product_git_token }}"
+
+# *************************************
+# ZPM Instance Variables
+# *************************************
+zpm_instance_name: example
+zpm_instance_api_version: "{{ zpm_api_version_string }}"
+zpm_registry_proxy_host:
+zpm_registry_proxy_port:
+zpm_install_dir: /usr/lpp/IBM/zpm
+zpm_state_dir: /var/zpm
+zpm_product_hlq: ZPM
+zpm_java_home_directory: /usr/lpp/java/J8.0_64
+
+# *************************************
+# ZPM Diagnostic Instance Variables
+# *************************************
+zpm_diagnostics_name: zpm-diagnostics
+zpm_diagnostics_api_version: "{{ zpm_api_version_string }}"
+
+# *************************************
+# ZPM - ZOS Endpoint variables
+# *************************************
+# Location of bash directory
+zpm_bash_dir: /rsusr/ported/bin #Can be HOSTVAR overrode
+# LE HLQ
+zpm_le_install_hlq: CEE #Can be HOSTVAR overrode
+# CBC HLQ
+zpm_cbc_install_hlq: CBC #Can be HOSTVAR overrode
+
+
+
+
