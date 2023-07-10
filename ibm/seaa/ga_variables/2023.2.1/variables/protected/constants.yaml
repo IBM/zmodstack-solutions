@@ -1,0 +1,152 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+#DO NOT CHANGE THIS VARIABLES#
+# CONSTANTS
+# *************************************
+# General OCP Variables
+# *************************************
+project_api_version: project.openshift.io/v1
+
+# *************************************
+# Operator Group Variables -
+# *************************************
+operator_group_api_version: operators.coreos.com/v1
+
+# *************************************
+# z/OS Cloud Broker Constants
+# *************************************
+# z/OS Cloud Broker automation configuration
+zoscb_uri: zoscb.ibm.com
+
+# *************************************
+# Broker Subscription
+# *************************************
+broker_subscription_api_version: operators.coreos.com/v1alpha1
+
+# *************************************
+# Broker Instance
+# *************************************
+broker_instance_kind: ZosCloudBroker
+broker_instance_api_version: zoscb.ibm.com/v2beta1
+
+
+# *************************************
+# Broker zOS Endpoint
+# *************************************
+broker_zosendpoint_kind: ZosEndpoint
+broker_zosendpoint_finalizer: zosendpoints.zoscb.ibm.com/finalizer
+broker_zosendpoint_api_version: zoscb.ibm.com/v2beta2
+
+# *************************************
+# Broker Sub Operator
+# *************************************
+broker_sub_operator_api_group: suboperator.zoscb.ibm.com
+
+# *************************************
+# Operator Collection & Sub Operator
+# *************************************
+oc_product_api_version: zoscb.ibm.com/v2beta2
+oc_product_finalizer: operatorcollections.zoscb.ibm.com/finalizer
+subop_config_api_version: zoscb.ibm.com/v2beta2
+subop_config_finalizer: suboperatorconfigs.zoscb.ibm.com/finalizer
+
+# *************************************
+# ZPM Instance Variables
+# *************************************
+zpm_instance_kind: ZosPackageManager
+zpm_instance_finalizer: zospackagemanagers.suboperator.zoscb.ibm.com/finalizer
+zpm_instance_license_accept: true
+
+# *************************************
+# ZPM Diagnostic Instance Variables
+# *************************************
+zpm_diagnostics_kind: ZosPackageManagerDiagnostics
+zpm_diagnostics_finalizer: zospackagemanagerdiagnosticss.suboperator.zoscb.ibm.com/finalizer
+
+# *******************************************************************************
+# ZPM and Sub operator constants
+# code_name = OCI name
+# short_name = Name used in automation 
+# *******************************************************************************
+sub_operators:
+  zpm:
+    name: zos-package-manager
+    short_name: zpm
+    code_name: ZPM
+  go:
+    name: zos-go
+    short_name: go
+    code_name: golang # GA 2023.2.1 removed enums 
+  java:
+    name: zos-java
+    short_name: java
+    code_name: Java
+  nodejs:
+    name: zos-nodejs
+    short_name: nodejs  
+    code_name: node # GA 2023.2.1 removed enums 
+  oelcpp:
+    name: zos-oelcpp
+    short_name: oelcpp
+    code_name: oelcpp
+  python:
+    name: zos-python
+    short_name: python
+    code_name: Python
+  zoau:
+    name: zos-zoau
+    short_name: zoau
+    code_name: ZOAU
+
+# Prefix for ZPM installation (final name - prefix-zosendpoint)
+zpm_instance_prefix: "{{sub_operators.zpm.short_name}}"
+zpm_diagnostics_prefix: diag-{{zpm_instance_prefix}}
+
+# Prefix instance names final name will be <product_prefix>-<zosendpoint><delimeter><inventory-hostname>
+#Example - go-wazi-sandbox-vanilla
+go_instance_prefix: "{{sub_operators.go.short_name}}"
+validate_go_prefix: val-{{go_instance_prefix}}
+
+java_instance_prefix: "{{sub_operators.java.short_name}}"
+validate_java_prefix: val-{{java_instance_prefix}}
+
+nodejs_instance_prefix: "{{sub_operators.nodejs.short_name}}"
+validate_nodejs_prefix: val-{{nodejs_instance_prefix}}
+
+oelcpp_instance_prefix: "{{sub_operators.oelcpp.short_name}}"
+validate_oelcpp_prefix: val-{{oelcpp_instance_prefix}}
+
+python_instance_prefix: "{{sub_operators.python.short_name}}"
+validate_python_prefix: val-{{python_instance_prefix}}
+
+zoau_instance_prefix: "{{sub_operators.zoau.short_name}}"
+validate_zoau_prefix: val-{{zoau_instance_prefix}}
+
+
+# Create ZPM diagnostic CR used with seaa_deploy_validate_crs variable
+zpm_create_diagnostics_cr: true
+
+# zProduct Sub-Operators automation configuration used with seaa_deploy_validate_crs variable
+sub_operator_go_create_validate_cr: true
+sub_operator_java_create_validate_cr: true
+sub_operator_nodejs_create_validate_cr: true
+sub_operator_oelcpp_create_validate_cr: true
+sub_operator_python_create_validate_cr: true
+sub_operator_zoau_create_validate_cr: true
+
+# *******************************************************************************
+# Z Opentools constants
+# *******************************************************************************
+
+zopentools:
+
+# Prefix instance names final name will be <tool_prefix>-<zosendpoint><delimiter><inventory-hostname>
+
+# z Open tools automation configuration used with seaa_deploy_validate_crs variable to validate tool installation
+
+
+

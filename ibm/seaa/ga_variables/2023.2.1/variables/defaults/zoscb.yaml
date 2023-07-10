@@ -1,0 +1,87 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+# *************************************
+# z/OS Cloud Broker Variables
+# *************************************
+# *************************************
+# Broker Subscription
+# *************************************
+broker_subscription_name: ibm-zoscb
+broker_subscription_version: 2.2.1 # 2023.2.1 GA
+broker_subscription_source: ibm-operator-catalog
+broker_subscription_channel: v2.2
+broker_subscription_install_plan_approval: Automatic
+broker_subscription_source_namespace: openshift-marketplace
+
+# *************************************
+# Broker Instance
+# *************************************
+broker_instance_name: zoscloudbroker
+broker_instance_license_accept: true
+broker_instance_log_level: trace #debug
+broker_instance_resources_cpu_limit: 200m
+broker_instance_resources_memory_limit: 256Mi
+broker_instance_requests_cpu_limit: 100m
+broker_instance_requests_memory_limit: 128Mi
+broker_instance_requests_ephemeral_stg_limit: 500Mi
+broker_instance_resources_ephemeral_stg_limit: "{{ broker_instance_requests_ephemeral_stg_limit }}" # ${ broker_instance_requests_ephemeral_stg_limit }
+broker_instance_multi_namespace: true
+
+# *************************************
+# Broker Storage
+# *************************************
+broker_instance_storage_configure: true
+broker_instance_storage_enabled: false
+
+# TODO:E2E Update E2E Collection NOT USING THESE USING PVC VARS Directly
+# broker_instance_storage_size: "{{ pvc_storage }}"
+# broker_instance_storage_class_name: "{{ pvc_storage_class_name }}"
+# broker_instance_storage_volume_mode: "{{ pvc_volume_mode }}"
+# broker_instance_storage_access_mode: "{{ pvc_access_mode }}"
+# broker_instance_storage_pvc_name: "{{ pvc_name }}"
+
+# *************************************
+# Broker Operator Collection & Sub Operator
+# *************************************
+oc_product_short_name:
+oc_product_name:
+oc_product_oc_version: 1.0.3 # 2.0.0-beta.8 #2.0.0 #
+oc_product_oc_vrm_string: "{{ oc_product_oc_version | get_vmp_string }}"
+oc_product_oci_version:
+oc_product_domain: zpm
+
+oc_product_credential_type: shared # shared | personal
+multi_namespaces: [] #Multi-Namespace array
+  # - dev1_namespace
+  # - dev2_namespace
+
+# TODO implemented to not deleting OC and POSTING new versions it already exist and IfPresent automation config flag is true
+oc_delete_collections: true
+
+#Install Modes - "galaxy | url | upload"
+oc_product_import_mode: galaxy
+oc_product_import_url: https://galaxy.ansible.com
+oc_product_git_token:
+oc_product_delete_collections: true
+
+# Flags to work with signature files
+oc_product_sigfile_domain: https://github.com/IBM # signatureFile domain
+oc_product_public_key: z-mod-stack-key-v2.pub # 2023.1.1 GA
+oc_product_skip_verify: false  #skipVerify
+oc_product_signature_upload_mode: url # url | file
+oc_product_signature_file_ext: .sig
+
+# *************************************
+# z/OS Endpoint
+# *************************************
+# zos_endpoint_name:
+# zos_endpoint_hostname:
+# zos_endpoint_admin_user:
+# zos_endpoint_ssh_key_file:
+# zos_endpoint_ssh_key_passphrase:
+# zos_endpoint_port:
+# zos_endpoint_type: remote
