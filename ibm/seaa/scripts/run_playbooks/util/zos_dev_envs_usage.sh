@@ -7,7 +7,6 @@
 # Exit script on error
 set -e
 
-
 # Format variables
 red="\033[0;31m"
 green="\033[0;32m"
@@ -15,6 +14,11 @@ cyan="\033[0;34m"
 reset="\033[0m"
 yellow="\033[0;33m"
 
+# Default extra-vars file used if exist and no extra vars are passed to script
+export SEAA_DEFAULT_EXTRAVARS="${SEAA_CONFIG_PATH_TO_SE_VARIABLES:-${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/variables}/seaa-extra-vars.json"
+
+echo $SEAA_DEFAULT_EXTRAVARS
+# exit 99
 # Print usage
 function printUsage {
   echo "Usage: $(basename "$0"): "
@@ -254,7 +258,6 @@ function parseCommandLine {
 }
 
 function overrideAndMaskExtraVars {
-  # set -x
   # echo $overrideValues
 
   # Check if input file with ExtraVARS is provided
@@ -358,6 +361,13 @@ function overrideAndMaskExtraVars {
 function setRunOptions {
 
     # set -a
+    
+    # Check if no extra file are passed in and there is a default extra-vars file and use it
+    if [[ -z "${SEAA_EXTRA_VARS}" && -f "${SEAA_DEFAULT_EXTRAVARS}" ]]; then
+            SEAA_EXTRA_VARS="@${SEAA_DEFAULT_EXTRAVARS}"
+            isExtraVarsFileReference=true
+    fi
+
     # Check if there are values to override for extra-vars JSON file
     # if [[ -n "$overrideValues" && "$isExtraVarsFileReference" == "true" ]]; then
     if [[ "$isExtraVarsFileReference" == "true" ]]; then
@@ -375,7 +385,6 @@ function setRunOptions {
         overrideAndMaskExtraVars "${SEAA_EXTRA_VARS}"
     # elif [[ -n "$overrideValues" ]]; then
     else
-
 
         # Display SEAA_EXTRA_VARS and set masked
         overrideAndMaskExtraVars
