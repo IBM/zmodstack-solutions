@@ -43,25 +43,19 @@ The following table provides details about variable files used with the Solution
     <td>Constants used by the seaa framework that should not changed</td></tr>
 	</tbody>
 	</table>
-<!-- - config/
-	- [.config](config/.config) - SEAA framework configuration/setup
-	- [seaa_config](config/seaa_config.yaml) - Control automation for SEAA framework
-	- [seaa_trouble](config/seaa_trouble.yaml) - Troubleshooting SEAA framework -->
-
-<!-- - defaults/
-	- [ocp](defaults/ocp.yaml) - Default variables for Openshift cluster
-
-	- [zoscb](defaults/zoscb.yaml) - Default variables for z/OS Cloud Broker
-
-	- [zpm](defaults/zpm.yaml) - Default variables for zos package manager
-
-	- [zproducts](defaults/zproducts.yaml) - Default variables for zos products being deployed/undeployed -->
-
-<!-- - protected/
-	- [constants](protected/constants.yaml) - Constants used by the seaa framework that should not changed -->
 
 ## Ansible Extra-vars
 Extra-vars have the highest-level of precedence and can be used to override ANY ansible variables when [running](https://docs.ansible.com/ansible/latest/user_guide/playbooks_variables.html#defining-variables-at-runtime) the framework.
 
+- You can provide a default extra-vars file **'[seaa-extra-vars.json](./seaa-extra-vars.json)'** by adding the appropriate json and saving `seaa-extra-vars.json` file to the `SEAA_CONFIG_PATH_TO_SE_VARIABLES` directory, see below:
+  ```
+  ${SEAA_CONFIG_PATH_TO_SE_VARIABLES}/seaa-extra-vars.json
+  ```
+  Example:
+  ```json
+   { "project_names" : "zstack-foo" }
+
+  ```
+  **Note** The default `SEAA_CONFIG_PATH_TO_SE_VARIABLES`=[${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/variables](../variables/)
 ---
 ## [back to framework guide](../../../../docs/guide/README.md)
