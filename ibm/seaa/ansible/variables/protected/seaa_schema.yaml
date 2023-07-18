@@ -41,6 +41,9 @@
 # bytes
 # bits
 ---
+# Validate flag used to determine if host is active
+validate_is_active_flag: true
+
 #****************************************************************************************
 # Inventory groups validated with complex schema
 #****************************************************************************************
@@ -66,6 +69,8 @@ project_names:
 # Flag to check if the host is active
 _is_active: 
   data_type: bool
+  expected_values: 
+   - True
   host_group:
     name: *id_all_groups
     required: true
