@@ -111,12 +111,15 @@ seaa_work_dir = "/tmp/.seaa" #os.path.expanduser("~")+'/.seaa/tmp'
 # Prefix for tmp files
 tmp_file_prefix = "vseaa"
 
+# bool filters used in eval jinja method
 def bool_filter(value):
     return bool(value)
 
+# int filters used in eval jinja method
 def int_filter(value):
     return int(value)
 
+# method to evaluate jinja template with variables dictionary for hostvars
 def evaluate_jinja_template(template_string, variables):
     # Create a Jinja environment
     env = Environment()
@@ -128,6 +131,7 @@ def evaluate_jinja_template(template_string, variables):
 
     return rendered_value
 
+# method to check if jinja temlate is vaalid
 def validate_jinja_template(template_string):
     try:
         env = Environment()
@@ -161,7 +165,6 @@ def get_variable_value(module, value_string, variables):
         # Get variable name from "lookup"
         lookup_var_name = lookup_match.group(4)
 
-       
         if validate_jinja_template(value_string):
             # Do lookup for variables value string
             return _dolookup(module, lookup_type, lookup_var_name, variables)
@@ -206,14 +209,12 @@ def _dolookup(module, lookup_type, lookup_var_name, variables):
 
 
 def _check_and_return_value(module, value_string, variables):
+    # CHeck if value could be a jinja template
     jinja_value_match = re.match(r"({{.*?}})$", value_string)
     if jinja_value_match:
         value_jinja_str = jinja_value_match.group(1)
-    # ^\s*
-    # \{\{\s*(lookup\([^)]+\))\s*\|\s*(\w+)\s*\}\}
-        # raise Exception(value_string)
-        
-        # lookup_w_filter_match = re.match(r"^\s*{{\s*(lookup\([^)]+\))\s*\|\s*(\w+)\s*\}\}", value_string)
+
+        # Check value to see if lookup has filter
         lookup_w_filter_match = re.match(r"^\s*{{\s*lookup\('(\w+)',\s*'(\w+)'\)\s*\|\s*(\w+)\s*}}", value_string)
         if lookup_w_filter_match:
             # Get lookup_type
@@ -225,9 +226,11 @@ def _check_and_return_value(module, value_string, variables):
             # Get lookup_filter_name
             lookup_filter_name = lookup_w_filter_match.group(3)
 
+            # Check if lookup filter is supported    
             if lookup_filter_name != "bool" and lookup_filter_name != "int" :
                 raise ValidationException(f"Unsupported lookup filter {lookup_filter_name}")
             else:
+                # Lookup 
                 return _dolookup(module, lookup_type, lookup_var_name, variables)
             
         value_string = evaluate_jinja_template(value_jinja_str, variables)
@@ -320,8 +323,6 @@ def validate_host_complex_types(module, schema_data: str, validating_group: str,
             # Check if group being verified is in list for variable
             elif validating_group in _group_names:
                 return _do_validate_host_complex_types(module, variable, host_variables[variable], variable_schema, validating_group, current_group_name, host_name, host_variables, raise_exception)
-        # else:
-        #     raise ValidationException("Validation schema data structure is not valid")
 
 def _do_validate_host_complex_types(module, variable, host_variable_values, variable_schema, validating_group: str, current_group_name: str, host_name: str, host_variables, raise_exception):
 
@@ -384,8 +385,9 @@ def convert_expected_type(variable_value, expected_types):
             return _variable_value
     return variable_value
 
+# Check  if variable is one of the expected values
 def validate_one_of(value, variable_schema, raise_exception=True):
-
+    # Check if variable schema has exoected vakus=es
     if "expected_values" in variable_schema:
         if value in variable_schema['expected_values']:
             return True
