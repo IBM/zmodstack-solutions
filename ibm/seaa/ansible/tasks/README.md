@@ -7,8 +7,6 @@ Below are the internal task used by SEAA framework.
 
 - _generate_readme.yml 
 - _generate_script.yml
-- add_ocp_secrets.yml
-- add_ssh_key_loop.yml
 - authenticate_and_ocplogin.yml
 - gen_init.yml
 - generate_cmd.yml

@@ -1,0 +1,56 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+# ****************************************************************************************************************************
+# *
+# - Include task to set this_project_name from current_namespace for deployment
+# *
+# ****************************************************************************************************************************
+- name: Set this_project_name
+  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_the_project_name.yml"
+  tags: always
+
+# ****************************************************************************************************************************
+# *
+# - Set "zos_endpoints" list for iterating multiple zos endpoint deployments
+# *
+# ****************************************************************************************************************************
+- name: Set zos endpoint list
+  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_inventory_zosendpoints.yml"
+  tags: always
+
+
+# ****************************************************************************************************************************
+# *
+# - Set smart deploy flags and verify current zpm and zoswcb installation status
+# *
+# ****************************************************************************************************************************
+- name: Smart Deploy Setup
+  tags: always
+  when:
+    - seaa_zoscb_smart_deploy | bool or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yaml"
+  block:
+    - name: Setup Smart Deploy and Generate
+      ansible.builtin.include_tasks: "smart_deploy_and_generate.yml"
+  rescue:
+    - name: Debug rescue error
+      ansible.builtin.debug:
+        msg: "Caught an error while setting up smart deploying on {{ current_ocphost }}"
+
+# ****************************************************************************************************************************
+# *
+# - IMPORTANT: Include zos endpoint variable dictionaries used by each deployment to iterate over zosendpoints in inventory
+# *
+# ****************************************************************************************************************************
+- name: Include endpoint variables
+  when: not endpoint_vars_loaded
+  ansible.builtin.include_vars: "{{ zoscb_e2e_roles_directory | get_expanded_dir }}/ocp_cluster/vars/endpoints.yml"
+  tags: always
+
+- name: Set endpoint_vars_loaded flag
+  ansible.builtin.set_fact:
+    endpoint_vars_loaded: true
+  when: not endpoint_vars_loaded
