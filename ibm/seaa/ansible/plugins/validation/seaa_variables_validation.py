@@ -111,19 +111,27 @@ seaa_work_dir = "/tmp/.seaa" #os.path.expanduser("~")+'/.seaa/tmp'
 # Prefix for tmp files
 tmp_file_prefix = "vseaa"
 
+# bool filters used in eval jinja method
 def bool_filter(value):
     return bool(value)
 
+# int filters used in eval jinja method
+def int_filter(value):
+    return int(value)
+
+# method to evaluate jinja template with variables dictionary for hostvars
 def evaluate_jinja_template(template_string, variables):
     # Create a Jinja environment
     env = Environment()
     env.filters['bool'] = bool_filter
+    env.filters['int'] = int_filter
 
     template = env.from_string(template_string)
     rendered_value = template.render(variables)
 
     return rendered_value
 
+# method to check if jinja temlate is vaalid
 def validate_jinja_template(template_string):
     try:
         env = Environment()
@@ -147,10 +155,10 @@ def get_variable_value(module, value_string, variables):
     # Regex to match lookup variable string for values
     # lookup_match = re.match(r"{{\s*lookup\s*\(\s*(['\"]{1,2})(\w+)\1\s*,\s*(['\"]{1,2})(\w+)\3\s*\)\s*}}$", value_string)
     lookup_match = re.match(r"^\s*{{\s*lookup\s*\(\s*(['\"]{1,2})(\w+)\1\s*,\s*(['\"]{1,2})(\w+)\3\s*\)\s*}}$", value_string)
-
+    
     # Check if doing lookup for variable_sting
     if lookup_match:
-
+        
         # Get type of lookup supported lookups are ones are 'var and 'env'
         lookup_type = lookup_match.group(2)
 
@@ -174,11 +182,11 @@ def get_variable_value(module, value_string, variables):
             # Check if value is also a string could be a jinja template
             if isinstance(var_value, str):
                 # Check if value a jinja template or return value
-                return _check_and_return_value(var_value, variables)
+                return _check_and_return_value(module, var_value, variables)
             return var_value
         else:
             # Check if value a jinja template or return value
-            return _check_and_return_value(value_string, variables)
+            return _check_and_return_value(module, value_string, variables)
 
 # Method to do lookup (ansible vars or ENV) and jinja templating based on a specific variable and variables dictionary for specific host
 def _dolookup(module, lookup_type, lookup_var_name, variables):
@@ -200,11 +208,31 @@ def _dolookup(module, lookup_type, lookup_var_name, variables):
         raise ValidationException(f"Unsupported lookup type: {lookup_type}")
 
 
-def _check_and_return_value(value_string, variables):
+def _check_and_return_value(module, value_string, variables):
+    # CHeck if value could be a jinja template
     jinja_value_match = re.match(r"({{.*?}})$", value_string)
     if jinja_value_match:
         value_jinja_str = jinja_value_match.group(1)
-    
+
+        # Check value to see if lookup has filter
+        lookup_w_filter_match = re.match(r"^\s*{{\s*lookup\('(\w+)',\s*'(\w+)'\)\s*\|\s*(\w+)\s*}}", value_string)
+        if lookup_w_filter_match:
+            # Get lookup_type
+            lookup_type = lookup_w_filter_match.group(1)
+
+            # Get lookup_var_name variable name
+            lookup_var_name = lookup_w_filter_match.group(2)
+            
+            # Get lookup_filter_name
+            lookup_filter_name = lookup_w_filter_match.group(3)
+
+            # Check if lookup filter is supported    
+            if lookup_filter_name != "bool" and lookup_filter_name != "int" :
+                raise ValidationException(f"Unsupported lookup filter {lookup_filter_name}")
+            else:
+                # Lookup 
+                return _dolookup(module, lookup_type, lookup_var_name, variables)
+            
         value_string = evaluate_jinja_template(value_jinja_str, variables)
 
     return value_string
@@ -295,8 +323,6 @@ def validate_host_complex_types(module, schema_data: str, validating_group: str,
             # Check if group being verified is in list for variable
             elif validating_group in _group_names:
                 return _do_validate_host_complex_types(module, variable, host_variables[variable], variable_schema, validating_group, current_group_name, host_name, host_variables, raise_exception)
-        # else:
-        #     raise ValidationException("Validation schema data structure is not valid")
 
 def _do_validate_host_complex_types(module, variable, host_variable_values, variable_schema, validating_group: str, current_group_name: str, host_name: str, host_variables, raise_exception):
 
@@ -359,8 +385,9 @@ def convert_expected_type(variable_value, expected_types):
             return _variable_value
     return variable_value
 
+# Check  if variable is one of the expected values
 def validate_one_of(value, variable_schema, raise_exception=True):
-
+    # Check if variable schema has exoected vakus=es
     if "expected_values" in variable_schema:
         if value in variable_schema['expected_values']:
             return True
