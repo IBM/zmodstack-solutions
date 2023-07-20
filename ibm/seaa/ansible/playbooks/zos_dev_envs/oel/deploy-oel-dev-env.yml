@@ -141,7 +141,7 @@
             - hostvars[current_ocphost]._is_active
             - seaa_deploy_strategy != "undeploy"
           vars:
-            seaa_product: zoscb
+            seaa_deploy_objective: zoscb
           with_items:
             - "{{ groups['ocphosts'] }}"
           loop_control:
@@ -162,7 +162,7 @@
             - hostvars[current_ocphost]._is_active
             - seaa_deploy_strategy != "undeploy"
           vars:
-            seaa_product: zpm
+            seaa_deploy_objective: zpm
           with_items:
             - "{{ groups['ocphosts'] }}"
           loop_control:
@@ -184,7 +184,7 @@
             - hostvars[current_ocphost]._is_active
             - seaa_deploy_strategy != "undeploy"
           vars:
-            seaa_product: go
+            seaa_deploy_objective: go
           with_items:
             - "{{ groups['ocphosts'] }}"
           loop_control:
@@ -206,7 +206,7 @@
             - hostvars[current_ocphost]._is_active
             - seaa_deploy_strategy != "undeploy"
           vars:
-            seaa_product: java
+            seaa_deploy_objective: java
           with_items:
             - "{{ groups['ocphosts'] }}"
           loop_control:
@@ -228,7 +228,7 @@
             - hostvars[current_ocphost]._is_active
             - seaa_deploy_strategy != "undeploy"
           vars:
-            seaa_product: nodejs
+            seaa_deploy_objective: nodejs
           with_items:
             - "{{ groups['ocphosts'] }}"
           loop_control:
@@ -250,7 +250,7 @@
             - hostvars[current_ocphost]._is_active
             - seaa_deploy_strategy != "undeploy"
           vars:
-            seaa_product: oelcpp
+            seaa_deploy_objective: oelcpp
           with_items:
             - "{{ groups['ocphosts'] }}"
           loop_control:
@@ -272,7 +272,7 @@
             - hostvars[current_ocphost]._is_active
             - seaa_deploy_strategy != "undeploy"
           vars:
-            seaa_product: python
+            seaa_deploy_objective: python
           with_items:
             - "{{ groups['ocphosts'] }}"
           loop_control:
@@ -294,7 +294,7 @@
             - hostvars[current_ocphost]._is_active
             - seaa_deploy_strategy != "undeploy"
           vars:
-            seaa_product: zoau
+            seaa_deploy_objective: zoau
           with_items:
             - "{{ groups['ocphosts'] }}"
           loop_control:

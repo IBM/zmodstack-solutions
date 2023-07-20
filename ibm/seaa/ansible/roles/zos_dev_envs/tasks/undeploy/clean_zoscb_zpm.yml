@@ -22,7 +22,7 @@
   when:
     - seaa_zoscb_smart_deploy | bool or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yaml"
   vars:
-    seaa_product: cleanup
+    seaa_deploy_objective: cleanup
   tags: always
   block:
     - name: Set up smart deploy and generate variables
@@ -58,7 +58,7 @@
   # Undeploy ZPM
   ansible.builtin.include_tasks: "undeploy/zpm.yml"
   vars:
-    seaa_product: zpm
+    seaa_deploy_objective: zpm
 
 # Remove ZPM, Broker and revoke Auth tokens
 - name: Undeploy z/OS Cloud Broker
@@ -67,4 +67,4 @@
     - (seaa_zoscb_smart_deploy | bool and seaa_zpm_smart_deploy | bool) or seaa_deploy_strategy == "testing"
   ansible.builtin.include_tasks: "undeploy/zoscb.yml"
   vars:
-    seaa_product: zoscb
+    seaa_deploy_objective: zoscb

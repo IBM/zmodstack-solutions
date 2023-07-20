@@ -32,7 +32,6 @@
   when:
     - seaa_zoscb_smart_deploy | bool or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yaml"
   block:
-
     - name: Setup Smart Deploy and Generate
       ansible.builtin.include_tasks: "smart_deploy_and_generate.yml"
   rescue:
@@ -44,7 +43,7 @@
   block:
     # ****************************************************************************************************************************
     # *
-    # - IMPORTANT: Include zos endpoint variable dicstion used by each deplotment to iterate over zosendpoints in inventory
+    # - IMPORTANT: Include zos endpoint variable dictionaries used by each deployment to iterate over zosendpoints in inventory
     # *
     # ****************************************************************************************************************************
     - name: Include endpoint variables
@@ -64,7 +63,7 @@
     # Block to deploy Cloud Broker
     - name: Create Instance of ZOSCB
       when:
-        - seaa_product == 'zoscb'
+        - seaa_deploy_objective == 'zoscb'
         - not seaa_zoscb_smart_deploy | bool or seaa_deploy_role == "developer" # Used to deploy developer project creds
         - not zoscb_deployed
       tags:
@@ -85,9 +84,9 @@
     # Smart Deploy Broker
     - name: Smart Deploy Instance of z/OS Cloud Broker
       when:
-        - seaa_product != 'zpm'
+        - seaa_deploy_objective != 'zpm'
         - seaa_deploy_role == "admin"
-        - (seaa_zoscb_smart_deploy | bool and not zoscb_deployed) # and seaa_automation_strategy != "generate_yaml" # or seaa_product == 'zoscb'
+        - (seaa_zoscb_smart_deploy | bool and not zoscb_deployed) # and seaa_automation_strategy != "generate_yaml" # or seaa_deploy_objective == 'zoscb'
       tags:
         - always
       block:
@@ -136,7 +135,7 @@
                 - broker_instance_info_only.resources[0].status.phase == "Successful"
                 # Subscription Info
                 - broker_subscription_info_only.resources[0].status.installedCSV == broker_subscription.name~'.v'~broker_subscription.version
-               
+
             # Verify CSV instance exist
             - name: Set zoscb_csv_deploy_verified if it exist true
               ansible.builtin.set_fact:
@@ -198,7 +197,7 @@
           when:
             - (zoscb_csv_deploy_verified is undefined) or
               (not zoscb_csv_deploy_verified) or
-              (not seaa_zoscb_smart_deploy | bool and seaa_product == 'zoscb')
+              (not seaa_zoscb_smart_deploy | bool and seaa_deploy_objective == 'zoscb')
 
         # Update cache with new namespace for broker
         - name: Update cache with new namespace for broker
@@ -241,7 +240,7 @@
     # Block for installing sub-operator product
     - name: Create Instance of ZPM
       when:
-        - seaa_product == 'zpm'
+        - seaa_deploy_objective == 'zpm'
         # - seaa_deploy_role == "admin"
         - not seaa_zoscb_smart_deploy | bool or seaa_automation_strategy == "generate_yaml"
         - not zpm_deployed
@@ -263,7 +262,7 @@
     - name: Smart deploy instance of z/OS Package Manager
       # Deploy ZPM when tagged to deploy Broker and Smart deploy is true
       when:
-        - seaa_product == 'zoscb'
+        - seaa_deploy_objective == 'zoscb'
         - (seaa_zoscb_smart_deploy | bool and seaa_zpm_smart_deploy | bool and not zpm_deployed)
       tags:
         - always
@@ -478,7 +477,7 @@
     # ****************************************************************************************************************************
     # Block for installing sub-operator product
     - name: Create Instance of Go
-      when: seaa_product == 'go'
+      when: seaa_deploy_objective == 'go'
       tags:
         - oel-dev
         - go
@@ -494,7 +493,7 @@
     # ****************************************************************************************************************************
     # Block for installing sub-operator product
     - name: Create Instance of Java
-      when: seaa_product == 'java'
+      when: seaa_deploy_objective == 'java'
       tags:
         - oel-dev
         - java
@@ -510,7 +509,7 @@
     # ****************************************************************************************************************************
     # Block for installing sub-operator product
     - name: Create Instance of Nodejs
-      when: seaa_product == 'nodejs'
+      when: seaa_deploy_objective == 'nodejs'
       tags:
         - oel-dev
         - nodejs
@@ -526,7 +525,7 @@
     # ****************************************************************************************************************************
     # Block for installing sub-operator product
     - name: Create Instance of Oelcpp
-      when: seaa_product == 'oelcpp'
+      when: seaa_deploy_objective == 'oelcpp'
       tags:
         - oel-dev
         - oelcpp
@@ -543,7 +542,7 @@
     # ****************************************************************************************************************************
     # Block for installing sub-operator product
     - name: Create Instance of Python
-      when: seaa_product == 'python'
+      when: seaa_deploy_objective == 'python'
       tags:
         - oel-dev
         - python
@@ -559,7 +558,7 @@
     # ****************************************************************************************************************************
     # Block for installing sub-operator product
     - name: Create Instance of ZOAU
-      when: seaa_product == 'zoau'
+      when: seaa_deploy_objective == 'zoau'
       tags:
         - oel-dev
         - zoau

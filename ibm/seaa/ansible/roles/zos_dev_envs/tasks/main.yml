@@ -49,6 +49,12 @@
         - seaa_deploy_strategy == "testing"
         - seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yml"
 
+    - name: Fail if seaa_deploy_objective '{{ seaa_deploy_objective }}' is not a provided for deployment
+      ansible.builtin.fail:
+        msg: "Please supply a value for 'seaa_deploy_objective' to run the zos_dev_envs ansible role."
+      when:
+        - seaa_deploy_objective is undefined or seaa_deploy_objective is none
+
 - name: Show Automation Status for Current OCP Host
   tags:
     - always
@@ -67,7 +73,7 @@
         var: seaa_deploy_strategy
       no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
 
-    - name: Debug automation status for product '{{ seaa_product }}' on '{{ current_ocphost }}'
+    - name: Debug automation status for product '{{ seaa_deploy_objective }}' on '{{ current_ocphost }}'
       ansible.builtin.debug:
         var: openshift_auth_token
       no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
@@ -101,67 +107,77 @@
         zoscb_deployed: false
         zpm_deployed: false
 
-# Deploy tagged components to stack
-- name: Deploy z/OS Cloud and Modernization Stack Components
-  when:
-    - hostvars[current_ocphost]._is_active
-    - seaa_deploy_strategy == "deploy" or seaa_deploy_strategy == "testing"
-  block:
-    - name: Deploy z/OS Cloud and Modernization Stack Components
-      ansible.builtin.include_tasks: "_deploy.yml"
-      with_items:
-        - "{{ hostvars[current_ocphost].project_names }}"
-      loop_control:
-        loop_var: current_namespace
-      tags: always
-  rescue:
-    - name: Debug rescued error
-      ansible.builtin.debug:
-        msg: "Caught an error while deploying on {{ current_ocphost }}"
-
-# Verify Deployed Resources when running testing strategy
-- name: Verifying z/OS Cloud and Modernization Stack Components
-  when:
-    - hostvars[current_ocphost]._is_active
-    - seaa_deploy_strategy == "verify" or seaa_deploy_strategy == "testing"
-  block:
-
-    - name: Verifying z/OS Cloud and Modernization Stack Components
-      ansible.builtin.include_tasks: "verify.yml"
-      with_items:
-        - "{{ hostvars[current_ocphost].project_names }}"
-      loop_control:
-        loop_var: current_namespace
-      tags: always
-  rescue:
-    - name: Debug rescued error
-      ansible.builtin.debug:
-        msg: "Caught an error while verifying on {{ current_ocphost }}"
-
-# Set flag to determin if component should be undeployed
-- name: Set fact to allow undeployment of non broker or zpm component when using "testing" strategy
-  when:
-    - hostvars[current_ocphost]._is_active
-    - seaa_deploy_strategy == "testing"
-    - seaa_product != "zoscb" and seaa_product != "zpm"
-  ansible.builtin.set_fact:
-    can_undeploy_component: true
+- name: Block for deploying ZPM and Broker Components
   tags: always
-
-# Undeploy tagged components from stack
-- name: Undeploy z/OS Cloud and Modernization Stack Components
   when:
     - hostvars[current_ocphost]._is_active
-    - seaa_deploy_strategy == "undeploy" or can_undeploy_component is defined and can_undeploy_component
+    - seaa_deploy_objective != "secrets"
   block:
+
+    # Deploy tagged components to stack
+    - name: Deploy z/OS Cloud and Modernization Stack Components
+      when:
+        - seaa_deploy_strategy == "deploy" or seaa_deploy_strategy == "testing"
+      block:
+        - name: Deploy z/OS Cloud and Modernization Stack Components
+          ansible.builtin.include_tasks: "_deploy.yml"
+          with_items:
+            - "{{ hostvars[current_ocphost].project_names }}"
+          loop_control:
+            loop_var: current_namespace
+      rescue:
+        - name: Debug rescued error
+          ansible.builtin.debug:
+            msg: "Caught an error while deploying on {{ current_ocphost }}"
+
+    # Verify Deployed Resources when running testing strategy
+    - name: Verifying z/OS Cloud and Modernization Stack Components
+      when:
+        - seaa_deploy_strategy == "verify" or seaa_deploy_strategy == "testing"
+      block:
+
+        - name: Verifying z/OS Cloud and Modernization Stack Components
+          ansible.builtin.include_tasks: "verify.yml"
+          with_items:
+            - "{{ hostvars[current_ocphost].project_names }}"
+          loop_control:
+            loop_var: current_namespace
+      rescue:
+        - name: Debug rescued error
+          ansible.builtin.debug:
+            msg: "Caught an error while verifying on {{ current_ocphost }}"
+
+    # Set flag to determin if component should be undeployed
+    - name: Set fact to allow undeployment of non broker or zpm component when using "testing" strategy
+      when:
+        - seaa_deploy_objective != "zoscb" and seaa_deploy_objective != "zpm"
+      ansible.builtin.set_fact:
+        can_undeploy_component: true
+
+    # Undeploy tagged components from stack
     - name: Undeploy z/OS Cloud and Modernization Stack Components
-      ansible.builtin.include_tasks: "undeploy.yml"
+      when:
+        - seaa_deploy_strategy == "undeploy" or can_undeploy_component is defined and can_undeploy_component
+      block:
+        - name: Undeploy z/OS Cloud and Modernization Stack Components
+          ansible.builtin.include_tasks: "undeploy.yml"
+          with_items:
+            - "{{ hostvars[current_ocphost].project_names }}"
+          loop_control:
+            loop_var: current_namespace
+      rescue:
+        - name: Debug rescued error
+          ansible.builtin.debug:
+            msg: "Caught an error while undeploying on {{ current_ocphost }}"
+
+- name: Block to manage secrets for OCP projects
+  tags: sshkey
+  when:
+    - seaa_deploy_objective == "secrets"
+  block:
+    - name: Manage Secrets for OCP projects
+      ansible.builtin.include_tasks: 'util/manage_ocp_secrets.yml'
       with_items:
         - "{{ hostvars[current_ocphost].project_names }}"
       loop_control:
         loop_var: current_namespace
-      tags: always
-  rescue:
-    - name: Debug rescued error
-      ansible.builtin.debug:
-        msg: "Caught an error while undeploying on {{ current_ocphost }}"

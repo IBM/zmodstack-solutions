@@ -83,5 +83,6 @@
 
         - name: Waiting for user response
           ansible.builtin.pause:
-            prompt: PRE-Check '{{ seaa_deploy_strategy }}' of '{{ seaa_product }}' in '{{ this_project_name }}' on '{{ current_ocphost }}', enter to continue...
+            prompt: PRE-Check '{{ seaa_deploy_strategy }}' of '{{ seaa_deploy_objective }}' in '{{ this_project_name }}\
+             ' on '{{ current_ocphost }}', enter to continue...
           when: seaa_automation.prompt_during_automation | bool
