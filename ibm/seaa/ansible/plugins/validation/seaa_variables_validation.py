@@ -80,6 +80,7 @@ EXAMPLES = r'''
 '''
 
 from ansible.module_utils.basic import AnsibleModule
+from jinja2 import Environment, TemplateSyntaxError, Template
 from ansible.module_utils.common.process import get_bin_path
 import yaml
 import tempfile
@@ -100,13 +101,141 @@ class MissingVariable(Exception):
 class MissingVariableValue(Exception):
     pass
 
+# ValidationException exception class
+class ValidationException(Exception):
+    pass
+
 # Work directory to use for temp files used to validate variables
 seaa_work_dir = "/tmp/.seaa" #os.path.expanduser("~")+'/.seaa/tmp'
 
 # Prefix for tmp files
 tmp_file_prefix = "vseaa"
 
-# schema_type = "complex"
+# bool filters used in eval jinja method
+def bool_filter(value):
+    return bool(value)
+
+# int filters used in eval jinja method
+def int_filter(value):
+    return int(value)
+
+# method to evaluate jinja template with variables dictionary for hostvars
+def evaluate_jinja_template(template_string, variables):
+    # Create a Jinja environment
+    env = Environment()
+    env.filters['bool'] = bool_filter
+    env.filters['int'] = int_filter
+
+    template = env.from_string(template_string)
+    rendered_value = template.render(variables)
+
+    return rendered_value
+
+# method to check if jinja temlate is vaalid
+def validate_jinja_template(template_string):
+    try:
+        env = Environment()
+        env.parse(template_string)
+
+        return True
+    except TemplateSyntaxError as e:
+        
+        error_details = {
+            'type': type(e).__name__,
+            'message': str(e),
+            'lineno': e.lineno,
+            'name': e.name,
+            'source': e.source
+        }
+
+        raise TemplateSyntaxError(error_details)
+    
+
+def get_variable_value(module, value_string, variables):
+    # Regex to match lookup variable string for values
+    # lookup_match = re.match(r"{{\s*lookup\s*\(\s*(['\"]{1,2})(\w+)\1\s*,\s*(['\"]{1,2})(\w+)\3\s*\)\s*}}$", value_string)
+    lookup_match = re.match(r"^\s*{{\s*lookup\s*\(\s*(['\"]{1,2})(\w+)\1\s*,\s*(['\"]{1,2})(\w+)\3\s*\)\s*}}$", value_string)
+    
+    # Check if doing lookup for variable_sting
+    if lookup_match:
+        
+        # Get type of lookup supported lookups are ones are 'var and 'env'
+        lookup_type = lookup_match.group(2)
+
+        # Get variable name from "lookup"
+        lookup_var_name = lookup_match.group(4)
+
+        if validate_jinja_template(value_string):
+            # Do lookup for variables value string
+            return _dolookup(module, lookup_type, lookup_var_name, variables)
+        else:
+            return value_string    
+    else:
+        # Check if value_string is a ansible var {{ ansiblle_var }}
+        jinja_ansiblevar_match = re.match(r"\s*{{\s*(\w+)\s*}}$", value_string)
+        if jinja_ansiblevar_match:
+            # Get ansible variable name
+            var_name = jinja_ansiblevar_match.group(1)
+            # Get ansible variable value
+            var_value = variables.get(var_name)
+
+            # Check if value is also a string could be a jinja template
+            if isinstance(var_value, str):
+                # Check if value a jinja template or return value
+                return _check_and_return_value(module, var_value, variables)
+            return var_value
+        else:
+            # Check if value a jinja template or return value
+            return _check_and_return_value(module, value_string, variables)
+
+# Method to do lookup (ansible vars or ENV) and jinja templating based on a specific variable and variables dictionary for specific host
+def _dolookup(module, lookup_type, lookup_var_name, variables):
+    if lookup_type == 'vars':
+        # Perform jijna templating for value
+        lookup_var_value = evaluate_jinja_template(lookup_var_name, variables)
+
+        # Get value of Lookup var
+        var_value = variables.get(lookup_var_value)
+
+        # Recursively get_variable_value until no more lookups or vars are needed 
+        return get_variable_value(module, var_value, variables)
+
+    elif lookup_type == 'env':
+        # Perform env lookup
+        return os.environ.get(lookup_var_name)
+    else:
+        # Unsupported lookup type
+        raise ValidationException(f"Unsupported lookup type: {lookup_type}")
+
+
+def _check_and_return_value(module, value_string, variables):
+    # CHeck if value could be a jinja template
+    jinja_value_match = re.match(r"({{.*?}})$", value_string)
+    if jinja_value_match:
+        value_jinja_str = jinja_value_match.group(1)
+
+        # Check value to see if lookup has filter
+        lookup_w_filter_match = re.match(r"^\s*{{\s*lookup\('(\w+)',\s*'(\w+)'\)\s*\|\s*(\w+)\s*}}", value_string)
+        if lookup_w_filter_match:
+            # Get lookup_type
+            lookup_type = lookup_w_filter_match.group(1)
+
+            # Get lookup_var_name variable name
+            lookup_var_name = lookup_w_filter_match.group(2)
+            
+            # Get lookup_filter_name
+            lookup_filter_name = lookup_w_filter_match.group(3)
+
+            # Check if lookup filter is supported    
+            if lookup_filter_name != "bool" and lookup_filter_name != "int" :
+                raise ValidationException(f"Unsupported lookup filter {lookup_filter_name}")
+            else:
+                # Lookup 
+                return _dolookup(module, lookup_type, lookup_var_name, variables)
+            
+        value_string = evaluate_jinja_template(value_jinja_str, variables)
+
+    return value_string
 
 # Function to validate inventory and combined ansible variables
 def validate_seaa_variables(module, inventory_data: str, schema_data: str):
@@ -117,7 +246,7 @@ def validate_seaa_variables(module, inventory_data: str, schema_data: str):
        return validate_group_hosts(module, inventory_data, schema_data, 'zosendpoints')
     else:
        return False   
- 
+
 # Validate inventory groups
 def validate_group_hosts(module, inventory_data: str, schema_data: str, validating_group: str):
     # Variable to track if any host is active
@@ -133,14 +262,22 @@ def validate_group_hosts(module, inventory_data: str, schema_data: str, validati
             for host_name, host_variables in group_data['hosts'].items():
                 # Check if '_is_active' exist and has a value in this group
                 _check_for_active_host(host_name, host_variables, validating_group)
+                
+                if "validate_is_active_flag" in schema_data and schema_data['validate_is_active_flag']:
+                    # Validate '_is_active' flag for host
+                    valid, _ = validate_complex_types(module, host_name, schema_data['_is_active'], '_is_active',  host_variables['_is_active'], validating_group, current_group_name, host_variables, False)    
+                    if valid:    
+                        # Set any active host to True
+                        any_active_host_in_group = True
 
-                # Check if '_is_active' is true
-                if host_variables['_is_active'] == True:
-                    # Set any active host to True
-                    any_active_host_in_group = True
+                        # Validate current groups host against schema data
+                        schema_validation(module, schema_data, validating_group, current_group_name, host_name, host_variables)
+                else:
+                    any_active_host_in_group =  True    
+         
                     # Validate current groups host against schema data
                     schema_validation(module, schema_data, validating_group, current_group_name, host_name, host_variables)
-
+     
     #Fail if none of the hosts are active
     if not any_active_host_in_group:
         raise NoActiveHost(f"Error validating '{validating_group}': None of the hosts are active in inventory. Validation failed.") #NoActiveHost
@@ -160,12 +297,12 @@ def schema_validation(module, schema_data, validating_group, current_group_name,
 
     # Validate host for a specific group
     if _schema_type == "complex":
-        validate_host_complex_types(schema_data, validating_group, current_group_name, host_name, host_variables)
+        return validate_host_complex_types(module, schema_data, validating_group, current_group_name, host_name, host_variables, True)
     else:    
         validate_host_simple(schema_data, current_group_name, host_name, host_variables)
         
 # Validate values for inventory host
-def validate_host_complex_types(schema_data: str, validating_group: str, current_group_name: str, host_name: str, host_variables):
+def validate_host_complex_types(module, schema_data: str, validating_group: str, current_group_name: str, host_name: str, host_variables, raise_exception):
 
     # Iterate of variables in schema
     for variable, variable_schema in schema_data.items():
@@ -173,7 +310,7 @@ def validate_host_complex_types(schema_data: str, validating_group: str, current
         if variable == 'all_groups':
           # Continue to next variable
           continue
-        else:  
+        elif isinstance(variable, dict):
             # Set variable to check if variable is required
             _is_required = variable_schema['host_group']['required']
             
@@ -185,55 +322,97 @@ def validate_host_complex_types(schema_data: str, validating_group: str, current
                 raise MissingVariable(f"Variable '{variable}' is missing for host '{host_name}' in '{current_group_name}' for '{validating_group}'") #MissingVariable
             # Check if group being verified is in list for variable
             elif validating_group in _group_names:
+                return _do_validate_host_complex_types(module, variable, host_variables[variable], variable_schema, validating_group, current_group_name, host_name, host_variables, raise_exception)
 
-                
-                _do_validate_host_complex_types(variable, host_variables[variable], variable_schema, validating_group, current_group_name, host_name)
-
-def _do_validate_host_complex_types(variable, variable_value, variable_schema, validating_group: str, current_group_name: str, host_name: str):
+def _do_validate_host_complex_types(module, variable, host_variable_values, variable_schema, validating_group: str, current_group_name: str, host_name: str, host_variables, raise_exception):
 
     # Set variable to check if variable is required
     _is_required = variable_schema['host_group']['required']
 
     # Check if variable value is None
-    if _is_required and ( variable_value == None or variable_value == "" ) :
+    if _is_required and ( host_variable_values == None or host_variable_values == "" ) :
         raise MissingVariableValue(f"Variable '{variable}' value not provided for host '{host_name}' in '{current_group_name}' for '{validating_group}'") #MissingVariableValue
     # Check if the variable is of the correct type
-    elif _is_required and isinstance(variable_value, list) and (len(variable_value) == 0 or all(element == None for element in variable_value)):
+    elif _is_required and isinstance(host_variable_values, list) and (len(host_variable_values) == 0 or all(element == None for element in host_variable_values)):
         raise MissingVariableValue(f"Variable '{variable}' has no values for host '{host_name}' in '{current_group_name}' for '{validating_group}'") #MissingVariableValue
-    elif variable_value != None and variable_value != "" : # or (isinstance(variable_value, list) and (len(variable_value) != 0 and all(element != None for element in variable_value))):
-            validate_complex_types(host_name, variable_schema['data_type'], variable, variable_value, validating_group, current_group_name)
+    elif host_variable_values != None and host_variable_values != "" : # or (isinstance(variable_value, list) and (len(variable_value) != 0 and all(element != None for element in variable_value))):
+        return validate_complex_types(module, host_name, variable_schema, variable, host_variable_values, validating_group, current_group_name, host_variables, raise_exception)
+
 
 # Validate data types for variable value
-def validate_complex_types(host_name, _expected_types, variable, variable_value, validating_group, current_group_name):
-    # Convert expected types to a tuple of types
+def validate_complex_types(module, host_name, variable_schema, variable, host_variable_values, validating_group, current_group_name, host_variables, raise_exception ):
+    _expected_types = variable_schema['data_type']
+    
+    expected_types = None
+
     if isinstance(_expected_types, str):
         expected_types = (eval(_expected_types),)
     elif isinstance(_expected_types, list):
         expected_types = tuple(eval(t) for t in _expected_types)
+    else:
+        raise ValidationException("Schema validation error, 'data_type' must be 'str' or 'list' or strings")    
 
-    # Check if variable value is expected type
-    if not isinstance(variable_value, expected_types):
-        if len(expected_types) == 1:
-            expected_type_str = expected_types[0].__name__
-            raise TypeError(f"Variable '{variable}' for host '{host_name}' in '{current_group_name}' for '{validating_group}' is not of type '{expected_type_str}'") #IncorrectVariableType
-        else:
-            expected_type_names = [expected_type.__name__ for expected_type in expected_types]
-            expected_type_str = " or ".join(expected_type_names)
-            raise TypeError(f"Variable '{variable}' for host '{host_name}' in '{current_group_name}' for '{validating_group}' is not one of the expected types: {expected_type_str}") #IncorrectVariableType
+    if isinstance(host_variable_values, str):
+        variable_values = convert_expected_type(get_variable_value(module, host_variable_values, host_variables), expected_types )
+    else:
+        variable_values = host_variable_values
+
     # Check if values in a list are the right type 
-    elif isinstance(variable_value, list) and not validate_list_type(variable_value, expected_types):
-        raise TypeError(f"Variable '{variable}' value '{variable_value}' for host '{host_name}' in '{current_group_name}' for '{validating_group}' is not the expected type: {expected_types}") #IncorrectVariableType
+    if isinstance(variable_values, list):
+        if not validate_list_type(module, variable_values, expected_types, variable_schema, host_variables):
+            raise TypeError(f"Variable '{variable}' value '{variable_values}' for host '{host_name}' in '{current_group_name}' for '{validating_group}' is not the expected type: {expected_types}") #IncorrectVariableType
+        # else:
+    
+    else:
+        # Check if variable value is expected type
+        if not isinstance(variable_values, expected_types):
+            if len(expected_types) == 1:
+                expected_type_str = expected_types[0].__name__
+                raise TypeError(f"Variable '{variable}' for host '{host_name}' in '{current_group_name}' for '{validating_group}' is not of type '{expected_type_str}'") #IncorrectVariableType
+            else:
+                expected_type_names = [expected_type.__name__ for expected_type in expected_types]
+                expected_type_str = " or ".join(expected_type_names)
+                raise TypeError(f"Variable '{variable}' for host '{host_name}' in '{current_group_name}' for '{validating_group}' is not one of the expected types: {expected_type_str}") #IncorrectVariableType
+        return validate_one_of(variable_values, variable_schema, raise_exception), variable_values
+    
+def convert_expected_type(variable_value, expected_types):
+    if variable_value is not None :
+        if bool in expected_types and (type(variable_value) != bool):
+            _variable_value = True if variable_value.lower() == 'true' else False
+            return _variable_value
+        if int in expected_types and (type(variable_value) != int):
+            _variable_value = int(variable_value)
+            return _variable_value
+    return variable_value
+
+# Check  if variable is one of the expected values
+def validate_one_of(value, variable_schema, raise_exception=True):
+    # Check if variable schema has exoected vakus=es
+    if "expected_values" in variable_schema:
+        if value in variable_schema['expected_values']:
+            return True
+        else:
+            if raise_exception:
+                raise ValidationException(f"Value '{value}' is not one oF the expected values '{variable_schema['expected_values']}'")
+            else:
+                return False
+    else:
+        return True
 
 # Check if values in a list are of the right type 
-def validate_list_type(value_list, expected_types):
+def validate_list_type(module, value_list, expected_types, variable_schema, host_variables):
     # Check if expected type is only 1 type and it is a list
     if len(expected_types) == 1 and expected_types[0] == list:
         return True
     else:  
         # Iterate over values in a list and verify if they are of the expected type  
-        for value in value_list:
+        for variable_value in value_list:
+            # Get value for variable, including 'vars' and 'env' lookups
+            value = get_variable_value(module, variable_value, host_variables)
             if not isinstance(value, expected_types):
                 return False
+            # Validate value is one ox expected values
+            validate_one_of(value, variable_schema)
         return True
 
 # Validate values for inventory host
