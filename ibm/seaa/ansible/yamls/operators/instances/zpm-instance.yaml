@@ -28,6 +28,6 @@ spec:
   zpm_registry_proxy_port: "{{ zos_package_manager.zpmRegistryProxyPort }}"
   {% endif %}
   {% if oc_product.credential_type == "personal" %}
-  credential: "ssh-key-{{ endpoint.username }}-{{ endpoint.name }}"
+  credential: "{{ seaa_sshkey_secrets_prefix }}{{ endpoint.username }}-{{ endpoint.name }}"
   {% endif %}
 

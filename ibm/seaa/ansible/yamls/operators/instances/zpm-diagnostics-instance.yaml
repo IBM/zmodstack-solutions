@@ -13,7 +13,7 @@ spec:
   product_cr_name: "{{ zos_package_manager_diagnostics.productCRName }}"
   zosendpoint: "{{ zos_package_manager_diagnostics.zosEndpoint }}"
   {% if oc_product.credential_type == "personal" %}
-  credential: "ssh-key-{{ endpoint.username }}-{{ endpoint.name }}"
+  credential: "{{ seaa_sshkey_secrets_prefix }}{{ endpoint.username }}-{{ endpoint.name }}"
   {% endif %}
 
 

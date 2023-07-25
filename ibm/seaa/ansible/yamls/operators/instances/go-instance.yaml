@@ -21,6 +21,6 @@ spec:
   product_ver: "{{ go_instance.productVersion }}"
   zosendpoint: "{{ go_instance.zosEndpoint }}"
 {% if oc_product.credential_type == "personal" %}
-  credential: "ssh-key-{{ endpoint.username }}-{{ endpoint.name }}"
+  credential: "{{ seaa_sshkey_secrets_prefix }}{{ endpoint.username }}-{{ endpoint.name }}"
 {% endif %}
 
