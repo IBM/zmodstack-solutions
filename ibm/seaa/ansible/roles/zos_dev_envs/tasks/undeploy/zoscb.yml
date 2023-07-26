@@ -51,6 +51,7 @@
 - name: Block to delete project and namespace
   when:
     - seaa_deploy_role == "admin" or seaa_developer_deploys_project | bool
+    - seaa_purge_namespace | bool
   block:
 
     # DELETE NAMESPACE

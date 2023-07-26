@@ -4,14 +4,6 @@
 #
 
 ---
-- name: Set JMES cache queries
-  ansible.builtin.set_fact:
-    jmesq_zoscb_deployed: "cached[? ocp_host=='{{ current_ocphost }}'] | [].zoscb_deployed_on | [?contains(@, '{{ this_project_name }}')][]"
-    jmesq_zpm_deployed: "cached[? ocp_host=='{{ current_ocphost }}'] | [].zpm_deployed_on | [?contains(@, '{{ this_project_name }}')][]"
-    jmesq_script_started: "cached[? ocp_host=='{{ current_ocphost }}'] | [].started_script_gen_on | [?contains(@, '{{ this_project_name }}')][]"
-    jmesq_readme_started: "cached[? ocp_host=='{{ current_ocphost }}'] | [].started_readme_gen_on[].\"{{ this_project_name }}\""
-  no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
-
 - name: Set config variable facts
   ansible.builtin.set_fact:
     config_var_seaa_deploy_resource_ifpresent: "{{ lookup('vars', 'seaa_deploy_resource_ifpresent', default=true) | bool }}"

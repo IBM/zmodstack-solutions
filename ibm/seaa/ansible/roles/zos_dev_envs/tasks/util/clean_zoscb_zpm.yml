@@ -15,18 +15,24 @@
 
 # Include Authentication and cache initialization task to reset authentecate host
 - name: Authentication Initialize Cache and Authenticate
-  ansible.builtin.include_tasks: "init_cache.yml"
+  ansible.builtin.include_tasks: "auth_and_init_cache.yml"
 
 # Set smart feploy flags and verify current zpm and zoswcb installation status
 - name: Smart Deploy Setup
   when:
     - seaa_zoscb_smart_deploy | bool or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yaml"
   vars:
-    seaa_product: cleanup
+    seaa_deploy_objective: cleanup
   tags: always
   block:
-    - name: Set up smart deploy and generate variables
-      ansible.builtin.include_tasks: "smart_deploy_and_generate.yml"
+    # - name: Set up smart deploy and generate variables
+    #   ansible.builtin.include_tasks: "smart_deploy_and_generate.yml"
+
+    - name: Setup Smart Deploy and Generate
+      ansible.builtin.include_tasks: "util/_init_generate.yml"
+
+    - name: Setup Smart Deploy and Generate
+      ansible.builtin.include_tasks: "util/_init_smartdeploy.yml"
   rescue:
     - name: Debug rescue error
       ansible.builtin.debug:
@@ -58,7 +64,7 @@
   # Undeploy ZPM
   ansible.builtin.include_tasks: "undeploy/zpm.yml"
   vars:
-    seaa_product: zpm
+    seaa_deploy_objective: zpm
 
 # Remove ZPM, Broker and revoke Auth tokens
 - name: Undeploy z/OS Cloud Broker
@@ -67,4 +73,4 @@
     - (seaa_zoscb_smart_deploy | bool and seaa_zpm_smart_deploy | bool) or seaa_deploy_strategy == "testing"
   ansible.builtin.include_tasks: "undeploy/zoscb.yml"
   vars:
-    seaa_product: zoscb
+    seaa_deploy_objective: zoscb

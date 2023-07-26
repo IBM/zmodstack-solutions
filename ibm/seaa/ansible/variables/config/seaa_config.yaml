@@ -18,7 +18,7 @@ seaa_zoscb_smart_deploy: true
 
 # Auto deploy z/OS Package Manager if it is not deployed
 # for seaa_deploy_strategy = 'deploy' this will only deploy if 'seaa_zoscb_smart_deploy' is set to true and broker is deployed
-# for seaa_deploy_strategy = 'undeploy' if this and 'seaa_purge_namespace' is true ZPM can be deployed without undeploying ZOSCB
+# for seaa_deploy_strategy = 'undeploy' if this and 'seaa_purge_namespace' is true ZPM can be undeployed without undeploying ZOSCB
 seaa_zpm_smart_deploy: true
 
 # Auto purge zpm, broker and OCP project namespace when undeploying and smart deploy is enabled
@@ -71,6 +71,9 @@ seaa_security_password_vault_item: se-login
 
 # Encrypt secrets during deployment default(true)
 seaa_encrypt_secrets: true
+
+# Prefix for SSH Key secrets
+seaa_sshkey_secrets_prefix: ssh-key-
 
 # Encrypt sensitive endpoint variables
 seaa_encrypt_sensitive_endpoint_vars: true
