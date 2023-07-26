@@ -9,7 +9,7 @@
 # For additional usage information use "--help" flag as input to script.
 #
 # To run script:
-# ./run-manage-ssh-key
+# ./run-manage-ocp-secrets.sh --tags=sshkey
 # **************************************************************************************************#
 # Print parameter usage
 function _printUsage() {
@@ -91,46 +91,6 @@ function _parseCommandLine() {
             -debug|-dbug)
               continue;
         ;;     
-        #     --extra_vars=*|-e=*)
-        #         export EXTRAVARS=${i#*=}
-        # ;;
-        #     --inventory=*|-i=*)
-        #         val=${i#*=}
-        #         if [[ -n "$val" ]]; then
-        #           export INVENTORY=${val} ;
-        #         fi
-        # ;;
-        #     --inventory_location=*|-i_loc=*)
-        #         val=${i#*=}
-        #         if [[ -n "$val" ]]; then
-        #           export SEAA_INVENTORY_LOCATION=${val} ;
-        #         fi
-		# ;;
-        #     --ansible_verbosity=*|-v=*)
-		#         export ANSIBLE_VERBOSITY=${i#*=}
-	    # ;;
-        #     --ansible_debug|-adbug)
-   		#         export ANSIBLE_DEBUG=true
-        #         echo "Inventory Location: ${INVENTORY_LOCATION}"
-        #         echo  "Inventory File: ${INVENTORY}"
-        #         echo  "Ansible Tags: ${tags}"
-        #         echo  "Ansible Extra-Vars: ${EXTRAVARS}"
-	    # ;;
-        #     --script_debug|-sdbug)
-   		#         echo "Inventory Location: ${INVENTORY_LOCATION}"
-        #         echo  "Inventory File: ${INVENTORY}"
-        #         echo  "Ansible Tags: ${tags}"
-        #         echo  "Ansible Extra-Vars: ${EXTRAVARS}"
-        #         set -x
-	    # ;;
-        #     -debug|-dbug)
-   		#         export ANSIBLE_DEBUG=true
-        #         echo "Inventory Location: ${INVENTORY_LOCATION}"
-        #         echo  "Inventory File: ${INVENTORY}"
-        #         echo  "Ansible Tags: ${tags}"
-        #         echo  "Ansible Extra-Vars: ${EXTRAVARS}"
-        #         set -x
-	    # ;;
             --help)
                 _printUsage;
                 exit 0;
@@ -175,7 +135,7 @@ function main() {
 
     # Run playbook
     ansible-playbook "${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/playbooks/ocp/manage-ocp-secrets.yml" ${RUNOPTIONS} \
-     -e "${SEAA_EXTRA_VARS}" --tags "${SEAA_TAGS}" --skip-tags "${SEAA_SKIPTAGS}" -e "${ev_automation_strategy:=}" 
+     -e "${SEAA_EXTRA_VARS}" -e "${ev_automation_strategy:=}" 
 
     # Return Playbook exit code
     return $?
