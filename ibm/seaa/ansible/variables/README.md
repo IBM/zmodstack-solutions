@@ -57,5 +57,27 @@ Extra-vars have the highest-level of precedence and can be used to override ANY 
 
   ```
   **Note** The default `SEAA_CONFIG_PATH_TO_SE_VARIABLES`=[${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/variables](../variables/)
+
+## SEAA Environment Variables
+
+### SEAA Input variables
+- `SEAA_AUTOMATION_STRATEGY` - Automation strategy (deploy_yaml, generate_yaml, or generate_deploy_yaml )
+- `SEAA_EXTRA_VARS` - Ansible extra-vars
+- `SEAA_INVENTORY` - Ansible inventory file name
+- `SEAA_INVENTORY_LOCATION` - Ansible inventory directory location
+
+### SEAA Output variables
+- `SEAA_TAGS` - Ansible tags use to run playbook
+- `SEAA_SKIPTAGS` - Ansible skiptags use to run playbook
+
+### SEAA Internal variables
+- `SEAA_DEFAULT_EXTRAVARS` -  Default extra-vars file used if exist and no extra vars are passed to script
+  default
+  ``` 
+  "${SEAA_CONFIG_PATH_TO_SE_VARIABLES:-${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/variables}/seaa-extra-vars.json" 
+  ``` 
+### Ansible variables to debug automation run
+- `ANSIBLE_VERBOSITY` - Ansible playbook verbosity level
+- `ANSIBLE_DEBUG` - Debug Ansible playbooks
 ---
 ## [back to framework guide](../../../../docs/guide/README.md)

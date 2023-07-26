@@ -50,21 +50,11 @@ function main() {
 
     #Run playbook
     ansible-playbook "${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/playbooks/zos_dev_envs/oel/undeploy-oel-dev-env.yml" ${RUNOPTIONS} \
-     -e "${SEAA_EXTRA_VARS}" --tags "${SEAA_TAGS}" --skip-tags "${SEAA_SKIPTAGS}" -e "${ev_automation_strategy:=}"
+     -e "${SEAA_EXTRA_VARS}" -e "${ev_automation_strategy:=}"
 
     # Return Playbook exit code
     return $?
 }
 
-# Set defaults
-export SEAA_TAGS=
-export SEAA_SKIPTAGS=
-export SEAA_EXTRA_VARS=
-export SEAA_INVENTORY="${SEAA_INVENTORY:-inventory.yaml}"
-export SEAA_INVENTORY_LOCATION="${SEAA_INVENTORY_LOCATION:-${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/playbooks/inventory}"
-
-# Variables to debug automation run
-export ANSIBLE_VERBOSITY=0
-export ANSIBLE_DEBUG=false
 # Run script main
 main "$@"
