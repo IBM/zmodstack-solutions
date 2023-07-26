@@ -7,18 +7,6 @@
 - name: Clean up resources on Openshift
   tags: always
   block:
-
-    - name: Undeploy broker and/or zpm from namespaces
-      ansible.builtin.include_tasks: "undeploy/clean_zoscb_zpm.yml"
-      when:
-        - seaa_deploy_strategy == "undeploy" or seaa_deploy_strategy == "testing"
-        - (seaa_purge_namespace is defined and seaa_purge_namespace | bool)
-      with_items:
-        - "{{ hostvars[current_ocphost].project_names }}"
-      loop_control:
-        loop_var: current_namespace
-
-  always:
     - name: Set JMES cache queries
       ansible.builtin.set_fact:
         jmesq_authenticated: "cached[? ocp_host=='{{ current_ocphost }}'] | [].authenticated"

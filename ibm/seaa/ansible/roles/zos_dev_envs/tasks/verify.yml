@@ -6,36 +6,11 @@
 ---
 # ****************************************************************************************************************************
 # *
-# - Include task to set this_project_name from current_namespace for verify
+# - Include task to initialize the SEAA framwwork
 # *
 # ****************************************************************************************************************************
-- name: Set this_project_name
-  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_the_project_name.yml"
-  tags: always
-
-# ****************************************************************************************************************************
-# *
-# - Set "zos_endpoints" list for iterating multiple zos endpoint deployments
-# *
-# ****************************************************************************************************************************
-- name: Set zos endpoint list
-  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_inventory_zosendpoints.yml"
-  tags: always
-
-# ****************************************************************************************************************************
-# *
-# - IMPORTANT: Include zos endpoint variable dictionaries used by each deployment to iterate over zosendpoints in inventory
-# *
-# ****************************************************************************************************************************
-- name: Include variables endpoint variables
-  ansible.builtin.include_vars: "{{ zoscb_e2e_roles_directory | get_expanded_dir }}/ocp_cluster/vars/endpoints.yml"
-  tags: always
-  when: not endpoint_vars_loaded
-
-- name: Set endpoint_vars_loaded flag
-  ansible.builtin.set_fact:
-    endpoint_vars_loaded: true
-  when: not endpoint_vars_loaded
+- name: Initiallize SEAA framework
+  ansible.builtin.include_tasks: "util/seaa_initialize.yml"
 
 # ****************************************************************************************************************************
 # *

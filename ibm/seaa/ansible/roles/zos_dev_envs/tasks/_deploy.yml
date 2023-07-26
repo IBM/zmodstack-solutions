@@ -6,66 +6,34 @@
 ---
 # ****************************************************************************************************************************
 # *
-# - Include task to set this_project_name from current_namespace for deployment
+# - Include task to initialize the SEAA framwwork
 # *
 # ****************************************************************************************************************************
-- name: Set this_project_name
-  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_the_project_name.yml"
-  tags: always
-
-# ****************************************************************************************************************************
-# *
-# - Set "zos_endpoints" list for iterating multiple zos endpoint deployments
-# *
-# ****************************************************************************************************************************
-- name: Set zos endpoint list
-  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_inventory_zosendpoints.yml"
-  tags: always
-
-# ****************************************************************************************************************************
-# *
-# - Set smart deploy flags and verify current zpm and zoswcb installation status
-# *
-# ****************************************************************************************************************************
-- name: Smart Deploy Setup
-  tags: always
-  when:
-    - seaa_zoscb_smart_deploy | bool or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yaml"
-  block:
-    - name: Setup Smart Deploy and Generate
-      ansible.builtin.include_tasks: "smart_deploy_and_generate.yml"
-  rescue:
-    - name: Debug rescue error
-      ansible.builtin.debug:
-        msg: "Caught an error while setting up smart deploying on {{ current_ocphost }}"
+- name: Initiallize SEAA framework
+  ansible.builtin.include_tasks: "util/seaa_initialize.yml"
 
 - name: Deploy IBM Z and Cloud Modernization Stack components
   block:
     # ****************************************************************************************************************************
     # *
-    # - IMPORTANT: Include zos endpoint variable dictionaries used by each deployment to iterate over zosendpoints in inventory
-    # *
-    # ****************************************************************************************************************************
-    - name: Include endpoint variables
-      when: not endpoint_vars_loaded
-      ansible.builtin.include_vars: "{{ zoscb_e2e_roles_directory | get_expanded_dir }}/ocp_cluster/vars/endpoints.yml"
-      tags: always
-
-    - name: Set endpoint_vars_loaded flag
-      ansible.builtin.set_fact:
-        endpoint_vars_loaded: true
-      when: not endpoint_vars_loaded
-    # ****************************************************************************************************************************
-    # *
     # - name: Deploy ZOSCB on OCP CLUSTER
     # *
     # ****************************************************************************************************************************
+    - name: Include Smart Deploy z/OS Cloud Broker task
+      ansible.builtin.include_tasks: "util/smart_deploy_broker.yml"
+      when:
+        - seaa_deploy_objective != 'zpm'
+        - seaa_deploy_role == "admin"
+        - (seaa_zoscb_smart_deploy | bool and not zoscb_deployed) # and seaa_automation_strategy != "generate_yaml" # or seaa_deploy_objective == 'zoscb'
+      tags:
+        - always
+
     # Block to deploy Cloud Broker
     - name: Create Instance of ZOSCB
       when:
-        - seaa_deploy_objective == 'zoscb'
-        - not seaa_zoscb_smart_deploy | bool or seaa_deploy_role == "developer" # Used to deploy developer project creds
+        - seaa_deploy_objective == 'zoscb' or seaa_deploy_role == "developer" # Used to deploy developer project creds
         - not zoscb_deployed
+        - "'oel-dev' in  ansible_run_tags or 'zoscb' in ansible_run_tags or 'developer' in ansible_run_tags"
       tags:
         - oel-dev
         - zoscb
@@ -81,168 +49,27 @@
           ansible.builtin.set_fact:
             zoscb_deployed: true
 
-    # Smart Deploy Broker
-    - name: Smart Deploy Instance of z/OS Cloud Broker
-      when:
-        - seaa_deploy_objective != 'zpm'
-        - seaa_deploy_role == "admin"
-        - (seaa_zoscb_smart_deploy | bool and not zoscb_deployed) # and seaa_automation_strategy != "generate_yaml" # or seaa_deploy_objective == 'zoscb'
-      tags:
-        - always
-      block:
-        # Broker block for smart deploy
-        - name: Smart Deploy Broker
-          when: seaa_zoscb_smart_deploy | bool
-          block:
-
-            # Verify Cloud Broker
-            - name: Include info task for broker
-              ansible.builtin.include_tasks: "verify/zoscb.yml"
-              when:
-                - seaa_automation_strategy != "generate_yaml"
-                # - zoscb_deploy_verified is undefined or not zoscb_deploy_verified
-              vars:
-                info_only: true
-
-            # Set zoscb deployed fact
-            - name: Set zoscb_api_deployed true
-              ansible.builtin.set_fact:
-                has_broker_info: true
-              when:
-                - broker_instance_info_only is defined
-                - broker_instance_info_only | type_debug != "NoneType"
-                - broker_instance_info_only | length > 0
-
-            # Set zoscb deployed fact
-            - name: Set zoscb_api_deployed true
-              ansible.builtin.set_fact:
-                zoscb_api_deployed: true
-              when:
-                - has_broker_info is defined and has_broker_info
-                - broker_instance_info_only | json_query('api_found') is not none
-                # - broker_instance_info_only.api_found is defined
-
-            # Verify Endpoint is deployed
-            - name: Set zoscb_deploy_verified if it exist true
-              ansible.builtin.set_fact:
-                zoscb_deploy_verified: true
-              when:
-                - zoscb_api_deployed is defined and zoscb_api_deployed
-                # Broker instance
-                - broker_instance_info_only is defined and broker_instance_info_only.api_found
-                - broker_instance_info_only.resources is defined and broker_instance_info_only.resources | length > 0
-                - broker_instance_info_only.resources[0].status is defined and broker_instance_info_only.resources[0].status.licenseacceptance == "Accepted"
-                - broker_instance_info_only.resources[0].status.phase == "Successful"
-                # Subscription Info
-                - broker_subscription_info_only.resources[0].status.installedCSV == broker_subscription.name~'.v'~broker_subscription.version
-
-            # Verify CSV instance exist
-            - name: Set zoscb_csv_deploy_verified if it exist true
-              ansible.builtin.set_fact:
-                zoscb_csv_deploy_verified: true
-              when:
-                - zoscb_deploy_verified is defined and zoscb_deploy_verified
-                # CSV instance
-                # - operator_info_only.resources is defined and operator_info_only.resources | length > 0
-                - operator_info_only | json_query('resources') is not none
-                - operator_info_only.resources | length > 0
-                - operator_info_only.resources[0].metadata.creationTimestamp != ""
-                - operator_info_only.resources[0].status.phase == 'Succeeded'
-                - operator_info_only.resources[0].status.reason == 'InstallSucceeded'
-
-            - name: Set flag  to check if z/OS endpoint not found
-              ansible.builtin.set_fact:
-                zosendpoint_not_found: false
-
-            # Deploy if ENDPOINT doesn't exist Verify ENDPOINT
-            - name: Verify all endpoints exist
-              when:
-                - zoscb_csv_deploy_verified is defined and zoscb_csv_deploy_verified
-                - seaa_deploy_zosendpoints | bool
-              block:
-
-                # Iterate over endpoints to Verify if endpoints exist
-                - name: Include task to verify zosendpoints
-                  ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/endpoint.yml"
-                  when:
-                    - hostvars[current_zosendpoint]._is_active
-                    - not zosendpoint_not_found
-                  vars:
-                    info_only: true
-                    endpoints: "{{ groups['zosendpoints'] }}"
-                  loop: "{{ endpoints }}"
-                  loop_control:
-                    loop_var: current_zosendpoint
-
-            # Check if one of the Endpoints is are not deployed
-            - name: Set zoscb_deploy_verified false if not all endpoints are available
-              ansible.builtin.set_fact:
-                zoscb_csv_deploy_verified: false
-              when:
-                - seaa_deploy_zosendpoints | bool
-                - zosendpoint_not_found # or endpoint_info_only.resources | length == 0
-
-          always:
-            - name: Reset Broker info facts
-              ansible.builtin.set_fact:
-                has_broker_info: false
-                broker_instance_info_only: ''
-                operator_info_only: ''
-                zosendpoint_not_found: false
-                endpoint_info_only: ''
-
-        # Deploy z/OS Cloud Broker if it is not verified or not smart deploy
-        - name: Deploy z/OS Cloud Broker if it is not verified or not smart deploy
-          ansible.builtin.include_tasks: "deploy/zoscb.yml"
-          when:
-            - (zoscb_csv_deploy_verified is undefined) or
-              (not zoscb_csv_deploy_verified) or
-              (not seaa_zoscb_smart_deploy | bool and seaa_deploy_objective == 'zoscb')
-
-        # Update cache with new namespace for broker
-        - name: Update cache with new namespace for broker
-          ansible.builtin.set_fact:
-            ocp_cluster_cache: "{{ ocp_cluster_cache | update_seaa_automation_cache(current_ocphost, this_project_name, 'zoscb') }}"
-          no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
-          when: ocp_cluster_cache is defined and ocp_cluster_cache != None
-
-        # Show broker is deployed to namespace and added to cache
-        - name: Debug cache for updated broker in namespace
-          when:
-            - seaa_automation.debug | bool
-          block:
-            - name: Debug var ocp_cluster_cache
-              ansible.builtin.debug:
-                var: ocp_cluster_cache
-              no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
-
-            - name: Waiting for user response
-              ansible.builtin.pause:
-                prompt: Namespace '{{ this_project_name }}' added to zoscb deployed list on '{{ current_ocphost }}', press enter to continue ...
-              when: seaa_automation.prompt_during_automation | bool
-      always:
-        - name: Reset zoscb_deploy_verified and query info facts
-          ansible.builtin.set_fact:
-            zoscb_csv_deploy_verified: false
-            zoscb_deploy_verified: false
-            zoscb_api_deployed: false
-
-        # Set flag for ZOSCB being deployed to namespace
-        - name: Set flag for ZOSCB being deployed to namespace
-          ansible.builtin.set_fact:
-            zoscb_deployed: true
-
     # ****************************************************************************************************************************
     # *
     # - name: Deploy ZPM on z/OS Endpoint
     # *
     # ****************************************************************************************************************************
+    - name: Include Smart Deploy ZPM
+      ansible.builtin.include_tasks: "util/smart_deploy_zpm.yml"
+      when:
+        - seaa_deploy_objective == 'zoscb' or seaa_deploy_objective == 'zpm'
+        - (seaa_zoscb_smart_deploy | bool and seaa_zpm_smart_deploy | bool)
+        - not zpm_deployed
+      tags:
+        - always
+
     # Block for installing sub-operator product
     - name: Create Instance of ZPM
       when:
         - seaa_deploy_objective == 'zpm'
         # - seaa_deploy_role == "admin"
-        - not seaa_zoscb_smart_deploy | bool or seaa_automation_strategy == "generate_yaml"
+        # - (not seaa_zoscb_smart_deploy | bool ) # or seaa_automation_strategy == "generate_yaml"
+        - "'oel-dev' in  ansible_run_tags or 'zpm' in ansible_run_tags"
         - not zpm_deployed
       tags:
         - oel-dev
@@ -252,218 +79,6 @@
         # Deploy ZPM
         - name: Deploy ZPM
           ansible.builtin.include_tasks: "deploy/zpm.yml"
-
-        # Set flag for ZPM being deployed to namespace
-        - name: Set flag for ZPM being deployed to namespace
-          ansible.builtin.set_fact:
-            zpm_deployed: true
-
-    # Block for installing sub-operator product
-    - name: Smart deploy instance of z/OS Package Manager
-      # Deploy ZPM when tagged to deploy Broker and Smart deploy is true
-      when:
-        - seaa_deploy_objective == 'zoscb'
-        - (seaa_zoscb_smart_deploy | bool and seaa_zpm_smart_deploy | bool and not zpm_deployed)
-      tags:
-        - always
-      block:
-
-        # ZPM block for smart deploy
-        - name: Smart Deploy ZPM
-          when: seaa_zpm_smart_deploy | bool
-          block:
-
-            # Verify z/OS Package Manager
-            - name: Verify z/OS Package Manager
-              ansible.builtin.include_tasks: "verify/zpm.yml"
-              when:
-                - seaa_automation_strategy != "generate_yaml"
-                - zpm_deploy_verified is undefined or not zpm_deploy_verified
-              vars:
-                info_only: true
-
-            # Verify ZPM CRD is deployed
-            - name: Set zpm_api_deployed fact
-              ansible.builtin.set_fact:
-                zpm_api_deployed: "{{ zos_package_manager_info_only.api_found }}"
-              when:
-                - zos_package_manager_info_only is defined
-                - zos_package_manager_info_only | json_query('api_found') is not none
-                # - zos_package_manager_info_only is defined and zos_package_manager_info_only.api_found is defined
-                # - zos_package_manager_info_only.resources is defined and zos_package_manager_info_only.resources | length > 0
-
-            # Verify ZPM Instance is deployed and Succeeded
-            - name: Set zpm_deploy_verified fact
-              ansible.builtin.set_fact:
-                zpm_deploy_verified: true
-              when:
-                - zpm_api_deployed is defined and zpm_api_deployed
-                # ZPM Instance
-                - zos_package_manager_info_only.resources[0] is defined
-                - zos_package_manager_info_only.resources[0].status is defined and zos_package_manager_info_only.resources[0].status.phase == "Succeeded"
-
-            - name: Check for ZPM components when ZPM is not verified
-              when:
-                - zpm_deploy_verified is undefined or not zpm_deploy_verified
-              block:
-                # Verify ZPM Operator collection API is deployed
-                - name: Set zpm_oc_deployed fact
-                  ansible.builtin.set_fact:
-                    zpm_oc_deployed: "{{ oc_info_only.api_found }}"
-                  when:
-                    - oc_info_only is defined
-                    - oc_info_only | json_query('api_found') is not none
-
-                # Verify Operator collection is deployed
-                - name: Set zpm_oc_deploy_verified fact
-                  ansible.builtin.set_fact:
-                    zpm_oc_deploy_verified: true
-                  when:
-                    - zpm_oc_deployed is defined and zpm_oc_deployed
-                    # OC
-                    - oc_info_only | json_query('resources') is not none
-                    - oc_info_only.resources | length > 0
-                    - oc_info_only.resources[0].status.phase == "Successful"
-                    - oc_info_only.resources[0].spec is defined
-                    - oc_info_only.resources[0].spec.collectionURL is defined and oc_info_only.resources[0].spec.collectionURL != ""
-                # Verify ZPM Sub-Operator is deployed
-                - name: Set zpm_subop_deployed fact
-                  ansible.builtin.set_fact:
-                    zpm_subop_deployed: true
-                    subop_endpoints_deployed: "{{ subop_config_info_only.resources[0].status.zosEndpoints | join(',') }}"
-                  when:
-                    - zpm_oc_deploy_verified is defined and zpm_oc_deploy_verified
-                    - subop_config_info_only.api_found is defined and subop_config_info_only.api_found
-                    - subop_config_info_only.resources is defined and subop_config_info_only.resources | length > 0
-                    - subop_config_info_only.resources[0].status is defined
-                    - subop_config_info_only.resources[0].status.phase == "Successful"
-
-                # Verify ZPM Sub-Operator collection is deployed and installed successfully
-                - name: Set zpm_subop_deploy_verified fact
-                  ansible.builtin.set_fact:
-                    zpm_subop_deploy_verified: true
-                  when:
-                    - zpm_subop_deployed is defined and zpm_subop_deployed
-                    # sub-op is
-                    # TODO RESET zpm_subop_deployed and check zpm_subop_deployed == false for multiple iterations
-                    # - subop_config_info_only.resources is defined and subop_config_info_only.resources | length > 0
-                    - oc_product.name~'.'~oc_product.domain~'.'~oc_version == subop_config_info_only.resources[0].metadata.name
-                    - subop_config.finalizers[0] in subop_config_info_only.resources[0].metadata.finalizers
-                    - this_project_name == subop_config_info_only.resources[0].metadata.namespace
-                    - subop_config_info_only.resources[0].spec.operatorCollection == oc_product.name~'.'~oc_product.domain~'.'~oc_version
-
-                # Verify ZPM Sub-Operator collection is deployed and installed successfully
-                - name: Set zpm_zosendpoints_deploy_verified fact
-                  ansible.builtin.set_fact:
-                    zpm_zosendpoints_deploy_verified: true
-                  when:
-                    - zpm_subop_deploy_verified is defined and zpm_subop_deploy_verified
-                    - subop_config.endpointNames in subop_endpoints_deployed
-
-            - name: Check for ZPM Diagnose deployed when ZPM is verified
-              when:
-                - zpm_deploy_verified is defined and zpm_deploy_verified
-              block:
-                # Verify ZPM Diagnostic CRD is deployed
-                - name: Set zpm_diag_api_deployed fact
-                  ansible.builtin.set_fact:
-                    zpm_diag_api_deployed: true
-                  when:
-                    - zos_package_manager_diagnostics_info_only is defined
-                    - zos_package_manager_diagnostics_info_only | json_query('api_found') is not none
-
-                # Verify ZPM Instance is deployed and Succeeded
-                - name: Set zpm_diag_deploy_verified fact
-                  ansible.builtin.set_fact:
-                    zpm_diag_deploy_verified: true
-                  when:
-                    - zpm_diag_api_deployed is defined and zpm_diag_api_deployed
-                    # ZPM Instance
-                    - zos_package_manager_diagnostics_info_only | json_query('resources') is not none
-                    - zos_package_manager_diagnostics_info_only.resources | length > 0
-                    - zos_package_manager_diagnostics_info_only.resources[0].status.phase == "Succeeded"
-                    # # TODO Add ability to verify all active zosendpoints have ZPM and ZPM Diag instance deployed
-                    # - zos_package_manager_diagnostics.finalizers[0] in zos_package_manager_diagnostics_info_only.resources[0].metadata.finalizers
-          always:
-            - name: Reset ZPM info facts
-              ansible.builtin.set_fact:
-                zos_package_manager_info_only: ''
-                oc_info_only: ''
-                subop_config_info_only: ''
-                subop_endpoints_deployed: ''
-                zos_package_manager_diagnostics_info_only: ''
-                zpm_api_deployed: false
-                zpm_oc_deployed: false
-                zpm_subop_deployed: false
-                zpm_diag_api_deployed: false
-
-        - name: Debug ZPM Operator components deployment status
-          when: seaa_automation.debug | bool
-          block:
-            - name: Debug var zpm_deploy_verified
-              ansible.builtin.debug:
-                var: zpm_deploy_verified
-
-            - name: Debug var zpm_oc_deploy_verified
-              ansible.builtin.debug:
-                var: zpm_oc_deploy_verified
-
-            - name: Debug var zpm_subop_deploy_verified
-              ansible.builtin.debug:
-                var: zpm_subop_deploy_verified
-
-            - name: Debug var zpm_zosendpoints_deploy_verified
-              ansible.builtin.debug:
-                var: zpm_zosendpoints_deploy_verified
-
-            - name: Debug var zpm_diag_deploy_verified
-              ansible.builtin.debug:
-                var: zpm_diag_deploy_verified
-
-            - name: Waiting for user response
-              ansible.builtin.pause:
-                prompt: Check ZPM Operator components deployment status, press enter to continue ...
-              when: seaa_automation.prompt_during_automation | bool
-
-        # Deploy ZPM if it is not verified or not deployed to all endpoints
-        # or deploy validate CR or diag CR if they are not deployed
-        - name: Deploy ZPM if it is not verified or not deployed to all endpoints
-          ansible.builtin.include_tasks: "deploy/zpm.yml"
-          when:
-            - (zpm_deploy_verified is undefined or not zpm_deploy_verified) or
-              (zpm_zosendpoints_deploy_verified is undefined or not zpm_zosendpoints_deploy_verified) or
-              (seaa_deploy_validate_crs | bool and zpm_create_diagnostics_cr | bool and
-              (zpm_diag_deploy_verified is not defined or not zpm_diag_deploy_verified))
-
-        # Update cache with new namespace for zpm
-        - name: Set ocp_cluster_cache fact
-          ansible.builtin.set_fact:
-            ocp_cluster_cache: "{{ ocp_cluster_cache | update_seaa_automation_cache(current_ocphost, this_project_name, 'zpm') }}"
-          no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
-          when: ocp_cluster_cache is defined and ocp_cluster_cache != None
-
-        # Debug new namespace verified for zpm
-        - name: Debug new namespace verified for zpm
-          when: seaa_automation.debug | bool
-          block:
-
-            - name: Debug var ocp_cluster_cache
-              ansible.builtin.debug:
-                var: ocp_cluster_cache
-              no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
-
-            - name: Waiting for user response
-              ansible.builtin.pause:
-                prompt: Namespace '{{ this_project_name }}' added to zpm deployed list on '{{ current_ocphost }}, press enter to continue ...'
-              when: seaa_automation.prompt_during_automation | bool
-      always:
-        - name: Clear ZPM deploy facts
-          ansible.builtin.set_fact:
-            zpm_deploy_verified: false
-            zpm_diag_deploy_verified: false
-            zpm_oc_deploy_verified: false
-            zpm_subop_deploy_verified: false
-            zpm_zosendpoints_deploy_verified: false
 
         # Set flag for ZPM being deployed to namespace
         - name: Set flag for ZPM being deployed to namespace
