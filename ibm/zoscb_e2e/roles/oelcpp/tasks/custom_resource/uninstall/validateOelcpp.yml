@@ -16,7 +16,7 @@
 
 - name: Delete validateOelcppInstance with YAML file
   when:
-    - check_k8s_info.api_found and check_k8s_info.resources is defined and check_k8s_info.resources|length > 0
+    - seaa_automation_strategy == "generate_yaml" or (check_k8s_info.api_found and check_k8s_info.resources is defined and check_k8s_info.resources|length > 0)
     - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:
     - name: Include task to generate yaml file

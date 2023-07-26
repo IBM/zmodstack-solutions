@@ -1,0 +1,231 @@
+# Block for installing sub-operator product
+- name: Smart deploy instance of z/OS Package Manager
+  # Deploy ZPM when tagged to deploy Broker and Smart deploy is true
+  when:
+    - seaa_deploy_objective == 'zoscb' or seaa_deploy_objective == 'zpm'
+    - (seaa_zoscb_smart_deploy | bool and seaa_zpm_smart_deploy | bool and not zpm_deployed) or
+      (seaa_deploy_strategy == "undeploy" and seaa_zpm_smart_deploy | bool and not zpm_deployed)
+  tags:
+    - always
+  block:
+
+    # ZPM block for smart deploy
+    - name: Smart Deploy ZPM
+      when: seaa_zpm_smart_deploy | bool
+      block:
+
+        # Verify z/OS Package Manager
+        - name: Verify z/OS Package Manager
+          ansible.builtin.include_tasks: "verify/zpm.yml"
+          when:
+            - seaa_automation_strategy != "generate_yaml"
+            - zpm_deploy_verified is undefined or not zpm_deploy_verified
+          vars:
+            info_only: true
+
+        # Verify ZPM CRD is deployed
+        - name: Set zpm_api_deployed fact
+          ansible.builtin.set_fact:
+            zpm_api_deployed: "{{ zos_package_manager_info_only.api_found }}"
+          when:
+            - zos_package_manager_info_only is defined
+            - zos_package_manager_info_only | json_query('api_found') is not none
+
+        # Verify ZPM Instance is deployed and Succeeded
+        - name: Set zpm_deploy_verified fact
+          ansible.builtin.set_fact:
+            zpm_deploy_verified: true
+          when:
+            - zpm_api_deployed is defined and zpm_api_deployed
+            # ZPM Instance
+            - not seaa_deploy_software_instances | bool or
+              (zos_package_manager_info_only.resources[0] is defined and
+               zos_package_manager_info_only.resources[0].status is defined and
+               zos_package_manager_info_only.resources[0].status.phase == "Succeeded")
+
+        - name: Check for ZPM components when ZPM is not verified
+          when:
+            - zpm_deploy_verified is undefined or not zpm_deploy_verified
+          block:
+            # Verify ZPM Operator collection API is deployed
+            - name: Set zpm_oc_deployed fact
+              ansible.builtin.set_fact:
+                zpm_oc_deployed: "{{ oc_info_only.api_found }}"
+              when:
+                - oc_info_only is defined
+                - oc_info_only | json_query('api_found') is not none
+
+            # Verify Operator collection is deployed
+            - name: Set zpm_oc_deploy_verified fact
+              ansible.builtin.set_fact:
+                zpm_oc_deploy_verified: true
+              when:
+                - zpm_oc_deployed is defined and zpm_oc_deployed
+                # OC
+                - oc_info_only | json_query('resources') is not none
+                - oc_info_only.resources | length > 0
+                - oc_info_only.resources[0].status.phase == "Successful"
+                - oc_info_only.resources[0].spec is defined
+                - oc_info_only.resources[0].spec.collectionURL is defined and oc_info_only.resources[0].spec.collectionURL != ""
+            # Verify ZPM Sub-Operator is deployed
+            - name: Set zpm_subop_deployed fact
+              ansible.builtin.set_fact:
+                zpm_subop_deployed: true
+                subop_endpoints_deployed: "{{ subop_config_info_only.resources[0].status.zosEndpoints | join(',') }}"
+              when:
+                - zpm_oc_deploy_verified is defined and zpm_oc_deploy_verified
+                - subop_config_info_only.api_found is defined and subop_config_info_only.api_found
+                - subop_config_info_only.resources is defined and subop_config_info_only.resources | length > 0
+                - subop_config_info_only.resources[0].status is defined
+                - subop_config_info_only.resources[0].status.phase == "Successful"
+
+            # Verify ZPM Sub-Operator collection is deployed and installed successfully
+            - name: Set zpm_subop_deploy_verified fact
+              ansible.builtin.set_fact:
+                zpm_subop_deploy_verified: true
+              when:
+                - zpm_subop_deployed is defined and zpm_subop_deployed
+                # sub-op is
+                # TODO RESET zpm_subop_deployed and check zpm_subop_deployed == false for multiple iterations
+                # - subop_config_info_only.resources is defined and subop_config_info_only.resources | length > 0
+                - oc_product.name~'.'~oc_product.domain~'.'~oc_version == subop_config_info_only.resources[0].metadata.name
+                - subop_config.finalizers[0] in subop_config_info_only.resources[0].metadata.finalizers
+                - this_project_name == subop_config_info_only.resources[0].metadata.namespace
+                - subop_config_info_only.resources[0].spec.operatorCollection == oc_product.name~'.'~oc_product.domain~'.'~oc_version
+
+            # Verify ZPM Sub-Operator collection is deployed and installed successfully
+            - name: Set zpm_zosendpoints_deploy_verified fact
+              ansible.builtin.set_fact:
+                zpm_zosendpoints_deploy_verified: true
+              when:
+                - zpm_subop_deploy_verified is defined and zpm_subop_deploy_verified
+                - subop_config.endpointNames in subop_endpoints_deployed
+
+        - name: Check for ZPM Diagnose deployed when ZPM is verified
+          when:
+            - zpm_deploy_verified is defined and zpm_deploy_verified
+          block:
+            # Verify ZPM Diagnostic CRD is deployed
+            - name: Set zpm_diag_api_deployed fact
+              ansible.builtin.set_fact:
+                zpm_diag_api_deployed: true
+              when:
+                - zos_package_manager_diagnostics_info_only is defined
+                - zos_package_manager_diagnostics_info_only | json_query('api_found') is not none
+
+            # Verify ZPM Instance is deployed and Succeeded
+            - name: Set zpm_diag_deploy_verified fact
+              ansible.builtin.set_fact:
+                zpm_diag_deploy_verified: true
+              when:
+                - zpm_diag_api_deployed is defined and zpm_diag_api_deployed
+                # ZPM Instance
+                - zos_package_manager_diagnostics_info_only | json_query('resources') is not none
+                - zos_package_manager_diagnostics_info_only.resources | length > 0
+                - zos_package_manager_diagnostics_info_only.resources[0].status.phase == "Succeeded"
+                # # TODO Add ability to verify all active zosendpoints have ZPM and ZPM Diag instance deployed
+                # - zos_package_manager_diagnostics.finalizers[0] in zos_package_manager_diagnostics_info_only.resources[0].metadata.finalizers
+      always:
+        - name: Reset ZPM info facts
+          ansible.builtin.set_fact:
+            zos_package_manager_info_only: ''
+            oc_info_only: ''
+            subop_config_info_only: ''
+            subop_endpoints_deployed: ''
+            zos_package_manager_diagnostics_info_only: ''
+            zpm_api_deployed: false
+            zpm_oc_deployed: false
+            zpm_subop_deployed: false
+            zpm_diag_api_deployed: false
+
+    - name: Debug ZPM Operator components deployment status
+      when: seaa_automation.debug | bool
+      block:
+        - name: Debug var zpm_deploy_verified
+          ansible.builtin.debug:
+            var: zpm_deploy_verified
+
+        - name: Debug var zpm_oc_deploy_verified
+          ansible.builtin.debug:
+            var: zpm_oc_deploy_verified
+
+        - name: Debug var zpm_subop_deploy_verified
+          ansible.builtin.debug:
+            var: zpm_subop_deploy_verified
+
+        - name: Debug var zpm_zosendpoints_deploy_verified
+          ansible.builtin.debug:
+            var: zpm_zosendpoints_deploy_verified
+
+        - name: Debug var zpm_diag_deploy_verified
+          ansible.builtin.debug:
+            var: zpm_diag_deploy_verified
+
+        - name: Waiting for user response
+          ansible.builtin.pause:
+            prompt: Check ZPM Operator components deployment status, press enter to continue ...
+          when: seaa_automation.prompt_during_automation | bool
+
+    # Deploy ZPM if it is not verified or not deployed to all endpoints
+    # or deploy validate CR or diag CR if they are not deployed
+    - name: Deploy ZPM if it is not verified or not deployed to all endpoints
+      ansible.builtin.include_tasks: "deploy/zpm.yml"
+      when:
+        - seaa_deploy_strategy == "deploy"
+        - (zpm_deploy_verified is undefined or not zpm_deploy_verified) or
+          (zpm_zosendpoints_deploy_verified is undefined or not zpm_zosendpoints_deploy_verified) or
+          (seaa_deploy_validate_crs | bool and zpm_create_diagnostics_cr | bool and
+          (zpm_diag_deploy_verified is not defined or not zpm_diag_deploy_verified))
+
+    # UnDeploy ZPM if it is verified deployed
+    # or deploy validate CR or diag CR if they are not deployed
+    - name: UnDeploy ZPM if it is verified deployed
+      ansible.builtin.include_tasks: "undeploy/zpm.yml"
+      when:
+        - seaa_deploy_strategy == "undeploy"
+        - (zpm_deploy_verified is defined and zpm_deploy_verified) or
+          seaa_automation_strategy == "generate_yaml"
+
+    # Update cache with new namespace for zpm
+    - name: Set ocp_cluster_cache fact
+      ansible.builtin.set_fact:
+        ocp_cluster_cache: "{{ ocp_cluster_cache | update_seaa_automation_cache(current_ocphost, this_project_name, 'zpm') }}"
+      no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+      when: ocp_cluster_cache is defined and ocp_cluster_cache != None
+
+    # Debug new namespace verified for zpm
+    - name: Debug new namespace verified for zpm
+      when: seaa_automation.debug | bool
+      block:
+
+        - name: Debug var ocp_cluster_cache
+          ansible.builtin.debug:
+            var: ocp_cluster_cache
+          no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+        - name: Waiting for user response
+          ansible.builtin.pause:
+            prompt: Namespace '{{ this_project_name }}' added to zpm deployed list on '{{ current_ocphost }}, press enter to continue ...'
+          when: seaa_automation.prompt_during_automation | bool
+  always:
+    - name: Clear ZPM deploy facts
+      ansible.builtin.set_fact:
+        zpm_deploy_verified: false
+        zpm_diag_deploy_verified: false
+        zpm_oc_deploy_verified: false
+        zpm_subop_deploy_verified: false
+        zpm_zosendpoints_deploy_verified: false
+
+    # Set flag for ZPM being deployed to namespace
+    - name: Set flag for ZPM being deployed to namespace
+      when:
+        - seaa_deploy_strategy == "deploy"
+      ansible.builtin.set_fact:
+        zpm_deployed: "{{ seaa_zpm_smart_deploy | bool }}"
+
+    # Set flag for ZPM being deployed to namespace
+    - name: Set flag for ZPM being deployed to namespace
+      when:
+        - seaa_deploy_strategy == "undeploy"
+      ansible.builtin.set_fact:
+        zpm_deployed: "{{ not seaa_zpm_smart_deploy | bool }}"
