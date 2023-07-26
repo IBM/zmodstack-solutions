@@ -29,3 +29,6 @@ seaa_security_secure_log: true
 
 # Debug issues with 1password vault integration
 seaa_security_secure_log_1password: true
+
+# Track generation of YAML files
+seaa_track_generated_yamls: false

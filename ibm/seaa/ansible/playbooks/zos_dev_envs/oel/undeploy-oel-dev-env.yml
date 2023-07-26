@@ -124,7 +124,7 @@
             name: "zos_dev_envs"
           vars:
             # Need this so when tagging "oel-dev" role does not try to run each product deploy/undeploy
-            seaa_product: zoau
+            seaa_deploy_objective: zoau
             seaa_deploy_strategy: undeploy
           with_items:
             - "{{ groups['ocphosts'] }}"
@@ -147,7 +147,7 @@
           ansible.builtin.include_role:
             name: "zos_dev_envs"
           vars:
-            seaa_product: python
+            seaa_deploy_objective: python
             seaa_deploy_strategy: undeploy
           with_items:
             - "{{ groups['ocphosts'] }}"
@@ -170,7 +170,7 @@
           ansible.builtin.include_role:
             name: "zos_dev_envs"
           vars:
-            seaa_product: oelcpp
+            seaa_deploy_objective: oelcpp
             seaa_deploy_strategy: undeploy
           with_items:
             - "{{ groups['ocphosts'] }}"
@@ -193,7 +193,7 @@
           ansible.builtin.include_role:
             name: "zos_dev_envs"
           vars:
-            seaa_product: nodejs
+            seaa_deploy_objective: nodejs
             seaa_deploy_strategy: undeploy
           with_items:
             - "{{ groups['ocphosts'] }}"
@@ -216,7 +216,7 @@
           ansible.builtin.include_role:
             name: "zos_dev_envs"
           vars:
-            seaa_product: java
+            seaa_deploy_objective: java
             seaa_deploy_strategy: undeploy
           with_items:
             - "{{ groups['ocphosts'] }}"
@@ -239,7 +239,7 @@
           ansible.builtin.include_role:
             name: "zos_dev_envs"
           vars:
-            seaa_product: go
+            seaa_deploy_objective: go
             seaa_deploy_strategy: undeploy
           with_items:
             - "{{ groups['ocphosts'] }}"
@@ -262,7 +262,7 @@
           ansible.builtin.include_role:
             name: "zos_dev_envs"
           vars:
-            seaa_product: zpm
+            seaa_deploy_objective: zpm
             seaa_deploy_strategy: undeploy
           with_items:
             - "{{ groups['ocphosts'] }}"
@@ -289,7 +289,7 @@
           ansible.builtin.include_role:
             name: "zos_dev_envs"
           vars:
-            seaa_product: zoscb
+            seaa_deploy_objective: zoscb
             seaa_deploy_strategy: undeploy
           with_items:
             - "{{ groups['ocphosts'] }}"

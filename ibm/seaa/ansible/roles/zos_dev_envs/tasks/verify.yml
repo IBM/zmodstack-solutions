@@ -6,36 +6,11 @@
 ---
 # ****************************************************************************************************************************
 # *
-# - Include task to set this_project_name from current_namespace for verify
+# - Include task to initialize the SEAA framwwork
 # *
 # ****************************************************************************************************************************
-- name: Set this_project_name
-  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_the_project_name.yml"
-  tags: always
-
-# ****************************************************************************************************************************
-# *
-# - Set "zos_endpoints" list for iterating multiple zos endpoint deployments
-# *
-# ****************************************************************************************************************************
-- name: Set zos endpoint list
-  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_inventory_zosendpoints.yml"
-  tags: always
-
-# ****************************************************************************************************************************
-# *
-# - IMPORTANT: Include zos endpoint variable dicstion used by each deplotment to iterate over zosendpoints in inventory
-# *
-# ****************************************************************************************************************************
-- name: Include variables endpoint variables
-  ansible.builtin.include_vars: "{{ zoscb_e2e_roles_directory | get_expanded_dir }}/ocp_cluster/vars/endpoints.yml"
-  tags: always
-  when: not endpoint_vars_loaded
-
-- name: Set endpoint_vars_loaded flag
-  ansible.builtin.set_fact:
-    endpoint_vars_loaded: true
-  when: not endpoint_vars_loaded
+- name: Initiallize SEAA framework
+  ansible.builtin.include_tasks: "util/seaa_initialize.yml"
 
 # ****************************************************************************************************************************
 # *
@@ -45,7 +20,7 @@
 # Block to verify Cloud Broker
 - name: Verify Instance of z/OS Cloud Broker
   # Need this so when tagging "oel-dev" role does not try to run each product verify/uninstall
-  when: seaa_product == 'zoscb'
+  when: seaa_deploy_objective == 'zoscb'
   tags:
     - oel-dev
     - zoscb
@@ -61,7 +36,7 @@
 # ****************************************************************************************************************************
 # Block for installing sub-operator product
 - name: Verify Instance of z/OS Package Manager
-  when: seaa_product == 'zpm'
+  when: seaa_deploy_objective == 'zpm'
   tags:
     - oel-dev
     - zpm
@@ -77,7 +52,7 @@
 # ****************************************************************************************************************************
 # Block for installing sub-operator product
 - name: Verify Instance of Go
-  when: seaa_product == 'go'
+  when: seaa_deploy_objective == 'go'
   tags:
     - oel-dev
     - go
@@ -93,7 +68,7 @@
 # ****************************************************************************************************************************
 # Block for installing sub-operator product
 - name: Verify Instance of Java
-  when: seaa_product == 'java'
+  when: seaa_deploy_objective == 'java'
   tags:
     - oel-dev
     - java
@@ -109,7 +84,7 @@
 # ****************************************************************************************************************************
 # Block for installing sub-operator product
 - name: Verify Instance of Nodejs
-  when: seaa_product == 'nodejs'
+  when: seaa_deploy_objective == 'nodejs'
   tags:
     - oel-dev
     - nodejs
@@ -125,7 +100,7 @@
 # ****************************************************************************************************************************
 # Block for installing sub-operator product
 - name: Verify Instance of Oelcpp
-  when: seaa_product == 'oelcpp'
+  when: seaa_deploy_objective == 'oelcpp'
   tags:
     - oel-dev
     - oelcpp
@@ -141,7 +116,7 @@
 # ****************************************************************************************************************************
 # Block for installing sub-operator product
 - name: Verify Instance of Python
-  when: seaa_product == 'python'
+  when: seaa_deploy_objective == 'python'
   tags:
     - oel-dev
     - python
@@ -157,7 +132,7 @@
 # ****************************************************************************************************************************
 # Block for installing sub-operator product
 - name: Verify Instance of ZOAU
-  when: seaa_product == 'zoau'
+  when: seaa_deploy_objective == 'zoau'
   tags:
     - oel-dev
     - zoau

@@ -55,3 +55,6 @@ zoscb_deployed: false
 
 # Flag to determine if ZPM is deployed
 zpm_deployed: false
+
+# String that determines objective of deploy strategy
+seaa_deploy_objective:

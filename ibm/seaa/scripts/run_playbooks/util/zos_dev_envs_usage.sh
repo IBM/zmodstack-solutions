@@ -14,10 +14,20 @@ cyan="\033[0;34m"
 reset="\033[0m"
 yellow="\033[0;33m"
 
+# Set defaults
+export SEAA_TAGS=
+export SEAA_SKIPTAGS=
+export SEAA_EXTRA_VARS=
+export SEAA_INVENTORY="${SEAA_INVENTORY:-inventory.yaml}"
+export SEAA_INVENTORY_LOCATION="${SEAA_INVENTORY_LOCATION:-${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/playbooks/inventory}"
+
 # Default extra-vars file used if exist and no extra vars are passed to script
 export SEAA_DEFAULT_EXTRAVARS="${SEAA_CONFIG_PATH_TO_SE_VARIABLES:-${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/variables}/seaa-extra-vars.json"
 
-echo $SEAA_DEFAULT_EXTRAVARS
+# Variables to debug automation run
+export ANSIBLE_VERBOSITY=0
+export ANSIBLE_DEBUG=false
+
 # exit 99
 # Print usage
 function printUsage {
@@ -152,17 +162,19 @@ function validateTags {
             # "") # Match an empty value NOP
             #     ;;
             *)
-                if [[ "$tag_type" == "tag" ]]; then
-                    # echo "Unrecognized tag: $tag"
-                    echo -e "${red}Unrecognized tag:${reset}: $tag"
-                elif [[ "$tag_type" == "skip" ]]; then
-                    # echo "Unrecognized skiptag: $tag"
-                    echo -e "${red}Unrecognized skiptag:${reset}: $tag"
-                
-                fi
+                if [[ "${fail_unknown_cmd_or_tags}" == "true" ]]; then
+                    if [[ "$tag_type" == "tag" ]]; then
+                        # echo "Unrecognized tag: $tag"
+                        echo -e "${red}Unrecognized tag:${reset}: $tag"
+                    elif [[ "$tag_type" == "skip" ]]; then
+                        # echo "Unrecognized skiptag: $tag"
+                        echo -e "${red}Unrecognized skiptag:${reset}: $tag"
+                    
+                    fi
 
-                # printUsage;
-                exit 1;
+                    # printUsage;
+                    exit 1;
+                fi
                 ;;
         esac
     done
@@ -171,6 +183,11 @@ function validateTags {
 
 # Parse command line options
 function parseCommandLine {
+    
+    if [[ -z "${fail_unknown_cmd_or_tags+1}" ]]; then
+        export fail_unknown_cmd_or_tags=true 
+    fi 
+
     for i in "$@"; do
         case $i in
             --tags=*|-t=*)
@@ -248,9 +265,11 @@ function parseCommandLine {
                 exit 0;
         ;;
             *)
-                echo "Unrecognized option: $i"
-                printUsage;
-                exit 1;
+                if [[ "${fail_unknown_cmd_or_tags}" == "true" ]]; then
+                    echo "Unrecognized option: $i"
+                    printUsage;
+                    exit 1;
+                fi
                 ;;
         esac
     done
@@ -400,6 +419,20 @@ function setRunOptions {
     # Set up playbook run options
     RUNOPTIONS="-i ${SEAA_INVENTORY_LOCATION}/${SEAA_INVENTORY} -e @${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/variables/config/.config --flush-cache"
 
+    # Add tags run options
+    if [[ -n "${SEAA_TAGS}" ]]; then
+      RUNOPTIONS+=" --tags ${SEAA_TAGS}"
+    else
+      RUNOPTIONS+=" --tags ''"
+    fi
+    
+    # Add skiptags run options
+    if [[ -n "${SEAA_SKIPTAGS}" ]]; then
+      RUNOPTIONS+=" --skip-tags ${SEAA_SKIPTAGS}"
+    else 
+      RUNOPTIONS+=" --skip-tags ''"
+    fi
+
     # Add vault automation strategy to playbook run options
     if [[ -n "${SEAA_AUTOMATION_STRATEGY}" ]]; then
       # shellcheck disable=SC2034  # ev_automation_strategy is used as an extra var in deployment scripts
@@ -410,7 +443,7 @@ function setRunOptions {
     if [[ -n "${SEAA_ANSIBLE_VAULT_PASSWORD_FILE}" ]]; then
       RUNOPTIONS+=" --vault-password-file ${SEAA_ANSIBLE_VAULT_PASSWORD_FILE}"
     fi
-
+    
     # Add vault-id to playbook run options
     if [[ -n "${SEAA_ANSIBLE_VAULT_PASSWORD_FILE}" && -n "${SEAA_ANSIBLE_VAULT_ID}" ]]; then
       RUNOPTIONS+=" --vault-id ${SEAA_ANSIBLE_VAULT_ID}"
@@ -433,3 +466,4 @@ function printTagStatus {
         echo -e "${yellow}Warning:${reset} skip tag(s) provided '${SEAA_SKIPTAGS}'"
     fi
 }
+

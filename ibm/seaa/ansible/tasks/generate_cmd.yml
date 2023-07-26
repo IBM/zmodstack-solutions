@@ -21,8 +21,15 @@
     readme_src_file: "deploy_readme_template.md"
     readme_file_name: "{{ 'README.md' if seaa_deploy_strategy == 'deploy' else 'READMEU.md' }}" # "README"
     _timelapse: "{{ timelapse | default(0.0) }}"
-    nolog: false
+    nolog: "{{ not seaa_track_generated_yamls | bool }}"
     _copy_binary: false
+
+- name: Check for generation of YAML file '{{ yaml_file }}' for '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+  ansible.builtin.pause:
+    prompt: "Generation CMD for Native YAML API, press enter to continue ...:"
+  when:
+    - seaa_automation.prompt_during_automation | bool
+    - seaa_track_generated_yamls | bool
 
 - name: Set boolean for command with secret
   when:
