@@ -17,6 +17,14 @@
     _timelapse: "{{ timelapse | default(0.0) }}"
     _append_to_previous_step: "{{ append_to_previous_step | default(false, true) }}"
     _readme_has_started: "{{ readme_has_started | default(false, true) }}"
+    nolog: "{{ not seaa_track_generated_yamls | bool }}"
+
+- name: Check for generation of YAML file '{{ yaml_file }}' for '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+  ansible.builtin.pause:
+    prompt: "Generation  README for Native YAML API, press enter to continue ...:"
+  when:
+    - seaa_automation.prompt_during_automation | bool
+    - seaa_track_generated_yamls | bool
 
 - name: "Query resource Name from '{{ resource_yaml_file }}' yaml file"
   ansible.builtin.shell: "set -o pipefail && yq e '.metadata.name' {{ resource_yaml_file }} | head -n 1"
@@ -88,7 +96,7 @@
         readme_has_started: true
         readme_step_count: 0
 
-- name: Get step count from cache if already started cuurrently generating readme and not appending from previous deploy script
+- name: Get step count from cache if already started currently generating readme and not appending from previous deploy script
   when:
     - _readme_has_started
     - not seaa_append_to_deployment_script | bool

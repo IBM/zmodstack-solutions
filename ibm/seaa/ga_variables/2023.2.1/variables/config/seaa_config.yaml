@@ -72,6 +72,9 @@ seaa_security_password_vault_item: se-login
 # Encrypt secrets during deployment default(true)
 seaa_encrypt_secrets: true
 
+# Prefix for SSH Key secrets
+seaa_sshkey_secrets_prefix: ssh-key-
+
 # Encrypt sensitive endpoint variables
 seaa_encrypt_sensitive_endpoint_vars: true
 

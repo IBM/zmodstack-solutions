@@ -26,7 +26,7 @@
 - name: Block for verifying Sub-Operator
   when: info_only is undefined
   block:
-   
+
     - name: Block for verifying Sub Operator deployments
       block:
         - name: "Retrieve sub-operator config: '{{ oc_product.name }}.zpm.{{ oc_version }}-suboperatorconfig-...'"

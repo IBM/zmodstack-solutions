@@ -98,8 +98,8 @@
     - hostvars[current_ocphost]._is_active
   tags: always
   block:
-    - name: Initialize Cache and Authenticate
-      ansible.builtin.include_tasks: "init_cache.yml"
+    - name: Authenticate and Initialize Cache
+      ansible.builtin.include_tasks: "auth_and_init_cache.yml"
 
     # Set flags to check if ZOSCB and ZPM are already deployed or generated for a namespace
     - name: Set flags to check if ZOSCB and ZPM are already deployed or generated for a namespace
@@ -151,6 +151,7 @@
     - name: Set fact to allow undeployment of non broker or zpm component when using "testing" strategy
       when:
         - seaa_deploy_objective != "zoscb" and seaa_deploy_objective != "zpm"
+        - seaa_deploy_strategy == "testing"
       ansible.builtin.set_fact:
         can_undeploy_component: true
 
