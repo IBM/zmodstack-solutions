@@ -13,6 +13,15 @@
   ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_the_project_name.yml"
   tags: always
 
+- name: Set JMES cache queries
+  ansible.builtin.set_fact:
+    jmesq_zoscb_deployed: "cached[? ocp_host=='{{ current_ocphost }}'] | [].zoscb_deployed_on | [?contains(@, '{{ this_project_name }}')][]"
+    jmesq_zpm_deployed: "cached[? ocp_host=='{{ current_ocphost }}'] | [].zpm_deployed_on | [?contains(@, '{{ this_project_name }}')][]"
+    jmesq_script_started: "cached[? ocp_host=='{{ current_ocphost }}'] | [].started_script_gen_on | [?contains(@, '{{ this_project_name }}')][]"
+    jmesq_readme_started: "cached[? ocp_host=='{{ current_ocphost }}'] | [].started_readme_gen_on[].\"{{ this_project_name }}\""
+  no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+
+
 # ****************************************************************************************************************************
 # *
 # - Set "zos_endpoints" list for iterating multiple zos endpoint deployments
@@ -28,13 +37,19 @@
 # - Set smart deploy flags and verify current zpm and zoswcb installation status
 # *
 # ****************************************************************************************************************************
-- name: Smart Deploy Setup
+- name: YAML generate and Smart Deploy Setup
   tags: always
   when:
     - seaa_zoscb_smart_deploy | bool or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yaml"
+    - seaa_deploy_strategy != "verify"
   block:
+
     - name: Setup Smart Deploy and Generate
-      ansible.builtin.include_tasks: "smart_deploy_and_generate.yml"
+      ansible.builtin.include_tasks: "util/_init_generate.yml"
+
+    - name: Setup Smart Deploy and Generate
+      ansible.builtin.include_tasks: "util/_init_smartdeploy.yml"
+
   rescue:
     - name: Debug rescue error
       ansible.builtin.debug:

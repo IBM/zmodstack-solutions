@@ -419,6 +419,20 @@ function setRunOptions {
     # Set up playbook run options
     RUNOPTIONS="-i ${SEAA_INVENTORY_LOCATION}/${SEAA_INVENTORY} -e @${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/variables/config/.config --flush-cache"
 
+    # Add tags run options
+    if [[ -n "${SEAA_TAGS}" ]]; then
+      RUNOPTIONS+=" --tags ${SEAA_TAGS}"
+    else
+      RUNOPTIONS+=" --tags ''"
+    fi
+    
+    # Add skiptags run options
+    if [[ -n "${SEAA_SKIPTAGS}" ]]; then
+      RUNOPTIONS+=" --skip-tags ${SEAA_SKIPTAGS}"
+    else 
+      RUNOPTIONS+=" --skip-tags ''"
+    fi
+
     # Add vault automation strategy to playbook run options
     if [[ -n "${SEAA_AUTOMATION_STRATEGY}" ]]; then
       # shellcheck disable=SC2034  # ev_automation_strategy is used as an extra var in deployment scripts
@@ -429,7 +443,7 @@ function setRunOptions {
     if [[ -n "${SEAA_ANSIBLE_VAULT_PASSWORD_FILE}" ]]; then
       RUNOPTIONS+=" --vault-password-file ${SEAA_ANSIBLE_VAULT_PASSWORD_FILE}"
     fi
-
+    
     # Add vault-id to playbook run options
     if [[ -n "${SEAA_ANSIBLE_VAULT_PASSWORD_FILE}" && -n "${SEAA_ANSIBLE_VAULT_ID}" ]]; then
       RUNOPTIONS+=" --vault-id ${SEAA_ANSIBLE_VAULT_ID}"

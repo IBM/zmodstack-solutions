@@ -6,58 +6,15 @@
 ---
 # ****************************************************************************************************************************
 # *
-# - Include task to set this_project_name from current_namespace for deployment
+# - Include task to initialize the SEAA framwwork
 # *
 # ****************************************************************************************************************************
-- name: Set this_project_name
-  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_the_project_name.yml"
+- name: Initiallize SEAA framework
+  ansible.builtin.include_tasks: "util/seaa_initialize.yml"
   tags: always
-
-# ****************************************************************************************************************************
-# *
-# - Set "zos_endpoints" list for iterating multiple zos endpoint deployments
-# *
-# ****************************************************************************************************************************
-- name: Set zos endpoint list
-  ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/set_inventory_zosendpoints.yml"
-  tags: always
-
-# ****************************************************************************************************************************
-# *
-# - Set smart feploy flags and verify current zpm and zoswcb installation status
-# *
-# ****************************************************************************************************************************
-- name: Smart Deploy Setup
-  tags: always
-  when:
-    - seaa_zoscb_smart_deploy | bool or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yaml"
-  block:
-
-    - name: Setup Smart Deploy and Generate
-      ansible.builtin.include_tasks: "smart_deploy_and_generate.yml"
-  rescue:
-    - name: Debug rescue error
-      ansible.builtin.debug:
-        msg: "Caught an error while setting up smart deploying on {{ current_ocphost }}"
 
 - name: Undeploy IBM Z and Cloud Modernization Stack  component
   block:
-
-    # ****************************************************************************************************************************
-    # *
-    # - IMPORTANT: Include zos endpoint variable dictionaries used by each deployment to iterate over zosendpoints in inventory
-    # *
-    # ****************************************************************************************************************************
-    - name: Include variables endpoint variables
-      ansible.builtin.include_vars: "{{ zoscb_e2e_roles_directory | get_expanded_dir }}/ocp_cluster/vars/endpoints.yml"
-      tags: always
-      when: not endpoint_vars_loaded
-
-    - name: Set endpoint_vars_loaded flag
-      ansible.builtin.set_fact:
-        endpoint_vars_loaded: true
-      when: not endpoint_vars_loaded
-
     # ****************************************************************************************************************************
     # *
     # - name: Undeploy ZOAU from z/OS Endpoint
@@ -170,18 +127,26 @@
     # - name: Verify ZPM on z/OS Endpoint
     # *
     # ****************************************************************************************************************************
+    - name: Include Smart UnDeploy z/OS Package Manager
+      ansible.builtin.include_tasks: "util/smart_deploy_zpm.yml"
+      when:
+        - seaa_deploy_objective == 'zoscb'
+        - (seaa_zpm_smart_deploy | bool)
+        - (zpm_deployed or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yaml")
+      tags:
+        - always
+
     # Block for installing sub-operator product
     - name: Undeploy Instance of z/OS Package Manager
       # Need this so when tagging "oel-dev" role does not try to run each product deploy/Undeploy
       when:
-        - (seaa_zoscb_smart_deploy | bool and seaa_zpm_smart_deploy | bool and seaa_deploy_objective == 'zpm') or
-          (seaa_deploy_objective == 'zpm')
+        - seaa_deploy_objective == 'zpm'  # or# - (seaa_deploy_objective == 'zpm')
+        - "'oel-dev' in  ansible_run_tags or 'zpm' in ansible_run_tags"
       tags:
         - oel-dev
         - zpm
       block:
-        - name: Verify ZPM is deployd whn smart deploy is true
-          when: seaa_zpm_smart_deploy | bool
+        - name: Verify ZPM is deployd when smart deploy is true
           block:
             # Verify z/OS Package Manager
             - name: Verify z/OS Package Manager
@@ -203,7 +168,7 @@
           ansible.builtin.include_tasks: "undeploy/zpm.yml"
           when:
             - (zpm_deploy_verified is defined and zpm_deploy_verified) or
-              (not seaa_zoscb_smart_deploy | bool and not seaa_zpm_smart_deploy | bool and seaa_deploy_objective == 'zpm')
+              (not seaa_zpm_smart_deploy | bool and seaa_deploy_objective == 'zpm')
       always:
         - name: Set zoscb_undeployed fact
           ansible.builtin.set_fact:
@@ -215,6 +180,16 @@
     # *
     # - TODO (*** Remove pre-req - catalog source has to exist on cluster***)
     # ****************************************************************************************************************************
+    - name: Include Smart UnDeploy z/OS Cloud Broker task
+      ansible.builtin.include_tasks: "util/smart_deploy_broker.yml"
+      when:
+        - seaa_deploy_objective != 'zpm'
+        - seaa_deploy_role == "admin"
+        - (seaa_zoscb_smart_deploy | bool )
+        - (zoscb_deployed or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yaml")
+         # and seaa_automation_strategy != "generate_yaml" # or seaa_deploy_objective == 'zoscb'
+      tags:
+        - always
     # ****************************************************************************************************************************
     # *
     # - name: Verify ZOSCB on OCP CLUSTER
@@ -223,8 +198,8 @@
     - name: Undeploy Instance of z/OS Cloud Broker
       # Need this so when tagging "oel-dev" role does not try to run each product deploy/undeploy
       when:
-        (seaa_zoscb_smart_deploy | bool and seaa_deploy_objective == 'zoscb') or
-        (seaa_deploy_objective == 'zoscb')
+        - (not seaa_zoscb_smart_deploy | bool and seaa_deploy_objective == 'zoscb')
+        - "'oel-dev' in  ansible_run_tags or 'zoscb' in ansible_run_tags"
       tags:
         - oel-dev
         - zoscb

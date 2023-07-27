@@ -20,7 +20,7 @@ spec:
       {% for zosendpoint in groups['zosendpoints'] %}
         {% if oc_product.credential_type == "shared" and hostvars[zosendpoint]._is_active %}
         # shared creds
-        - credentialName: "ssh-key-{{ hostvars[zosendpoint].ansible_user }}-{{ zosendpoint }}"
+        - credentialName: "{{ seaa_sshkey_secrets_prefix }}{{ hostvars[zosendpoint].ansible_user }}-{{ zosendpoint }}"
           name: "{{ zosendpoint }}"
         {% elif hostvars[zosendpoint]._is_active %}
         # personal creds
@@ -37,7 +37,7 @@ spec:
       {% for zosendpoint in groups['zosendpoints'] %}
         {% if oc_product.credential_type == "shared" and hostvars[zosendpoint]._is_active %}
         # shared creds
-        - credentialName: "ssh-key-{{ hostvars[zosendpoint].ansible_user }}-{{ zosendpoint }}"
+        - credentialName: "{{ seaa_sshkey_secrets_prefix }}{{ hostvars[zosendpoint].ansible_user }}-{{ zosendpoint }}"
           name: "{{ zosendpoint }}"
         {% elif hostvars[zosendpoint]._is_active %}
         # personal creds
