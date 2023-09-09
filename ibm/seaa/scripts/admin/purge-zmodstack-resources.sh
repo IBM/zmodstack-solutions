@@ -44,6 +44,7 @@ function printUsage {
 
 # Parse command line options
 function parseCommandLine {
+
   for i in "$@"; do
 
       case $i in
@@ -57,10 +58,16 @@ function parseCommandLine {
               export projectFilter=${i#*=}
       ;;
           --allowed_projects=*)
-              allowed_projects=("${i#*=}")
+              value_list="${i#*=}"
+
+              # Split the string into an array using the delimiter
+              IFS="$array_delimiter" read -ra allowed_projects <<< "$value_list"
       ;;
           --unallowed_projects=*)
-              unallowed_projects=("${i#*=}")
+              value_list="${i#*=}"
+
+              # Split the string into an array using the delimiter
+              IFS="$array_delimiter" read -ra unallowed_projects <<< "$value_list"
       ;;
           --bycomponent=*)
               bycomponent="${i#*=}"
@@ -299,11 +306,17 @@ function main() {
     echo "PROJECT FILTER '$projectFilter'"
 
     if [ "${#allowed_projects[@]}" -gt 0 ]; then
-      echo "PROJECT(s) ALLOWED to be purged: " "${allowed_projects[@]}"
+      echo "PROJECT(s) ALLOWED to be purged:"
+      for allowed_project in "${allowed_projects[@]}"; do
+          echo "$allowed_project"
+      done
     fi
 
     if [ "${#unallowed_projects[@]}" -gt 0 ]; then
-      echo "PROJECT(s) UNALLOWED to be purged: " "${unallowed_projects[@]}"
+      echo "PROJECT(s) UNALLOWED to be purged:"
+      for unallowed_project in "${unallowed_projects[@]}"; do
+          echo "$unallowed_project"
+      done
     fi
 
     # Login OCP server
@@ -514,4 +527,5 @@ bycomponent=broker
 remove_finalizers=true
 delete_namespace=true
 automated_run=false
+array_delimiter=" "
 main "$@"
