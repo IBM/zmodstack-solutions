@@ -40,7 +40,7 @@ all:
 
         # OpenShift auth token
         # (Optional) Provide this token for the 'ansible_user' defined if 1Password is not configured to authenticate to the OCP host.
-        cluster_auth_token:
+        cluster_auth_token: MY_OCP_AUTH_TOKRN
 
         # Array of ocp project(s) to deploy/undeploy to ocp host
         # OCP Project names are restricted by RFC 1123: 
@@ -60,7 +60,7 @@ all:
             # This name should be any allowed name that reflects the target OCP host  
             # subdomain must consist of lower case alphanumeric characters, '-' or '.', and must start and end with an alphanumeric character
             # https://kubernetes.io/docs/concepts/overview/working-with-objects/names/#dns-subdomain-names
-            ocp-cluster: # Names can typically include alphanumeric characters (a-z, A-Z, 0-9) and hyphens (-).
+            ocp-dev-cluster: # Names can typically include alphanumeric characters (a-z, A-Z, 0-9) and hyphens (-).
             # example: api.zstack.ibm.com, see doc on getting api url 'get-ocp-api-server.md' in repo
               ansible_host: api.zstack.ibm.com
           # (Optional) variables for 'ocphost_type_group'
