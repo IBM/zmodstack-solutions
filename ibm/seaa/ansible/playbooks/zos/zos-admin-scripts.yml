@@ -1,0 +1,117 @@
+---
+- name: Transfer and execute a script.
+  hosts: zosendpoints
+  gather_facts: false
+
+  environment:
+    PATH: "{{script_add_to_envpath}}:{{ ansible_env.PATH }}"
+    _BPXK_AUTOCVT: 'ON'
+    _CEE_RUNOPTS: "FILETAG(AUTOCVT,AUTOTAG) POSIX(ON)"
+    _TAG_REDIR_IN: txt
+    _TAG_REDIR_ERR: txt
+    _TAG_REDIR_OUT: txt
+
+  vars:
+    script_source_dir: "{{ playbook_dir }}/../../../scripts/admin"
+    script_destination_dir: /tmp/scripts
+    script_run: false
+    script_clean: false
+    script_add_to_envpath: /bin
+    script_args:
+    script_debug: true
+
+  tasks:
+    - name: Debug admin script
+      when:
+        # - seaa_automation.debug | bool
+        # - seaa_automation.prompt_during_automation | bool
+        - script_debug
+      block:
+        - name: Debug var script_name
+          ansible.builtin.debug:
+            var: script_name
+        - name: Debug var - script_source_dir
+          ansible.builtin.debug:
+            var: script_source_dir
+        - name: Debug var script_args
+          ansible.builtin.debug:
+            var: script_args
+        - name: Debug var script_add_to_envpath
+          ansible.builtin.debug:
+            var: script_add_to_envpath
+        - name: Debug var script_run
+          ansible.builtin.debug:
+            var: script_run
+        - name: Debug var script_clean
+          ansible.builtin.debug:
+            var: script_clean
+        - name: Debug var script_destination_dir
+          ansible.builtin.debug:
+            var: script_destination_dir
+        - name: Waiting for user response
+          ansible.builtin.pause:
+            prompt: Debug script ansible variables, press enter to continue ...
+
+    - name: Copy and Run Specified Admin Script
+      block:
+        # zos_copy - 41-63
+        - name: Delete script file if already exist
+          # ansible.builtin.ignore_errors: true
+          ansible.builtin.file:
+            state: absent
+            path: "{{ script_destination_dir }}/{{ script_name }}"
+
+        - name: Create target directory
+          ansible.builtin.file:
+            path: "{{ script_destination_dir }}"
+            state: directory
+            mode: '0775'
+
+        - name: Transfer the script
+          ansible.builtin.copy:
+            src: "{{ script_source_dir ~'/' ~ script_name }}"
+            dest: "{{ script_destination_dir }}"
+            mode: '0775'
+          register: transfer_out
+
+        # - name: Encode script
+        #   ansible.builtin.shell: iconv -f ISO8859-1 -t IBM-1047 {{script_name}} > {{script_name}}_tmp; chtag -tc IBM-1047 |
+        #     {{script_name}}_tmp; mv {{script_name}}_tmp {{script_name}} ; chmod 0775 {{script_name}}
+        #   args:
+        #     chdir: '{{ script_destination_dir }}'
+
+        - name: Encode script
+          when: transfer_out is defined and transfer_out.state == "success"
+          ansible.builtin.shell: chtag -tc IBM-1047 {{ script_name }}_tmp; mv {{ script_name }}_tmp {{ script_name }} ; chmod 0775 {{ script_name }}
+          args:
+            chdir: '{{ script_destination_dir }}'
+          register: encode_script_out
+          changed_when: encode_script_out.rc != 0
+
+        - name: Run the script
+          when: script_run is defined and script_run | bool
+          ansible.builtin.command: sh {{ script_destination_dir }}/{{ script_name }} {{ script_args }}
+          register: script_out
+          changed_when: script_out.rc != 0
+
+      rescue:
+        - name: Caught an error while runing admin script
+          ansible.builtin.debug:
+            msg: "Script output: {{ script_out }}"
+          when: script_out is defined
+        # - ansible.builtin.debug:
+        #     var: ansible_failed_result
+
+        - name: Check for error message
+          ansible.builtin.assert:
+            that: ansible_failed_result.msg == ""
+            # that: ansible_failed_result.msg = "non-zero return codes"
+
+      always:
+        # Remove script file if script_clean is true
+        - name: Delete script file if already exist
+          when: script_clean is defined and script_clean | bool
+          # ansible.builtin.ignore_errors: true
+          ansible.builtin.file:
+            state: absent
+            path: "{{ script_destination_dir }}/{{ script_name }}"

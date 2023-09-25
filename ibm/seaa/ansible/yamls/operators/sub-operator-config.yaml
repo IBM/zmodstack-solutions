@@ -9,8 +9,6 @@ apiVersion: "{{ oc_product.apiVersion }}"
 kind: SubOperatorConfig
 metadata:
   name: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_version }}"
-  labels:
-    instance-name: "{{ broker_instance.name }}"
 spec:
   credentialType: "{{ oc_product.credential_type }}"
   operatorCollection: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_version }}"
