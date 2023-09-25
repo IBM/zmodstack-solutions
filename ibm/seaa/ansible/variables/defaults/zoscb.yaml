@@ -11,7 +11,7 @@
 # Broker Subscription
 # *************************************
 broker_subscription_name: ibm-zoscb
-broker_subscription_version: 2.2.1 # 2023.2.1 GA
+broker_subscription_version: 2.2.2 # 2023.2.1 GA - updated
 broker_subscription_source: ibm-operator-catalog
 broker_subscription_channel: v2.2
 broker_subscription_install_plan_approval: Automatic
@@ -34,7 +34,7 @@ broker_instance_multi_namespace: true
 # *************************************
 # Broker Storage
 # *************************************
-broker_instance_storage_configure: true
+broker_instance_storage_configure: false
 broker_instance_storage_enabled: false
 
 # TODO:E2E Update E2E Collection NOT USING THESE USING PVC VARS Directly
