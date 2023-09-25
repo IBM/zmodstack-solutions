@@ -15,8 +15,9 @@ reset="\033[0m"
 yellow="\033[0;33m"
 
 # Set defaults
-export SEAA_TAGS=
-export SEAA_SKIPTAGS=
+# export SEAA_TAGS=
+# export SEAA_SKIPTAGS=
+
 export SEAA_EXTRA_VARS=
 export SEAA_INVENTORY="${SEAA_INVENTORY:-inventory.yaml}"
 export SEAA_INVENTORY_LOCATION="${SEAA_INVENTORY_LOCATION:-${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/playbooks/inventory}"
