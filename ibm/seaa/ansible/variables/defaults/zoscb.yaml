@@ -34,7 +34,7 @@ broker_instance_multi_namespace: true
 # *************************************
 # Broker Storage
 # *************************************
-broker_instance_storage_configure: false
+broker_instance_storage_configure: true
 broker_instance_storage_enabled: false
 
 # TODO:E2E Update E2E Collection NOT USING THESE USING PVC VARS Directly
