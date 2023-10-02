@@ -104,10 +104,7 @@
       until:
         - deploy_csv_subop.resources is defined and deploy_csv_subop.resources | length > 0
         - "'status' in deploy_csv_subop.resources[0]"
-        - deploy_csv_subop.resources[0].status.phase == 'Succeeded' or
-           (deploy_csv_subop.resources[0].status.phase == 'Failed' and
-            deploy_csv_subop.resources[0].status.message != "install timeout" and
-            deploy_csv_subop.resources[0].status.reason != "InstallCheckFailed" )
+        - deploy_csv_subop.resources[0].status.phase == 'Succeeded' or deploy_csv_subop.resources[0].status.phase == 'Failed'
       failed_when: "'status' in deploy_csv_subop.resources[0] and
                     deploy_csv_subop.resources[0].status.phase != 'Succeeded'"
       retries: "{{ seaa_deploy_retries | int }}" # 120
