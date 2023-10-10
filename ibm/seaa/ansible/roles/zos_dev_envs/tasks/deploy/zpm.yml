@@ -70,11 +70,6 @@
 - name: Deploy Operator Collection and SubOperator
   block:
 
-    # FIND OPERATOR COLLECTION TAR.GZ FILE LOCALLY
-    - name: Find upload file
-      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/findFile.yml"
-      when: oc_product.import_mode == 'upload'
-
     - name: Manage Secret for OC
       when:
         - hostvars[current_zosendpoint]._is_active

@@ -28,11 +28,6 @@
     - csv_info.resources is defined and csv_info.resources | length > 0
     - "'status' in csv_info.resources[0] and csv_info.resources[0].status.phase == 'Succeeded'"
 
-- name: Set OC version for Galaxy mode
-  ansible.builtin.set_fact:
-    oc_version: "{{ oc_product.oc_version }}"
-  when: oc_product.import_mode == 'galaxy'
-
 - name: Debug Collection and endpoint before mapping
   when:
     - seaa_automation.debug | bool
@@ -46,9 +41,6 @@
     - name: Debug var oc_product
       ansible.builtin.debug:
         var: oc_product
-    - name: Debug var oc_version
-      ansible.builtin.debug:
-        var: oc_version
     - name: Waiting for user response
       ansible.builtin.pause:
         prompt: Check product and endpoint variables before mapping collection, press enter to continue ...
@@ -77,8 +69,8 @@
       no_log: "{{ not seaa_automation.debug }}"
       changed_when: start_tstamp_ns.rc != 0
 
-    - name: "Map suboperator with Native YAML API '{{ oc_product.name }}.zpm.{{ oc_version }}-suboperatorconfig' to '{{ project_namespace.name }}' on ' \
-            {{ ocp_cluster.hostname }}'"
+    - name: "Map suboperator with Native YAML API '{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}-suboperatorconfig' to '\
+       {{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
       when: seaa_automation_strategy != "generate_yaml"
       kubernetes.core.k8s:
         state: present
@@ -99,7 +91,7 @@
         api_version: operators.coreos.com/v1alpha1
         label_selectors:
           - "instance-name = {{ broker_instance.name }}"
-          - "suboperatorconfig.name = {{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_version }}"
+          - "suboperatorconfig.name = {{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
       register: deploy_csv_subop
       until:
         - deploy_csv_subop.resources is defined and deploy_csv_subop.resources | length > 0
