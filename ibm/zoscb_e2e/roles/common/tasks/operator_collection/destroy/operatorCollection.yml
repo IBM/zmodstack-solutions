@@ -4,17 +4,15 @@
 #
 
 ---
-- name: Delete operator collection with YAML
+- name: Delete operator collection with Native YAML API
   when:
     - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
-    - not oc_product.import_mode == 'upload'
   block:
 
     - name: Set zProduct Operator name
       when: oc_product.name != sub_operators.zpm.name
       ansible.builtin.set_fact:
         operator_name: ibm-{{ oc_product.name | replace('-', '_') }}_operator-{{ oc_product.oc_version }}
-
     - name: Set ZPM operator name
       when: oc_product.name == sub_operators.zpm.name
       ansible.builtin.set_fact:

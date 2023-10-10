@@ -25,11 +25,6 @@
     - not zpm_consolidated_operator | bool
   block:
 
-    # FIND OPERATOR COLLECTION TAR.GZ FILE LOCALLY
-    - name: Find upload file
-      ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/findFile.yml"
-      when: oc_product.import_mode == 'upload'
-
     # ADD Secret for OC and Endpoint
     - name: Manage Secret for OC
       when:

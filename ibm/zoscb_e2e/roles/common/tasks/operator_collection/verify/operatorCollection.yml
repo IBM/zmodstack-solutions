@@ -2,20 +2,35 @@
 # Copyright 2023 IBM Inc. All rights reserved
 # SPDX-License-Identifier: Apache2.0
 #
-
-- name: Set OC verison fact
+- name: Set zProduct Operator name
+  when: oc_product.name != sub_operators.zpm.name
   ansible.builtin.set_fact:
-    oc_version: "{{ oc_product.oc_version }}"
-  when: oc_product.import_mode == "galaxy"
+    operator_name: ibm-{{ oc_product.name | replace('-', '_') }}_operator-{{ oc_product.oc_version }}
 
-- name: "Info Only Retrieve imported operator collection: '{{ oc_product.name }}.zpm.{{ oc_version }}'"
+- name: Set ZPM operator name
+  when: oc_product.name == sub_operators.zpm.name
+  ansible.builtin.set_fact:
+    operator_name: ibm-{{ oc_product.name | replace('-', '_') }}-{{ oc_product.oc_version }}
+
+# - name: Set OC verison fact
+#   ansible.builtin.set_fact:
+#     oc_version: "{{ oc_product.oc_version }}"
+#   when: oc_product.import_mode == "galaxy"
+
+# FIND OPERATOR COLLECTION TAR.GZ FILE LOCALLY
+- name: Find and verify upload file
+  ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/findFile.yml"
+  when:
+    - oc_product.import_mode == 'upload'
+
+- name: "Info Only Retrieve imported operator collection: '{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}'"
   when: info_only is defined
   kubernetes.core.k8s_info:
     api_key: "{{ ocp_cluster.auth_token }}"
     kind: OperatorCollection
     namespace: "{{ project_namespace.name }}"
     api_version: "{{ oc_product.apiVersion }}"
-    name: "{{ oc_product.name }}.zpm.{{ oc_version }}"
+    name: "{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}"
     label_selectors:
       - "instance-name = {{ broker_instance.name }}"
       - "name = {{ oc_product.name }}"
@@ -27,14 +42,14 @@
   vars:
     resource_variable: "{{ oc_info_only }}"
 
-- name: "Retrieve imported operator collection: '{{ oc_product.name }}.zpm.{{ oc_version }}'"
+- name: "Retrieve imported operator collection: '{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}'"
   when: info_only is undefined
   kubernetes.core.k8s_info:
     api_key: "{{ ocp_cluster.auth_token }}"
     kind: OperatorCollection
     namespace: "{{ project_namespace.name }}"
     api_version: "{{ oc_product.apiVersion }}"
-    name: "{{ oc_product.name }}.zpm.{{ oc_version }}"
+    name: "{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}"
     label_selectors:
       - "instance-name = {{ broker_instance.name }}"
       - "name = {{ oc_product.name }}"
@@ -46,7 +61,7 @@
   retries: "{{ seaa_verify_retries | int }}" # 30
   delay: "{{ seaa_verify_delay | int }}" # 10
 
-- name: "Verify imported operator collection: '{{ oc_product.name }}.zpm.{{ oc_version }}'"
+- name: "Verify imported operator collection: '{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}'"
   when: info_only is undefined
   ansible.builtin.assert:
     that:
