@@ -176,7 +176,6 @@
           (zpm_zosendpoints_deploy_verified is undefined or not zpm_zosendpoints_deploy_verified) or
           (seaa_deploy_validate_crs | bool and zpm_create_diagnostics_cr | bool and
           (zpm_diag_deploy_verified is not defined or not zpm_diag_deploy_verified))
-
     # UnDeploy ZPM if it is verified deployed
     # or deploy validate CR or diag CR if they are not deployed
     - name: UnDeploy ZPM if it is verified deployed
@@ -208,6 +207,11 @@
             prompt: Namespace '{{ this_project_name }}' added to zpm deployed list on '{{ current_ocphost }}, press enter to continue ...'
           when: seaa_automation.prompt_during_automation | bool
   always:
+    # Set flag for ZPM being deployed to namespace
+    - name: Set flag for ZPM being deployed to namespace
+      ansible.builtin.set_fact:
+        zpm_deployed: "{{ zpm_deploy_verified | default(false) }}"
+
     - name: Clear ZPM deploy facts
       ansible.builtin.set_fact:
         zpm_deploy_verified: false
@@ -215,17 +219,3 @@
         zpm_oc_deploy_verified: false
         zpm_subop_deploy_verified: false
         zpm_zosendpoints_deploy_verified: false
-
-    # Set flag for ZPM being deployed to namespace
-    - name: Set flag for ZPM being deployed to namespace
-      when:
-        - seaa_deploy_strategy == "deploy"
-      ansible.builtin.set_fact:
-        zpm_deployed: "{{ seaa_zpm_smart_deploy | bool }}"
-
-    # Set flag for ZPM being deployed to namespace
-    - name: Set flag for ZPM being deployed to namespace
-      when:
-        - seaa_deploy_strategy == "undeploy"
-      ansible.builtin.set_fact:
-        zpm_deployed: "{{ not seaa_zpm_smart_deploy | bool }}"

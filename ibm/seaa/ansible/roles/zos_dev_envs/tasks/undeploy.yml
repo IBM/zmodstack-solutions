@@ -132,7 +132,6 @@
       when:
         - seaa_deploy_objective == 'zoscb'
         - (seaa_zpm_smart_deploy | bool)
-        - (zpm_deployed or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yaml")
       tags:
         - always
 
@@ -141,6 +140,7 @@
       # Need this so when tagging "oel-dev" role does not try to run each product deploy/Undeploy
       when:
         - seaa_deploy_objective == 'zpm'  # or# - (seaa_deploy_objective == 'zpm')
+        - (not seaa_zpm_smart_deploy | bool)
         - "'oel-dev' in  ansible_run_tags or 'zpm' in ansible_run_tags"
       tags:
         - oel-dev
@@ -186,8 +186,6 @@
         - seaa_deploy_objective != 'zpm'
         - seaa_deploy_role == "admin"
         - (seaa_zoscb_smart_deploy | bool )
-        - (zoscb_deployed or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "generate_deploy_yaml")
-         # and seaa_automation_strategy != "generate_yaml" # or seaa_deploy_objective == 'zoscb'
       tags:
         - always
     # ****************************************************************************************************************************

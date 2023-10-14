@@ -73,7 +73,7 @@
             - operator_info_only.resources[0].status.phase == 'Succeeded'
             - operator_info_only.resources[0].status.reason == 'InstallSucceeded'
 
-        - name: Set flag  to check if z/OS endpoint not found
+        - name: Set flag to check if z/OS endpoint not found
           ansible.builtin.set_fact:
             zosendpoint_not_found: false
 
@@ -152,22 +152,13 @@
             prompt: Namespace '{{ this_project_name }}' added to zoscb deployed list on '{{ current_ocphost }}', press enter to continue ...
           when: seaa_automation.prompt_during_automation | bool
   always:
+    # Set flag for ZOSCB being deployed to namespace
+    - name: Set flag for ZOSCB being deployed to namespace
+      ansible.builtin.set_fact:
+        zoscb_deployed: "{{ zoscb_deploy_verified | default(false) }}"
+
     - name: Reset zoscb_deploy_verified and query info facts
       ansible.builtin.set_fact:
         zoscb_csv_deploy_verified: false
         zoscb_deploy_verified: false
         zoscb_api_deployed: false
-
-    # Set flag for ZOSCB being deployed to namespace
-    - name: Set flag for ZOSCB being deployed to namespace
-      when:
-        - seaa_deploy_strategy == "deploy"
-      ansible.builtin.set_fact:
-        zoscb_deployed: "{{ seaa_zoscb_smart_deploy | bool }}"
-
-    # Set flag for ZPM being deployed to namespace
-    - name: Set flag for ZPM being deployed to namespace
-      when:
-        - seaa_deploy_strategy == "undeploy"
-      ansible.builtin.set_fact:
-        zoscb_deployed: "{{ not seaa_zoscb_smart_deploy | bool }}"
