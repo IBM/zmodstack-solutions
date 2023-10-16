@@ -30,7 +30,7 @@
 
 - name: Debug authenticate status
   when: seaa_automation.debug is defined and seaa_automation.debug | bool
-  no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+  no_log: "{{ local_secure_log }}"
   block:
 
     - name: Debug var

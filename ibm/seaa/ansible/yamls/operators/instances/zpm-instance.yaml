@@ -18,16 +18,25 @@ spec:
   java_home: "{{ zos_package_manager.javaHomeDirectory }}"
   zosendpoint: "{{ zos_package_manager.zosEndpoint }}"
   zpm_install_path: "{{ zos_package_manager.installDirectoryPath }}"
-  zpm_products_hlq: "{{ zos_package_manager.productsHLQ }}"
-  zpm_registry_location: "{{ zpm_registry.host }}"
   zpm_state_path: "{{ zos_package_manager.stateDirectoryPath }}"
-  {% if zos_package_manager.zpmRegistryProxyHost is defined and zos_package_manager.zpmRegistryProxyHost is not none %}
-  zpm_registry_proxy_host: "{{ zos_package_manager.zpmRegistryProxyHost }}"
-  {% endif %}
-  {% if zos_package_manager.zpmRegistryProxyPort is defined and zos_package_manager.zpmRegistryProxyPort is not none %}
-  zpm_registry_proxy_port: "{{ zos_package_manager.zpmRegistryProxyPort }}"
-  {% endif %}
-  {% if oc_product.credential_type == "personal" %}
+  zpm_products_hlq: "{{ zos_package_manager.productsHLQ }}"
+{% if oc_product.credential_type == "personal" %}
   credential: "{{ seaa_sshkey_secrets_prefix }}{{ endpoint.username }}-{{ endpoint.name }}"
-  {% endif %}
-
+{% endif %}
+{% if zpm_sets_registry_config is defined and zpm_sets_registry_config and zos_package_manager.registries | length > 0 %}
+  {% for registry in zos_package_manager.registries %}
+  zpm_registry_location: "{{ registry.host }}"
+  zpm_registry_user_credential: "{{ seaa_registry_secrets_prefix }}{{ registry.user }}-{{ registry.host | regex_replace('[./:?]', '-') }}"
+  {% endfor %}
+{% else %}
+  zpm_registry_location: "{{ zos_package_manager.zpmRegistryLocation }}"
+{% endif %}
+{% if zos_package_manager.zpmRegistryProxyHost is defined and zos_package_manager.zpmRegistryProxyHost != "" %}
+  zpm_registry_proxy_host: "{{ zos_package_manager.zpmRegistryProxyHost }}"
+{% endif %}
+{% if zos_package_manager.zpmRegistryProxyPort is defined and zos_package_manager.zpmRegistryProxyPort != "" %}
+  zpm_registry_proxy_port: "{{ zos_package_manager.zpmRegistryProxyPort }}"
+{% endif %}
+{% if zos_package_manager.zpmRegistryProxyName is defined and zos_package_manager.zpmRegistryProxyName != "" %}
+  zpm_registry_proxy_user_credential: "{{ zos_package_manager.zpmRegistryProxyName }}"
+{% endif %}

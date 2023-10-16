@@ -1,0 +1,212 @@
+#
+# Copyright 2023 IBM Inc. All rights reserved
+# SPDX-License-Identifier: Apache2.0
+#
+
+---
+- name: Set variables and facts for manage secrets task
+  ansible.builtin.set_fact:
+    # secret_deployed: false
+    _seaa_encrypt_secrets: "{{ seaa_encrypt_secrets | bool }}"
+
+- name: Set Modified Registry URL
+  ansible.builtin.set_fact:
+    modified_url: "{{ current_zpm_registry.host | regex_replace('[./:?]', '-') }}"
+
+- name: Set ZPM registry name
+  ansible.builtin.set_fact:
+    _zpm_registry_name: "{{ seaa_registry_secrets_prefix }}{{ current_zpm_registry.user }}-{{ modified_url }}"
+
+- name: Deploy Encrypted Registry Credentials WITHOUT Vault Password File
+  no_log: "{{ seaa_security_secure_log | default(true) | bool }}"
+  when:
+    - seaa_secret_data_strategy == "file"
+    - current_zpm_registry.password is defined and current_zpm_registry.password | length > 0
+    # - zpm_sets_registry_config is undefined or not zpm_sets_registry_config
+  block:
+
+    - name: Set path to encrypted sensitive file
+      ansible.builtin.set_fact:
+        sensitive_file: "{{ seaa_path_to_secret_files }}/{{ current_zpm_registry.password }}"
+
+    - name: Set stats of file with sensitive data in SEAA_SECRETS_DIR
+      ansible.builtin.stat:
+        path: "{{ sensitive_file }}"
+      register: secret_sensitive_file_stat
+
+    - name: Set flag for secret_sensitive_file not existing
+      ansible.builtin.set_fact:
+        secret_sensitive_file_exist: true
+      when: secret_sensitive_file_stat.stat.exists
+
+    - name: Block for Check if sensitive file is specifying absolute path if not in SEAA_SECRETS_DIR
+      when: secret_sensitive_file_exist is undefined # not secret_sensitive_file_stat.stat.exists
+      block:
+        - name: Check if sensitive file is specifying absolute path if not in SEAA_SECRETS_DIR
+          ansible.builtin.set_fact:
+            sensitive_file: "{{ current_zpm_registry.password }}"
+
+        - name: Set flag for secret_sensitive_file not existing
+          ansible.builtin.set_fact:
+            secret_sensitive_file_exist: false
+
+    - name: Set flag for sensitive_file
+      ansible.builtin.set_fact:
+        sensitive_file_exist: false
+
+    - name: Block Set stats of file with sensitive data
+      when: not secret_sensitive_file_exist # secret_sensitive_file_exist is defined and not secret_sensitive_file_exist
+      block:
+
+        - name: Set stats of file with sensitive data
+          ansible.builtin.stat:
+            path: "{{ sensitive_file }}"
+          register: sensitive_file_stat
+
+        - name: Set flag for sensitive_file
+          ansible.builtin.set_fact:
+            sensitive_file_exist: true
+          when: sensitive_file_stat.stat.exists
+
+    # - ansible.builtin.debug: var=sensitive_file_exist
+    # - ansible.builtin.debug: var=secret_sensitive_file_exist
+    # - ansible.builtin.debug: var=secret_sensitive_file_stat
+    # - ansible.builtin.debug: var=sensitive_file_stat
+    # - ansible.builtin.debug: var=sensitive_file
+    # - ansible.builtin.pause:
+    #      prompt: Check sensitive_file_stat and password
+
+    - name: Block Get sensitive content
+      when:
+        - secret_sensitive_file_exist or sensitive_file_exist
+      block:
+        - name: Read encrypted file into a variable
+          when:
+            - seaa_ansible_vault_key_file is not none and seaa_ansible_vault_key_file != ''
+          ansible.builtin.set_fact:
+            zpm_registry_pwd: "{{ lookup('file', sensitive_file) }}"
+
+        - name: Block set content from encoded secret file without vault key
+          when:
+            - seaa_ansible_vault_key_file is none or seaa_ansible_vault_key_file == ''
+          block:
+            - name: Get sensitive content
+              ansible.builtin.slurp:
+                src: "{{ sensitive_file }}"
+              register: registry_password_content
+
+            - name: Set Encrypted registry password variable
+              when:
+                - not registry_password_content.failed
+              ansible.builtin.set_fact:
+                zpm_registry_pwd: "{{ registry_password_content.content | b64decode }}"
+
+    - name: Encrypted registry password file '{{ sensitive_file }}' not found
+      when:
+        - (not secret_sensitive_file_exist and not sensitive_file_exist) or (zpm_registry_pwd is undefined or zpm_registry_pwd == "")
+      ansible.builtin.fail:
+        msg: "Unable to find registry password file. Please verify it exist."
+
+- name: Set Registry Password from Text
+  ansible.builtin.set_fact:
+    zpm_registry_pwd: "{{ current_zpm_registry.password }}"
+  when:
+    - seaa_secret_data_strategy == "text"
+
+    # - seaa_ansible_vault_key_file is none or seaa_ansible_vault_key_file == ''
+    # - zpm_registry_pwd is undefined or zpm_registry_pwd is none
+
+# - ansible.builtin.debug: var=seaa_secret_data_strategy
+# - ansible.builtin.debug: var=seaa_ansible_vault_key_file
+# - ansible.builtin.debug: var=current_zpm_registry
+# - ansible.builtin.debug: var=zpm_registry_pwd
+
+- name: No registry credentials to encryt continue
+  ansible.builtin.debug:
+    msg: There are no registry credentials to encrypt
+  when:
+    - zpm_registry_pwd == none or current_zpm_registry.user == none
+
+# - ansible.builtin.debug: var=zpm_registry_pwd
+# - ansible.builtin.debug: var=seaa_automation_strategy
+# - ansible.builtin.debug: var=current_zpm_registry
+# - ansible.builtin.debug: var=seaa_deploy_objective
+
+# - ansible.builtin.pause:
+#     prompt: Check WHAT THE HECK IS GOIN ON
+- name: Block to Encrypt Registry password with binary
+  when:
+    - (seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "deploy_yaml") or
+      (seaa_deploy_objective == "secrets" and seaa_automation_strategy == "")
+    - zpm_registry_pwd != none
+  block:
+    - name: Accept license for Encrypt CLI
+      ansible.builtin.shell: |
+        set -o pipefail
+        zoscb-encrypt license --accept
+      args:
+        executable: /bin/bash
+      register: encrypt_secret_license
+      changed_when: encrypt_secret_license.rc != 0
+
+    # - ansible.builtin.debug: var=zpm_registry_pwd
+    # - ansible.builtin.debug: var=current_zpm_registry
+    # - ansible.builtin.pause:
+    #      prompt: Check password when using Ansible Vaault Key file
+
+    - name: Encrypt Registry password
+      ansible.builtin.shell: |
+        set -o pipefail
+        export SECURED_SECRET_PROPERTIES='registry-user={{ current_zpm_registry.user }} registry-password={{ zpm_registry_pwd }}' &&
+        oc login --token={{ ocp_cluster.auth_token }} --server=https://{{ ocp_cluster.hostname }}:{{ ocp_cluster.port }} \
+        {{ "--insecure-skip-tls-verify" if not config_var_cluster_validate_certs | bool else '--certificate-authority='~config_var_cluster_cacert }} &&
+        oc project {{ project_namespace.name }} &&
+        zoscb-encrypt credential-secret -n {{ _zpm_registry_name }} -l --namespace {{ project_namespace.name }} &&
+        unset SECURED_SECRET_PROPERTIES 2>&1
+      args:
+        executable: /bin/bash
+      register: encrypted_secret
+      changed_when: encrypted_secret.rc == 0
+      no_log: "{{ seaa_security_secure_log | default(false) | bool }}"
+
+    # - name: Set secret_deployed flag
+    #   when: encrypted_secret.rc == 0
+    #   ansible.builtin.set_fact:
+    #     secret_deployed: true
+  rescue:
+    - name: Fail creating encrypted secret failed. Failed task is '{{ ansible_failed_task.name }}'
+      ansible.builtin.fail:
+        msg: "Unable to deploy encrypted secret. See details: {{ ansible_failed_result }}"
+  always:
+    - name: "Delete temporary files"
+      when:
+        - clean_tmp_files
+        - seaa_automation_strategy == "deploy_yaml"
+      ansible.builtin.file:
+        path: "{{ tmp_dir }}"
+        state: absent
+
+- name: Add command to deployment script and README to deploy Registry Encrypted Secrets
+  when:
+    - seaa_deploy_secrets | bool
+    - _deploy_type == "deploy" and _seaa_encrypt_secrets
+    - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" # or secret_deployed
+    # - secret_deployed or seaa_automation_strategy == "generate_yaml"
+    - seaa_deploy_role == "admin" or
+      (oc_product.credential_type == "personal" and seaa_deploy_role == "developer") # Create credential if shared-admin or personal-developer
+  no_log: "{{ seaa_security_secure_log | default(false) | bool }}"
+  block:
+
+    - name: Generate command for deploying encrypted Registry password secret
+      ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/generate_cmd.yml"
+      vars:
+        command_to_execute: "zoscb-encrypt"
+        command_secret: "{{ endpoint.SSHKeyPassPhrase }}"
+        script_command: "deployRegistryCredSecret"
+        script_command_comment: "'Secret' - '{{ _zpm_registry_name }}' for '{{ current_zpm_registry.user }}'"
+        script_command_string: "{{ current_zpm_registry.user }} {{ _zpm_registry_name }}"
+        is_encrypted: true
+        deploy_name: "{{ seaa_sshkey_secrets_prefix }}{{ endpoint.username }}-{{ endpoint.name }}"
+        deploy_kind: Secret
+        deploy_file: ""
+        secret_type: "{{ _secret_type }}"
