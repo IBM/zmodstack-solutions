@@ -23,6 +23,7 @@
     _timelapse: "{{ timelapse | default(0.0) }}"
     nolog: "{{ not seaa_track_generated_yamls | bool }}"
     _copy_binary: false
+    _secret_type: "{{ secret_type | default('sshkey') }}"
 
 - name: Check for generation of YAML file '{{ yaml_file }}' for '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
   ansible.builtin.pause:
@@ -40,66 +41,66 @@
 
 - name: Copy Encryption COMMAND to YAML output Directory and Update Script and README files
   when:
-    - is_encrypted is defined and is_encrypted
     - command_to_execute == "zoscb-encrypt"
   block:
 
     - name: Add Passphrase prompt flag if exist for secret
       when:
+        - _secret_type == "sshkey"
         - command_has_secret is defined and command_has_secret
       ansible.builtin.set_fact:
         line_to_append: "{{ line_to_append }} --prompt_for_passphrase"
 
-    - name: Set stats of CMD file.
-      ansible.builtin.stat:
-        path: "{{ _seaa_bin_output_dir }}/{{ command_to_execute }}"
-      register: command_file
-      no_log: "{{ nolog }}"
+    # - name: Set stats of CMD file.
+    #   ansible.builtin.stat:
+    #     path: "{{ _seaa_bin_output_dir }}/{{ command_to_execute }}"
+    #   register: command_file
+    #   no_log: "{{ nolog }}"
 
-    - name: Copy Command source
-      when:
-        - not command_file.stat.exists
-        - _copy_binary
-      block:
+    # - name: Copy Command source
+    #   when:
+    #     - not command_file.stat.exists
+    #     - _copy_binary
+    #   block:
 
-        - name: Get ansible controller OS
-          when: controller_os is not defined
-          block:
-            - name: Filter and return only selected facts
-              ansible.builtin.setup:
-                filter:
-                  - 'ansible_distribution'
+    #     - name: Get ansible controller OS
+    #       when: controller_os is not defined
+    #       block:
+    #         - name: Filter and return only selected facts
+    #           ansible.builtin.setup:
+    #             filter:
+    #               - 'ansible_distribution'
 
-            - name: Set Controller OS
-              ansible.builtin.set_fact:
-                controller_os: "{{ ansible_facts['distribution'] }}"
+    #         - name: Set Controller OS
+    #           ansible.builtin.set_fact:
+    #             controller_os: "{{ ansible_facts['distribution'] }}"
 
-        - name: Make sure parent bin directory for CMD  exists
-          ansible.builtin.file:
-            path: "{{ _seaa_bin_output_dir }}"
-            state: directory
-            mode: '0755'
+    #     - name: Make sure parent bin directory for CMD  exists
+    #       ansible.builtin.file:
+    #         path: "{{ _seaa_bin_output_dir }}"
+    #         state: directory
+    #         mode: '0755'
 
-        - name: Copy MacOSX CMD file
-          when: controller_os == "MacOSX"
-          ansible.builtin.copy:
-            src: "{{ seaa_ansible_directory }}/../../binaries/darwin-amd64-zoscb-encrypt"
-            dest: "{{ _seaa_bin_output_dir }}/{{ command_to_execute }}"
-            mode: '0755'
-          register: copied_command_file
+    #     - name: Copy MacOSX CMD file
+    #       when: controller_os == "MacOSX"
+    #       ansible.builtin.copy:
+    #         src: "{{ seaa_ansible_directory }}/../../binaries/darwin-amd64-zoscb-encrypt"
+    #         dest: "{{ _seaa_bin_output_dir }}/{{ command_to_execute }}"
+    #         mode: '0755'
+    #       register: copied_command_file
 
-        - name: Copy Linux CMD file
-          when: controller_os != "MacOSX"
-          ansible.builtin.copy:
-            src: "{{ seaa_ansible_directory }}/../../binaries/linux-amd64-zoscb-encrypt"
-            dest: "{{ _seaa_bin_output_dir }}/{{ command_to_execute }}"
-            mode: '0755'
-          register: copied_command_file
+    #     - name: Copy Linux CMD file
+    #       when: controller_os != "MacOSX"
+    #       ansible.builtin.copy:
+    #         src: "{{ seaa_ansible_directory }}/../../binaries/linux-amd64-zoscb-encrypt"
+    #         dest: "{{ _seaa_bin_output_dir }}/{{ command_to_execute }}"
+    #         mode: '0755'
+    #       register: copied_command_file
 
-        - name: Wait until the CMD file is present before continuing
-          ansible.builtin.wait_for:
-            path: "{{ _seaa_bin_output_dir }}/{{ command_to_execute }}"
-            timeout: 300
+    #     - name: Wait until the CMD file is present before continuing
+    #       ansible.builtin.wait_for:
+    #         path: "{{ _seaa_bin_output_dir }}/{{ command_to_execute }}"
+    #         timeout: 300
 
     - name: Include task to generate script file for Encrypt CMD
       ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/_generate_script.yml"

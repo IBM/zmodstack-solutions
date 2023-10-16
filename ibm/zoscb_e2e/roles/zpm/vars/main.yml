@@ -9,9 +9,8 @@
 # ZPM_REGISTRY CREDENTIALS  TODO:DOC -  Inventory > Ansible Var Defaults
 zpm_registry:
   host: "{{ hostvars[current_ocphost].zpm_registry_host | default(lookup('vars', 'zpm_registry_host'), true) }}"
-  username: "{{ hostvars[current_ocphost].zpm_registry_user | default(lookup('vars', 'zpm_registry_user'), true) }}"
-  apiToken: "{{ hostvars[current_ocphost].zpm_registry_password | default(lookup('vars', 'zpm_registry_password'), true) }}"
-
+  user: "{{ hostvars[current_ocphost].zpm_registry_user | default(lookup('vars', 'zpm_registry_user'), true) }}"
+  password: "{{ hostvars[current_ocphost].zpm_registry_password | default(lookup('vars', 'zpm_registry_password'), true) }}"
 
 # SUB-OPERATOR (Operator Collection) - TODO:DOC -  Inventory > Ansible Var Defaults, Constants
 oc_product:
@@ -67,14 +66,26 @@ zos_package_manager:
    default(lookup('vars', 'zpm_java_home_directory'), true) }}" # "{{ lookup('vars', 'zpm_java_home_directory') }}"
   productsHLQ: "{{ endpoint.zpm_product_hlq }}" # "{{ lookup('vars', 'zpm_product_hlq') }}"
   zpmRegistryLocation: "{{ zpm_registry.host }}"
+  zpmRegistryPassword: "{{ zpm_registry.password }}"
+  zpmRegistryUser: "{{ zpm_registry.user }}"
   zpmRegistryProxyHost: "{{ lookup('vars', 'zpm_registry_proxy_host') | default('', true) }}"
   zpmRegistryProxyPort: "{{ lookup('vars', 'zpm_registry_proxy_port') | default('', true) }}"
+  zpmRegistryProxyPassword: "{{ lookup('vars', 'zpm_registry_proxy_password') | default('', true) }}"
+  zpmRegistryProxyUser: "{{ lookup('vars', 'zpm_registry_proxy_user') | default('', true) }}"
   licenseAccept: "{{ lookup('vars', 'zpm_instance_license_accept') | bool }}"
+  zpmRegistryProxyName: "{{ seaa_registry_secrets_prefix if lookup('vars', 'zpm_registry_proxy_host', default='') != '' and \
+   lookup('vars', 'zpm_registry_proxy_host', default='') is not none else '' }}\
+   {{ lookup('vars', 'zpm_registry_proxy_user', default='') | default('', true) }}\
+   {{ '-' if lookup('vars', 'zpm_registry_proxy_host', default='') != '' and \
+    lookup('vars', 'zpm_registry_proxy_host', default='') is not none else '' }}\
+   {{ lookup('vars', 'zpm_registry_proxy_host', default='') | default('', true) | regex_replace('[./:?]', '-') }}"
+  # registries: "{{ lookup('vars', 'zpm_registries', default=none) }}"
+  registries: "{{ hostvars[current_zosendpoint].zpm_registries | default(lookup('vars', 'zpm_registries', default=none), true) }}"
 
 # TODO:DOC -  Inventory > Ansible Var Defaults, Constants
 zos_package_manager_diagnostics:
   name: "{{ hostvars[current_ocphost].zpm_diagnostics_name |
-            default(zpm_diagnostics_prefix | append_str_if_not_null('-'~current_zosendpoint), true)  |
+            default(zpm_diagnostics_prefix | append_str_if_not_null('-'~current_zosendpoint), true) |
             default(lookup('vars', 'zpm_diagnostics_name'), true) }}"
   kind: "{{ lookup('vars', 'zpm_diagnostics_kind') }}"
   apiVersion: "{{ lookup('vars', 'zpm_diagnostics_api_version') }}"

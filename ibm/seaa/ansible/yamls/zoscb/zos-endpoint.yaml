@@ -22,22 +22,24 @@ spec:
   endpointType: "{{ endpoint.type }}"
 {% endif %}
   variables:
-{% if zpm_registry.host is defined and zpm_registry.host != "" %}
+{% if zpm_sets_registry_config is undefined or zpm_sets_registry_config == false %}
+  {% if zpm_registry.host is defined and zpm_registry.host != "" %}
     - name: zpm_registry_host
       type: string
       value: "{{ zpm_registry.host }}"
-{% endif %}
-{% if zpm_registry.user is defined and zpm_registry.user != "" %}
+  {% endif %}
+  {% if zpm_registry.user is defined and zpm_registry.user != "" %}
     - name: zpm_registry_user
       type: string
       value: "{{ zpm_registry.user }}"
-{% endif %}
-{% if zpm_registry.password is defined and zpm_registry.password != "" %}
+  {% endif %}
+  {% if zpm_registry.password is defined and zpm_registry.password != "" %}
     - name: zpm_registry_password
       type: string
       sensitive: {{ seaa_encrypt_sensitive_endpoint_vars }}
       value: >-
         {{ registry_password | safe | indent(width=8) }}
+  {% endif %}
 {% endif %}
 {% if endpoint.zpm_bash_dir is defined and endpoint.zpm_bash_dir != "" %}
     - name: zpm_bash_dir

@@ -25,6 +25,7 @@
         - not seaa_automation_strategy == "deploy_yaml"
         - not seaa_automation_strategy == "generate_yaml"
         - not seaa_automation_strategy == "generate_deploy_yaml"
+        - seaa_deploy_objective != "secrets" and seaa_automation_strategy != ""
 
     - name: Fail seaa_deploy_strategy '{{ seaa_deploy_strategy }}' is not a supported value
       ansible.builtin.fail:
@@ -172,7 +173,7 @@
       #       msg: "Caught an error while undeploying on {{ current_ocphost }}"
 
 - name: Block to manage secrets for OCP projects
-  tags: sshkey
+  tags: always
   when:
     - seaa_deploy_objective == "secrets"
   block:

@@ -12,17 +12,24 @@
 # *************************************
 # Artifact directory for pulling OCI Images
 # *************************************
+zpm_sets_registry_config: true
 zpm_registry_host: icr.io/zpm
 zpm_registry_user:
 zpm_registry_password:
 
+# Support for Multiple and specific registry
+zpm_registries: []
+  # - host: icr.io/zpm 
+  #   user:
+  #   password: 
+     
 # *************************************
 # ZPM Operator Collection Variables
 # *************************************
 zpm_product_short_name: "{{ sub_operators.zpm.short_name }}" # zpm
 zpm_product_code_name: "{{ sub_operators.zpm.code_name }}"
 zpm_product_name: "{{ sub_operators.zpm.name }}" #zos-package-manager
-zpm_oc_version: 2.0.1 # GA 2023.2.1
+zpm_oc_version: 2.1.0 # GA 2023.4.1
 zpm_oc_vrm_string: "{{ zpm_oc_version | get_vmp_string }}" #v2minor0patch0
 zpm_api_version_string: "{{ broker_sub_operator_api_group }}/{{ zpm_oc_vrm_string }}"
 zpm_oci_version: "{{ zpm_oc_version }}"
@@ -50,7 +57,9 @@ zpm_git_token: "{{ oc_product_git_token }}"
 zpm_instance_name: example
 zpm_instance_api_version: "{{ zpm_api_version_string }}"
 zpm_registry_proxy_host:
-zpm_registry_proxy_port:
+zpm_registry_proxy_port: 
+zpm_registry_proxy_password: 
+zpm_registry_proxy_user: 
 zpm_install_dir: /usr/lpp/IBM/zpm
 zpm_state_dir: /var/zpm
 zpm_product_hlq: ZPM

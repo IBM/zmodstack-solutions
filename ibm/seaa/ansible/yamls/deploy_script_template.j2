@@ -192,6 +192,34 @@ function promptOrQuitScript () {
 
 }
 {% if deploy_type == "deploy" %}
+# function to encrypt registry password
+function {{ deploy_type }}RegistryCredSecret () {
+
+  # Set user and registry names
+  user=${1} 
+  zpm_registry_name=${2} 
+
+  # Prompt for registry password for password
+  read -s -p "Enter password for ${user} on ${zpm_registry_name}: " password
+  echo  # Move to a new line
+
+  # Export Env variable
+  export SECURED_SECRET_PROPERTIES="registry-user=${user} registry-password=${password}"
+  
+  # export SECURED_SECRET_PROPERTIES="registry-user=iamapikey registry-password=7BVmgS79EEuwbJcjjNa-nrKdW3SO2oIi6-ja3wkJYL26"
+  # zoscb-encrypt credential-secret -n reg-cred-iamapikey-us-icr-io-zpmtest -l --namespace acrand-test
+
+
+  # Encrpt Registry Password
+  zoscb-encrypt credential-secret -n ${zpm_registry_name} -l --namespace ${CURRENT_NAMESPACE}
+
+  # Unset secret env var
+  unset SECURED_SECRET_PROPERTIES 
+     
+  # Insert ne line
+  echo -e "\n"
+}
+
 # Log message to terminal
 function {{ deploy_type }}CredSecret () {
   # Check if should deploy CREDS for Project  deployment
