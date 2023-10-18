@@ -81,11 +81,10 @@ seaa_registry_secrets_prefix: reg-cred-
 # Encrypt sensitive endpoint variables
 seaa_encrypt_sensitive_endpoint_vars: true
 
-# Encryption strategy
-seaa_secret_data_strategy: file # text | file | file_or_text
-
-# Ansible Vault ID
-# seaa_ansible_vault_id: "{{ lookup('env', 'SEAA_ANSIBLE_VAULT_ID') }}" #TODO and use with env var - ANSIBLE_VAULT_ID_MATCH
+# Data encryption strategy 
+# for file or file_or_test - default location is 'seaa_ansible_directory/secrets'
+# can also use 'SEAA_CONFIG_PATH_TO_SE_SECRETS' env variable for directory
+seaa_secret_data_strategy: file_or_text # text | file | file_or_text
 
 # Path to ansible-vault password file used to encrypted content used in playbook
 seaa_ansible_vault_key_file: "{{ lookup('env', 'SEAA_ANSIBLE_VAULT_KEY_FILE') }}"

@@ -78,7 +78,7 @@ EXAMPLES = r'''
         extra_var_files: 
             - "/path-to-extra-var-dir/extra-var.json"
 '''
-
+from ansible.parsing.yaml.objects import AnsibleVaultEncryptedUnicode
 from ansible.module_utils.basic import AnsibleModule
 from jinja2 import Environment, TemplateSyntaxError, Template
 from ansible.module_utils.common.process import get_bin_path
@@ -104,6 +104,14 @@ class MissingVariableValue(Exception):
 # ValidationException exception class
 class ValidationException(Exception):
     pass
+
+# Constructor for Encrypted Data
+def construct_vault_encrypted_unicode(loader, node):
+    value = loader.construct_scalar(node)
+    return AnsibleVaultEncryptedUnicode(value)
+
+# Add constructor
+yaml.SafeLoader.add_constructor(u'!vault', construct_vault_encrypted_unicode)
 
 # Work directory to use for temp files used to validate variables
 seaa_work_dir = "/tmp/.seaa" #os.path.expanduser("~")+'/.seaa/tmp'
@@ -522,16 +530,40 @@ def build_ansible_inventory_command(inventory_source, seaa_variable_path, temp_d
     # Create command array for inventory command
     command = []
     
+    # Environment variable for Ansible-Vault key file
+    seaa_vault_env_variable = "SEAA_ANSIBLE_VAULT_KEY_FILE"
+
+    # Check if the environment variable exists
+    vault_env_variable_exists = seaa_vault_env_variable in os.environ
+
+    # Use the 'os.environ' dictionary to check if the variable exists
+    if vault_env_variable_exists:
+        vault_key_file = os.environ[seaa_vault_env_variable]
+    
     # Check if inventory source is a list
     if isinstance(inventory_source, list):
         # If source is a list of files
         for file in inventory_source:
             command += [ansible_inventory_cmd, '-i', file]
-        # Add output, list and yaml to command
-        command += ['--output', temp_file_path, '--list', '--yaml']
-    # Else check if inventory source is a single file of directory of inventories
+            
+        # Check if vault key provided
+        if vault_env_variable_exists:
+            # Add output, list and yaml to command with vault key
+            command += ['--output', temp_file_path, '--vault-password-file', vault_key_file, '--list', '--yaml']
+        else:    
+            # Add output, list and yaml to command
+            command += ['--output', temp_file_path, '--list', '--yaml']
+
+    # Else check if inventory source is a single file or directory of inventories
     elif os.path.isfile(inventory_source) or os.path.isdir(inventory_source):
-        command = [ansible_inventory_cmd, '-i', inventory_source, '--output', temp_file_path, '--list', '--yaml']
+        # Check if vault key provided
+        if vault_env_variable_exists:
+            # Add output, list and yaml to command with vault key
+            command = [ansible_inventory_cmd, '-i', inventory_source, '--output', temp_file_path, '--vault-password-file', vault_key_file, '--list', '--yaml']
+        else:
+            # Add output, list and yaml to command
+            command = [ansible_inventory_cmd, '-i', inventory_source, '--output', temp_file_path, '--list', '--yaml']
+
     # Raise error file for directory not found 
     else:
         raise FileNotFoundError(f"Unable to find inventory source '{inventory_source}'")
