@@ -11,11 +11,11 @@
 # Broker Subscription
 # *************************************
 broker_subscription_name: ibm-zoscb
-broker_subscription_version: 2.2.2 # 2023.2.1 GA - updated
-broker_subscription_source: ibm-operator-catalog
 broker_subscription_channel: v2.2
 broker_subscription_install_plan_approval: Automatic
 broker_subscription_source_namespace: openshift-marketplace
+broker_subscription_source: "{{ broker_catalog_name }}"
+broker_subscription_version: 2.2.3 # 2023.4.1 GA
 
 # *************************************
 # Broker Instance
@@ -23,13 +23,42 @@ broker_subscription_source_namespace: openshift-marketplace
 broker_instance_name: zoscloudbroker
 broker_instance_license_accept: true
 broker_instance_log_level: trace #debug
-broker_instance_resources_cpu_limit: 200m
-broker_instance_resources_memory_limit: 256Mi
-broker_instance_requests_cpu_limit: 100m
-broker_instance_requests_memory_limit: 128Mi
-broker_instance_requests_ephemeral_stg_limit: 500Mi
-broker_instance_resources_ephemeral_stg_limit: "{{ broker_instance_requests_ephemeral_stg_limit }}" # ${ broker_instance_requests_ephemeral_stg_limit }
 broker_instance_multi_namespace: true
+
+# *************************************
+# Broker Resources
+# *************************************
+# Manager Resources
+set_broker_manager_resources: false
+
+# Broker Resource Limits
+# broker_instance_resources_cpu_limit: 200m
+broker_instance_resources_memory_limit: 32Mi 
+broker_instance_resources_ephemeral_stg_limit: 500Mi 
+# Broker Resource Request
+broker_instance_resource_cpu_request: 10m # 100m
+broker_instance_resource_memory_request: 32Mi # 128Mi
+broker_instance_resource_ephemeral_stg_request: "{{ broker_instance_resources_ephemeral_stg_limit }}"
+
+# Catalog Resources
+set_broker_catalog_resources: false
+# Catalog Resource Limits
+broker_catalog_resources_memory_limit: 128Mi
+broker_catalog_resources_ephemeral_stg_limit: 500Mi 
+# Catalog Resource Request
+broker_catalog_resources_cpu_request: 10m
+broker_catalog_resources_memory_request: 128Mi
+broker_catalog_resources_ephemeral_stg_request: "{{ broker_catalog_resources_ephemeral_stg_limit }}"
+
+# UI Resources
+set_broker_ui_resources: false
+# UI Resource Limits
+broker_ui_resources_memory_limit: 128Mi
+broker_ui_resources_ephemeral_stg_limit: 500Mi
+# UI Resource Request
+broker_ui_resources_cpu_request: 10m
+broker_ui_resources_memory_request: 128Mi
+broker_ui_resources_ephemeral_stg_request: "{{ broker_ui_resources_ephemeral_stg_limit }}"
 
 # *************************************
 # Broker Storage
@@ -55,14 +84,14 @@ oc_product_oci_version:
 oc_product_domain: zpm
 
 oc_product_credential_type: shared # shared | personal
-multi_namespaces: [] #Multi-Namespace array
+multi_namespaces: [] # Multi-Namespace array
   # - dev1_namespace
   # - dev2_namespace
 
 # TODO implemented to not deleting OC and POSTING new versions it already exist and IfPresent automation config flag is true
 oc_delete_collections: true
 
-#Install Modes - "galaxy | url | upload"
+#Install Modes - "galaxy | url | upload "
 oc_product_import_mode: galaxy
 oc_product_import_url: https://galaxy.ansible.com
 oc_product_git_token:

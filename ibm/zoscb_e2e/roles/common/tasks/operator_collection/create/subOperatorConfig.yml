@@ -29,7 +29,7 @@
   when:
     - csv_info is defined and csv_info.resources is defined and csv_info.resources | length > 0
     - "'status' in csv_info.resources[0] and csv_info.resources[0].status.phase == 'Succeeded'"
-    
+
 - name: Debug Collection and endpoint before mapping
   when:
     - seaa_automation.debug | bool
@@ -90,6 +90,7 @@
   when:
     - seaa_automation_strategy != "generate_yaml"
     - csv_exist
+    - zoscb_csv_deploy_verified is defined and not zoscb_csv_deploy_verified
   block:
     - name: "Map suboperator with Native YAML API '{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}-suboperatorconfig' to '\
         {{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
