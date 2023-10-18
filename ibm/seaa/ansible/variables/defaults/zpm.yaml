@@ -16,13 +16,15 @@ zpm_sets_registry_config: true
 zpm_registry_host: icr.io/zpm
 zpm_registry_user:
 zpm_registry_password:
+zpm_registry_credentials_required: false
 
 # Support for Multiple and specific registry
-zpm_registries: []
-  # - host: icr.io/zpm 
-  #   user:
+# zpm_registries: []
+  # - host: icr.io/zpm
+  #   user: 
   #   password: 
-     
+  #   credentials_required:
+
 # *************************************
 # ZPM Operator Collection Variables
 # *************************************
