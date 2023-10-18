@@ -26,7 +26,7 @@ spec:
 {% if zpm_sets_registry_config is defined and zpm_sets_registry_config and zos_package_manager.registries | length > 0 %}
   {% for registry in zos_package_manager.registries %}
   zpm_registry_location: "{{ registry.host }}"
-  zpm_registry_user_credential: "{{ seaa_registry_secrets_prefix }}{{ registry.user }}-{{ registry.host | regex_replace('[./:?]', '-') }}"
+  zpm_registry_user_credential: "{{ seaa_registry_secrets_prefix | replace('_', '-') }}{{ registry.user | replace('_', '-') }}-{{ registry.host | regex_replace('[./:?]', '-') }}"
   {% endfor %}
 {% else %}
   zpm_registry_location: "{{ zos_package_manager.zpmRegistryLocation }}"

@@ -74,12 +74,11 @@ zos_package_manager:
   zpmRegistryProxyUser: "{{ lookup('vars', 'zpm_registry_proxy_user') | default('', true) }}"
   licenseAccept: "{{ lookup('vars', 'zpm_instance_license_accept') | bool }}"
   zpmRegistryProxyName: "{{ seaa_registry_secrets_prefix if lookup('vars', 'zpm_registry_proxy_host', default='') != '' and \
-   lookup('vars', 'zpm_registry_proxy_host', default='') is not none else '' }}\
-   {{ lookup('vars', 'zpm_registry_proxy_user', default='') | default('', true) }}\
-   {{ '-' if lookup('vars', 'zpm_registry_proxy_host', default='') != '' and \
     lookup('vars', 'zpm_registry_proxy_host', default='') is not none else '' }}\
-   {{ lookup('vars', 'zpm_registry_proxy_host', default='') | default('', true) | regex_replace('[./:?]', '-') }}"
-  # registries: "{{ lookup('vars', 'zpm_registries', default=none) }}"
+    {{ lookup('vars', 'zpm_registry_proxy_user', default='') | default('', true) }}\
+    {{ '-' if lookup('vars', 'zpm_registry_proxy_host', default='') != '' and \
+     lookup('vars', 'zpm_registry_proxy_host', default='') is not none else '' }}\
+    {{ lookup('vars', 'zpm_registry_proxy_host', default='') | default('', true) | regex_replace('[./:?]', '-') }}"
   registries: "{{ hostvars[current_zosendpoint].zpm_registries | default(lookup('vars', 'zpm_registries', default=none), true) }}"
 
 # TODO:DOC -  Inventory > Ansible Var Defaults, Constants

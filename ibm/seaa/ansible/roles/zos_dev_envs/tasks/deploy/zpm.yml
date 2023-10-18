@@ -93,21 +93,41 @@
         - seaa_deploy_operator_collections | bool
         - (zpm_oc_deploy_verified is undefined or not zpm_oc_deploy_verified)
         - seaa_deploy_role == "admin" # ONLY ALLOW ADMIN TO DEPLOY OC
-
     # CREATE SUB-OPERATOR CONFIG
     - name: Create subOperatorConfig with yaml
       ansible.builtin.include_tasks: "{{ zoscb_e2e_task_directory }}/operator_collection/create/subOperatorConfig.yml"
       when:
         - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
         - seaa_deploy_suboperator | bool
-        - (zpm_subop_deploy_verified is undefined or not zpm_subop_deploy_verified)
+        - (zoscb_csv_deploy_verified is defined and not zoscb_csv_deploy_verified)
         - seaa_deploy_role == "admin" # ONLY ALLOW ADMIN TO DEPLOY OC
+
+# Add Registry Credential for ZPM INSTANCE
+- name: Block to manage ZPM Registry Secrets
+  when:
+    - zpm_sets_registry_config is defined and zpm_sets_registry_config
+  block:
+    - name: Manage ZPM Registry Secrets
+      when:
+        - hostvars[current_zosendpoint]._is_active
+      ansible.builtin.include_role:
+        name: openshift_cluster
+        tasks_from: manage_secrets
+      vars:
+        secret_type: "registry"
+        registry: "{{ zos_package_manager.registries }}"
+        cred_type: "Registry"
+      with_items:
+        - "{{ groups['zosendpoints'] }}"
+      loop_control:
+        loop_var: current_zosendpoint
 
 # CREATE ZPM INSTANCE
 - name: Create zpm instance
   ansible.builtin.include_tasks: "{{ zpm_cr_task_dir }}/install/zpm.yml"
   when:
-    - zpm_deploy_verified is undefined or not zpm_deploy_verified # TODO: add IFPresent flag
+    - (zpm_deploy_verified is undefined or not zpm_deploy_verified) or
+      (new_csv_deployed is defined and new_csv_deployed)  # TODO: add IFPresent flag
     - hostvars[current_zosendpoint]._is_active
     - seaa_deploy_software_instances | bool
   with_items:
@@ -119,7 +139,8 @@
 - name: Create zpmDiagnostics instance
   ansible.builtin.include_tasks: "{{ zpm_cr_task_dir }}/install/zpmDiagnostics.yml"
   when:
-    - zpm_diag_deploy_verified is undefined or not zpm_diag_deploy_verified
+    - zpm_diag_deploy_verified is undefined or not zpm_diag_deploy_verified or
+      (new_csv_deployed is defined and new_csv_deployed)  # TODO: add IFPresent flag
     - hostvars[current_zosendpoint]._is_active
     - seaa_deploy_validate_crs | bool
     - zpm_create_diagnostics_cr | bool
