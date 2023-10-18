@@ -22,15 +22,42 @@ spec:
   multiNamespace: false
 {% endif %}
   logLevel: "{{ broker_instance.loglevel }}"
-  resources:
+  {% if set_broker_catalog_resources is defined and set_broker_catalog_resources == true %}
+  catalogResources:
       limits:
-        cpu: "{{ broker_instance.resources.limits.cpu }}" #"200m"
-        memory: "{{ broker_instance.resources.limits.memory }}" #"256Mi"
+        memory: "{{ broker_instance.catalogResources.limits.memory }}" #"32Mi"
+        ephemeral-storage: "{{ broker_instance.catalogResources.limits.ephemeralStorage }}"
+      requests:
+        cpu: "{{ broker_instance.catalogResources.requests.cpu }}"  #"10m"
+        memory: "{{ broker_instance.catalogResources.requests.memory }}" #"32Mi"
+        ephemeral-storage: "{{ broker_instance.catalogResources.requests.ephemeralStorage }}"
+  {% else %}
+  catalogResources: {} # {{ broker_instance.catalogResources | default({}) }}
+  {% endif %}
+  {% if set_broker_ui_resources is defined and set_broker_ui_resources == true %}
+  uiResources:
+      limits:
+        memory: "{{ broker_instance.uiResources.limits.memory }}" #"32Mi"
+        ephemeral-storage: "{{ broker_instance.uiResources.limits.ephemeralStorage }}"
+      requests:
+        cpu: "{{ broker_instance.uiResources.requests.cpu }}"  #"10m"
+        memory: "{{ broker_instance.uiResources.requests.memory }}" #"32Mi"
+        ephemeral-storage: "{{ broker_instance.uiResources.requests.ephemeralStorage }}"
+  {% else %}
+  uiResources: {} # {{ broker_instance.uiResources | default({}) }}
+  {% endif %}
+  {% if set_broker_manager_resources is defined and set_broker_manager_resources == true %}
+  managerResources:
+      limits:
+        memory: "{{ broker_instance.resources.limits.memory }}" #"32Mi"
         ephemeral-storage: "{{ broker_instance.resources.limits.ephemeralStorage }}"
       requests:
-        cpu: "{{ broker_instance.resources.requests.cpu }}"  #"100m"
-        memory: "{{ broker_instance.resources.requests.memory }}" #"128Mi"
+        cpu: "{{ broker_instance.resources.requests.cpu }}"  #"10m"
+        memory: "{{ broker_instance.resources.requests.memory }}" #"32Mi"
         ephemeral-storage: "{{ broker_instance.resources.requests.ephemeralStorage }}"
+  {% else %}
+  managerResources: {}
+  {% endif %}
   storage:
 {% if broker_instance.storage.configure == true %}
     configure: true
@@ -47,3 +74,10 @@ spec:
     storageClassName: "{{ broker_instance.storage.storageClassName }}"
     volumeMode: "{{ broker_instance.storage.volumeMode }}"
     accessModes: "{{ broker_instance.storage.accessMode }}"
+  galaxyConfig:
+  {% if broker_instance.galaxyConfig.import_mode == 'airgap' %}
+    enabled: false
+  {% else %}
+    enabled: true
+  {% endif %}
+    galaxyURL: "{{ broker_instance.galaxyConfig.galaxyURL }}" #'https://galaxy.ansible.com'

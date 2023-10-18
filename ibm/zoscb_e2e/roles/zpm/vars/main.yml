@@ -8,9 +8,9 @@
 
 # ZPM_REGISTRY CREDENTIALS  TODO:DOC -  Inventory > Ansible Var Defaults
 zpm_registry:
-  host: "{{ hostvars[current_ocphost].zpm_registry_host | default(lookup('vars', 'zpm_registry_host'), true) }}"
-  user: "{{ hostvars[current_ocphost].zpm_registry_user | default(lookup('vars', 'zpm_registry_user'), true) }}"
-  password: "{{ hostvars[current_ocphost].zpm_registry_password | default(lookup('vars', 'zpm_registry_password'), true) }}"
+  host: "{{ hostvars[current_ocphost].zpm_registry_host | default(lookup('vars', 'zpm_registry_host'), true) | default('', true) }}"
+  user: "{{ hostvars[current_ocphost].zpm_registry_user | default(lookup('vars', 'zpm_registry_user'), true) | default('', true) }}"
+  password: "{{ hostvars[current_ocphost].zpm_registry_password | default(lookup('vars', 'zpm_registry_password'), true) | default('', true) }}"
 
 # SUB-OPERATOR (Operator Collection) - TODO:DOC -  Inventory > Ansible Var Defaults, Constants
 oc_product:

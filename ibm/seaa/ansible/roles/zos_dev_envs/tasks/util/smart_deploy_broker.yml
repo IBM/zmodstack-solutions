@@ -123,7 +123,7 @@
                 loop_var: current_zosendpoint
 
         # Check if one of the Endpoints is are not deployed
-        - name: Set zoscb_deploy_verified false if not all endpoints are available
+        - name: Set zoscb_csv_deploy_verified false if not all endpoints are available
           ansible.builtin.set_fact:
             zoscb_csv_deploy_verified: false
           when:
@@ -190,6 +190,5 @@
 
     - name: Reset zoscb_deploy_verified and query info facts
       ansible.builtin.set_fact:
-        zoscb_csv_deploy_verified: false
         zoscb_deploy_verified: false
         zoscb_api_deployed: false
