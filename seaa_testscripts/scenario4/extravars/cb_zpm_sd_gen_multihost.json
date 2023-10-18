@@ -1,0 +1,17 @@
+{
+    /* SEAA Config Ansible Variable Section */
+
+
+    /* Component Override Ansible Variable Section */
+
+    /* Override ZOSCB */
+    /*"BROKER_SUBSCRIPTION_SOURCE": "ibm-zoscb-internal-catalog", */
+    /*"BROKER_SUBSCRIPTION_CHANNEL": "v2.2", */
+    /*"OC_PRODUCT_IMPORT_URL": "http://hcf-galaxy1.fyre.ibm.com", */
+    /*"OC_PRODUCT_SKIP_VERIFY": true, */
+
+    /* Override ZPM */
+    "zpm_product_hlq": "ZPMSDMUL"
+    /*"ZPM_OC_VERSION": "2.0.0-rc.1" */
+
+ }
