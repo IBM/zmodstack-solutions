@@ -5,14 +5,14 @@
 
 ---
 endpoint:
-  name: "{{ current_zosendpoint }}"
+  name: "{{ current_zosendpoint | default('', true) }}"
   apiVersion: "{{ lookup('vars', 'broker_zosendpoint_api_version') }}" # zoscb.ibm.com/v2beta1
   kind: "{{ lookup('vars', 'broker_zosendpoint_kind') }}" # ZosEndpoint
   finalizers:
     - "{{ lookup('vars', 'broker_zosendpoint_finalizer') }}" # zosendpoints.zoscb.ibm.com/finalizer
-  hostname: "{{ hostvars[current_zosendpoint].ansible_host }}"
-  port: "{{ hostvars[current_zosendpoint].ansible_port }}"
-  username: "{{ hostvars[current_zosendpoint].ansible_user }}"
+  hostname: "{{ hostvars[current_zosendpoint].ansible_host | default('', true) }}"
+  port: "{{ hostvars[current_zosendpoint].ansible_port | default('', true) }}"
+  username: "{{ hostvars[current_zosendpoint].ansible_user | default('', true) }}"
   type: "{{ hostvars[current_zosendpoint].type | default('remote', true) }}"
   SSHKeyFile: "{{ hostvars[current_zosendpoint].ansible_ssh_private_key_file | default('', true) }}"
   SSHKeyPassPhrase: "{{ hostvars[current_zosendpoint].ssh_passphrase | default('', true) }}"  # "{{ lookup('vars', 'zos_endpoint_ssh_key_passphrase') }}"

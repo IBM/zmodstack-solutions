@@ -5,7 +5,7 @@
 
 ---
 # Set fact to check if CSV already exist for this namespace
-- name: "Check for existence of CSV: 'zpm-{{ oc_product.name }}-operator'"
+- name: "Check for existence of CSV: '{{ oc_product.domain }}-{{ oc_product.name }}-operator'"
   when: seaa_automation_strategy != "generate_yaml"
   kubernetes.core.k8s_info:
     api_key: "{{ ocp_cluster.auth_token }}"
@@ -13,8 +13,10 @@
     namespace: "{{ project_namespace.name }}"
     api_version: operators.coreos.com/v1alpha1
     label_selectors:
-      - "name = {{ oc_product.name }}"
-      - "instance-name = {{ broker_instance.name }}"
+      - "instance-name={{ broker_instance.name }}"
+      - "operator-domain={{ oc_product.domain }}"
+      - "operator-name={{ oc_product.name }}"
+      - "operator-version={{ oc_product.oc_version }}"
   register: csv_info
 
 - name: Reset flag for existing CSV
@@ -25,9 +27,9 @@
   ansible.builtin.set_fact:
     csv_exist: true
   when:
-    - csv_info.resources is defined and csv_info.resources | length > 0
+    - csv_info is defined and csv_info.resources is defined and csv_info.resources | length > 0
     - "'status' in csv_info.resources[0] and csv_info.resources[0].status.phase == 'Succeeded'"
-
+    
 - name: Debug Collection and endpoint before mapping
   when:
     - seaa_automation.debug | bool
@@ -47,7 +49,7 @@
       when:
         - seaa_automation.prompt_during_automation | bool
 
-- name: Block to Map sub-operator - yaml
+- name: Block to Map sub-operator for new csv deplyment - with yaml
   when: (not csv_exist and seaa_automation_strategy == "generate_deploy_yaml") or
         seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:
@@ -71,7 +73,9 @@
 
     - name: "Map suboperator with Native YAML API '{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}-suboperatorconfig' to '\
        {{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
-      when: seaa_automation_strategy != "generate_yaml"
+      when:
+        - seaa_automation_strategy != "generate_yaml"
+        - not csv_exist
       kubernetes.core.k8s:
         state: present
         namespace: "{{ project_namespace.name }}"
@@ -81,6 +85,46 @@
       failed_when: mapped_suboperator.failed == true
       retries: "{{ seaa_deploy_yaml_retries | int }}" # 5
       delay: "{{ seaa_deploy_yaml_delay | int }}" # 30
+
+- name: Block to handle existing CSV
+  when:
+    - seaa_automation_strategy != "generate_yaml"
+    - csv_exist
+  block:
+    - name: "Map suboperator with Native YAML API '{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}-suboperatorconfig' to '\
+        {{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+      kubernetes.core.k8s:
+        state: present
+        namespace: "{{ project_namespace.name }}"
+        definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/sub-operator-config.yaml') | from_yaml }}"
+      register: mapped_suboperator
+      until:
+        - "mapped_suboperator.failed == false"
+        - "mapped_suboperator.changed == true"
+      failed_when: mapped_suboperator.failed == true
+      retries: "{{ seaa_deploy_yaml_retries | int }}" # 5
+      delay: "{{ seaa_deploy_yaml_delay | int }}" # 30
+
+    - name: Set flag for updated operator CSV
+      ansible.builtin.set_fact:
+        new_csv_deployed: true
+
+    - name: "If CSV exist wait for sub-operator {{ oc_product.name }} to go back into 'Installing' phase to continue ..."
+      kubernetes.core.k8s_info:
+        api_key: "{{ ocp_cluster.auth_token }}"
+        kind: ClusterServiceVersion
+        namespace: "{{ project_namespace.name }}"
+        api_version: operators.coreos.com/v1alpha1
+        label_selectors:
+          - "instance-name = {{ broker_instance.name }}"
+          - "suboperatorconfig.name = {{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
+      register: updated_deploy_csv_subop
+      until:
+        - updated_deploy_csv_subop.resources is defined and updated_deploy_csv_subop.resources | length > 0
+        - "'status' in updated_deploy_csv_subop.resources[0]"
+        - updated_deploy_csv_subop.resources[0].status.phase == 'Installing'
+      retries: "{{ seaa_deploy_retries / 2 | int }}" # 120/2
+      delay: "{{ seaa_deploy_delay / 2 | int }}" # 10/2
 
     - name: "Ensure successful installation of the {{ oc_product.name }} suboperator before proceeding"
       when: seaa_automation_strategy != "generate_yaml"
