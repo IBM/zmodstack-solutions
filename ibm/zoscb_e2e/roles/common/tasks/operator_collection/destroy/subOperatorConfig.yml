@@ -11,7 +11,6 @@
 
 - name: Block to delete sub-operator with YAML
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
-  # when: (csv_exist is defined and not csv_exist and seaa_automation_strategy == "generate_deploy_yaml") or seaa_automation_strategy == "generate_yaml"
   block:
 
     - name: Include task to generate yaml file
@@ -31,7 +30,10 @@
         namespace: "{{ project_namespace.name }}"
         definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/sub-operator-config.yaml') | from_yaml }}"
         label_selectors:
-          - "instance-name = {{ broker_instance.name }}"
+          - "instance-name={{ broker_instance.name }}"
+          - "operator-domain={{ oc_product.domain }}"
+          - "operator-name={{ oc_product.name }}"
+          - "operator-version={{ oc_product.oc_version }}"
         wait: "{{ seaa_undeploy_wait | bool }}" # yes
         wait_timeout: "{{ seaa_undeploy_wait_timeout | int }}" # 600
         continue_on_error: "{{ seaa_undeploy_continue_on_error | bool }}"

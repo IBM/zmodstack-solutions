@@ -73,11 +73,13 @@
                 zpm_subop_deployed: true
                 subop_endpoints_deployed: "{{ subop_config_info_only.resources[0].status.zosEndpoints | join(',') }}"
               when:
+                - zosendpoint_not_found is defined and zosendpoint_not_found
                 - zpm_oc_deploy_verified is defined and zpm_oc_deploy_verified
                 - subop_config_info_only.api_found is defined and subop_config_info_only.api_found
                 - subop_config_info_only.resources is defined and subop_config_info_only.resources | length > 0
                 - subop_config_info_only.resources[0].status is defined
                 - subop_config_info_only.resources[0].status.phase == "Successful"
+                - subop_config_info_only.resources[0].status.zosEndpoints is defined
 
             # Verify ZPM Sub-Operator collection is deployed and installed successfully
             - name: Set zpm_subop_deploy_verified fact
@@ -88,10 +90,10 @@
                 # sub-op is
                 # TODO RESET zpm_subop_deployed and check zpm_subop_deployed == false for multiple iterations
                 # - subop_config_info_only.resources is defined and subop_config_info_only.resources | length > 0
-                - oc_product.name~'.'~oc_product.domain~'.'~oc_version == subop_config_info_only.resources[0].metadata.name
+                - oc_product.name~'.'~oc_product.domain~'.'~oc_product.oc_version == subop_config_info_only.resources[0].metadata.name
                 - subop_config.finalizers[0] in subop_config_info_only.resources[0].metadata.finalizers
                 - this_project_name == subop_config_info_only.resources[0].metadata.namespace
-                - subop_config_info_only.resources[0].spec.operatorCollection == oc_product.name~'.'~oc_product.domain~'.'~oc_version
+                - subop_config_info_only.resources[0].spec.operatorCollection == oc_product.name~'.'~oc_product.domain~'.'~oc_product.oc_version
 
             # Verify ZPM Sub-Operator collection is deployed and installed successfully
             - name: Set zpm_zosendpoints_deploy_verified fact

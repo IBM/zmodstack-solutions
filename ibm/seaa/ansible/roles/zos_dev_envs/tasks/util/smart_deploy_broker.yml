@@ -76,6 +76,7 @@
         - name: Set flag to check if z/OS endpoint not found
           ansible.builtin.set_fact:
             zosendpoint_not_found: false
+            zpm_subop_zosendpoints_mapped_not_verified: false
 
         # Deploy if ENDPOINT doesn't exist Verify ENDPOINT
         - name: Verify all endpoints exist
@@ -97,13 +98,37 @@
               loop_control:
                 loop_var: current_zosendpoint
 
+            # Include ansible variables for product sub-operator being verifyed
+            - name: Include ZPM vars
+              ansible.builtin.include_vars:
+                file: "{{ zoscb_e2e_roles_directory }}/zpm/vars/main.yml"
+              when: not zpm_vars_loaded
+
+            - name: Set zpm_vars_loaded flag
+              ansible.builtin.set_fact:
+                zpm_vars_loaded: true
+              when: not zpm_vars_loaded
+
+            # Iterate over endpoints to Verify they active ones are mapped
+            - name: Include task to verify zosendpoints are mapped
+              ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/operator_collection/verify/subOperatorConfig.yml"
+              when:
+                - hostvars[current_zosendpoint]._is_active
+                - not zpm_subop_zosendpoints_mapped_not_verified # short circuit endpoint mapping verification
+              vars:
+                info_only: true
+                endpoints: "{{ groups['zosendpoints'] }}"
+              loop: "{{ endpoints }}"
+              loop_control:
+                loop_var: current_zosendpoint
+
         # Check if one of the Endpoints is are not deployed
         - name: Set zoscb_deploy_verified false if not all endpoints are available
           ansible.builtin.set_fact:
             zoscb_csv_deploy_verified: false
           when:
             - seaa_deploy_zosendpoints | bool
-            - zosendpoint_not_found # or endpoint_info_only.resources | length == 0
+            - zosendpoint_not_found or zpm_subop_zosendpoints_mapped_not_verified
 
       always:
         - name: Reset Broker info facts
@@ -111,9 +136,15 @@
             has_broker_info: false
             broker_instance_info_only: ''
             operator_info_only: ''
-            zosendpoint_not_found: false
+            # zosendpoint_not_found: false
+            # zpm_subop_zosendpoints_mapped_not_verified: false
             endpoint_info_only: ''
 
+    # - ansible.builtin.debug: var=zosendpoint_not_found
+    # - ansible.builtin.debug: var=zpm_subop_zosendpoints_mapped_not_verified
+    # - ansible.builtin.debug: var=zoscb_csv_deploy_verified
+    # - ansible.builtin.pause:
+    #     prompt: Check is zoscb_csv_deploy_verified
     # Deploy z/OS Cloud Broker if it is not verified or not smart deploy
     - name: Deploy z/OS Cloud Broker if it is not verified or not smart deploy
       ansible.builtin.include_tasks: "deploy/zoscb.yml"
