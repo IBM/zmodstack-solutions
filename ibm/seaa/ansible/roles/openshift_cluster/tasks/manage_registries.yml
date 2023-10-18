@@ -11,8 +11,8 @@
   ansible.builtin.fail:
     msg: Deploying unencrypted Registry Credentials not supported. Please use 'zoscb-encrypt' tool to deploy registry credntials or
      set 'seaa_encrypt_secrets' variable to 'true' to allow deployment of encrypted registry credentials.
-  ignore_errors: true
-  register: ignore_errors_register # <- Stores errors and failures for evaluation.
+  # ignore_errors: true
+  # register: ignore_errors_register # <- Stores errors and failures for evaluation.
   when:
     - not _seaa_encrypt_secrets
     - zpm_registry_credentials_required
@@ -36,70 +36,81 @@
       ansible.builtin.set_fact:
         sensitive_file: "{{ seaa_path_to_secret_files }}/{{ current_zpm_registry.password }}"
 
-    - name: Set stats of file with sensitive data in SEAA_SECRETS_DIR
-      ansible.builtin.stat:
-        path: "{{ sensitive_file }}"
-      register: secret_sensitive_file_stat
-
-    - name: Set flag for secret_sensitive_file not existing
-      ansible.builtin.set_fact:
-        secret_sensitive_file_exist: true
-      when: secret_sensitive_file_stat.stat.exists
-
-    - name: Block for Check if sensitive file is specifying absolute path if not in SEAA_SECRETS_DIR
-      when: secret_sensitive_file_exist is undefined # not secret_sensitive_file_stat.stat.exists
+    - name: Block to check sensitive file
+      when: sensitive_file | length < 255
       block:
-        - name: Check if sensitive file is specifying absolute path if not in SEAA_SECRETS_DIR
-          ansible.builtin.set_fact:
-            sensitive_file: "{{ current_zpm_registry.password }}"
+        - name: Set stats of file with sensitive data in SEAA_SECRETS_DIR
+          ansible.builtin.stat:
+            path: "{{ sensitive_file }}"
+          register: secret_sensitive_file_stat
 
         - name: Set flag for secret_sensitive_file not existing
           ansible.builtin.set_fact:
-            secret_sensitive_file_exist: false
+            secret_sensitive_file_exist: true
+          when: secret_sensitive_file_stat.stat.exists
 
-    - name: Set flag for sensitive_file
-      ansible.builtin.set_fact:
-        sensitive_file_exist: false
+        - name: Block for Check if sensitive file is specifying absolute path if not in SEAA_SECRETS_DIR
+          when: secret_sensitive_file_exist is undefined # not secret_sensitive_file_stat.stat.exists
+          block:
+            - name: Check if sensitive file is specifying absolute path if not in SEAA_SECRETS_DIR
+              ansible.builtin.set_fact:
+                sensitive_file: "{{ current_zpm_registry.password }}"
 
-    - name: Block Set stats of file with sensitive data
-      when: not secret_sensitive_file_exist # secret_sensitive_file_exist is defined and not secret_sensitive_file_exist
-      block:
-
-        - name: Set stats of file with sensitive data
-          ansible.builtin.stat:
-            path: "{{ sensitive_file }}"
-          register: sensitive_file_stat
+            - name: Set flag for secret_sensitive_file not existing
+              ansible.builtin.set_fact:
+                secret_sensitive_file_exist: false
 
         - name: Set flag for sensitive_file
           ansible.builtin.set_fact:
-            sensitive_file_exist: true
-          when: sensitive_file_stat.stat.exists
+            sensitive_file_exist: false
 
-    - name: Block Get sensitive content
-      when:
-        - secret_sensitive_file_exist or sensitive_file_exist
-      block:
-        - name: Read encrypted file into a variable
-          when:
-            - seaa_ansible_vault_key_file is not none and seaa_ansible_vault_key_file != ''
-          ansible.builtin.set_fact:
-            zpm_registry_pwd: "{{ lookup('file', sensitive_file) }}"
-
-        - name: Block set content from encoded secret file without vault key
-          when:
-            - seaa_ansible_vault_key_file is none or seaa_ansible_vault_key_file == ''
+        - name: Block Set stats of file with sensitive data
+          when: not secret_sensitive_file_exist # secret_sensitive_file_exist is defined and not secret_sensitive_file_exist
           block:
-            - name: Get sensitive content
-              ansible.builtin.slurp:
-                src: "{{ sensitive_file }}"
-              register: registry_password_content
 
-            - name: Set Encrypted registry password variable
-              when:
-                - not registry_password_content.failed
+            - name: Set stats of file with sensitive data
+              ansible.builtin.stat:
+                path: "{{ sensitive_file }}"
+              register: sensitive_file_stat
+
+            - name: Set flag for sensitive_file
               ansible.builtin.set_fact:
-                zpm_registry_pwd: "{{ registry_password_content.content | b64decode }}"
+                sensitive_file_exist: true
+              when: sensitive_file_stat.stat.exists
 
+        - name: Block Get sensitive content
+          when:
+            - secret_sensitive_file_exist or sensitive_file_exist
+          block:
+
+            - name: Read encrypted file into a variable
+              when:
+                - seaa_ansible_vault_key_file is not none and seaa_ansible_vault_key_file != ''
+              ansible.builtin.set_fact:
+                zpm_registry_pwd: "{{ lookup('file', sensitive_file) }}"
+
+            - name: Block set content from encoded secret file without vault key
+              when:
+                - seaa_ansible_vault_key_file is none or seaa_ansible_vault_key_file == ''
+              block:
+                - name: Get sensitive content
+                  ansible.builtin.slurp:
+                    src: "{{ sensitive_file }}"
+                  register: registry_password_content
+
+                - name: Set Encrypted registry password variable
+                  when:
+                    - not registry_password_content.failed
+                  ansible.builtin.set_fact:
+                    zpm_registry_pwd: "{{ registry_password_content.content | b64decode }}"
+  rescue:
+    - name: Secret registry password text or file not found, verify specified text or file secret exist for '{{ current_zpm_registry.host }}'.
+      when:
+        - seaa_secret_data_strategy != "file_or_text"
+        - (not secret_sensitive_file_exist and not sensitive_file_exist) or (zpm_registry_pwd is undefined or zpm_registry_pwd == "")
+      ansible.builtin.fail:
+        msg: "Unable to find secret registry password text or file. Please verify it exist."
+  always:
     - name: Secret registry password text or file not found, verify specified text or file secret exist for '{{ current_zpm_registry.host }}'.
       when:
         - seaa_secret_data_strategy != "file_or_text"
@@ -112,27 +123,22 @@
     zpm_registry_pwd: "{{ current_zpm_registry.password }}"
   when:
     - seaa_secret_data_strategy == "text" or seaa_secret_data_strategy == "file_or_text"
+    - zpm_registry_pwd is undefined or zpm_registry_pwd is none
+    - current_zpm_registry.password | length < 253
 
-- name: Registry Credentials not created if user and password are not provided
+- name: Registry Credentials not created if both user and password are not provided
   ansible.builtin.fail:
     msg: Both registry user and password variables are required to create credentials.
-  ignore_errors: true
-  register: ignore_errors_register # <- Stores errors and failures for evaluation.
-    # verbosity: 1 # Set to generate warning message
+     If they are provided, please ensure they do not exceed the maximum allowed length.
+     For user credential name '{{ _zpm_registry_name }}' the maximum secret name length is '253' and
+     for the path the a secret file the maximum absolute file path length is 255.
+  # ignore_errors: true
+  # register: ignore_errors_register # <- Stores errors and failures for evaluation.
   when:
     - _seaa_encrypt_secrets
     - zpm_registry_credentials_required
-    - (zpm_registry_pwd is undefined or zpm_registry_pwd == none) or current_zpm_registry.user == none
-
-# - ansible.builtin.debug: var=seaa_secret_data_strategy
-# - ansible.builtin.debug: var=zpm_registry_credentials_required
-# - ansible.builtin.debug: var=_seaa_encrypt_secrets
-# - ansible.builtin.debug: var=seaa_automation_strategy
-# - ansible.builtin.debug: var=seaa_deploy_objective
-# - ansible.builtin.debug: var=zpm_registry_pwd
-# - ansible.builtin.debug: var=current_zpm_registry
-# - ansible.builtin.pause:
-#     prompt: Check encryption management
+    - (zpm_registry_pwd is undefined or zpm_registry_pwd is none or zpm_registry_pwd == "") or
+      (current_zpm_registry.user is none or current_zpm_registry.user == "")
 
 - name: Block to Encrypt Registry password with binary
   when:
