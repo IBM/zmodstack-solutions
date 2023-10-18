@@ -252,15 +252,15 @@ _is_active:
 #  # domain: config
 
 # # Path to ansible-vault password file used to encrypted content used in playbook
-# seaa_ansible_vault_password_file: "{{ lookup('env', 'SEAA_ANSIBLE_VAULT_PASSWORD_FILE') }}"
+# seaa_ansible_vault_key_file: "{{ lookup('env', 'SEAA_ANSIBLE_VAULT_KEY_FILE') }}"
 #   data_type: str
 #   host_group:
 #     name: *id_all_groups
 #     required: seaa_ansible_vault_id not null
 #   domain: config
 
-# # Path to encrypted SSH Key file
-# seaa_path_to_encrypted_files: "{{ seaa_ansible_directory }}/secrets"
+# # Path to secret files
+# seaa_path_to_secret_files: "{{ seaa_ansible_directory }}/secrets"
 #   data_type: str
 #   host_group:
 #     name: *id_all_groups

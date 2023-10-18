@@ -72,8 +72,8 @@ function printEnvVarUsage {
 
     fi
 
-    if [[ -n "${SEAA_ANSIBLE_VAULT_PASSWORD_FILE+1}" ]]; then
-        echo -e "\t${green}Using Environment variable${reset} '${cyan}SEAA_ANSIBLE_VAULT_PASSWORD_FILE${reset}': $SEAA_ANSIBLE_VAULT_PASSWORD_FILE"
+    if [[ -n "${SEAA_ANSIBLE_VAULT_KEY_FILE+1}" ]]; then
+        echo -e "\t${green}Using Environment variable${reset} '${cyan}SEAA_ANSIBLE_VAULT_KEY_FILE${reset}': $SEAA_ANSIBLE_VAULT_KEY_FILE"
 
     fi
    
@@ -441,12 +441,12 @@ function setRunOptions {
     fi
 
     # Add vault passwords file to playbook run options
-    if [[ -n "${SEAA_ANSIBLE_VAULT_PASSWORD_FILE}" ]]; then
-      RUNOPTIONS+=" --vault-password-file ${SEAA_ANSIBLE_VAULT_PASSWORD_FILE}"
+    if [[ -n "${SEAA_ANSIBLE_VAULT_KEY_FILE}" ]]; then
+      RUNOPTIONS+=" --vault-password-file ${SEAA_ANSIBLE_VAULT_KEY_FILE}"
     fi
     
     # Add vault-id to playbook run options
-    if [[ -n "${SEAA_ANSIBLE_VAULT_PASSWORD_FILE}" && -n "${SEAA_ANSIBLE_VAULT_ID}" ]]; then
+    if [[ -n "${SEAA_ANSIBLE_VAULT_KEY_FILE}" && -n "${SEAA_ANSIBLE_VAULT_ID}" ]]; then
       RUNOPTIONS+=" --vault-id ${SEAA_ANSIBLE_VAULT_ID}"
     fi
 
