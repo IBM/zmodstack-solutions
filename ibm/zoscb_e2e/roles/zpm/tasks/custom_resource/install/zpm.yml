@@ -13,6 +13,15 @@
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:
 
+    - name: Make sure that atleast one registry exist in array
+      when:
+        - zpm_registries is undefined or zpm_registries is none or zpm_registries | length == 0
+      ansible.builtin.set_fact:
+        zpm_registries:
+          - host: "{{ zpm_registry.host }}"
+            user: "{{ zpm_registry.user }}"
+            password: "{{ zpm_registry.password }}"
+
     - name: Include task to generate yaml file
       when:
         - seaa_automation_strategy != "deploy_yaml"

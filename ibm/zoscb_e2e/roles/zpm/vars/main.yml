@@ -8,9 +8,9 @@
 
 # ZPM_REGISTRY CREDENTIALS  TODO:DOC -  Inventory > Ansible Var Defaults
 zpm_registry:
-  host: "{{ hostvars[current_ocphost].zpm_registry_host | default(lookup('vars', 'zpm_registry_host', default=''), true) }}"
-  user: "{{ hostvars[current_ocphost].zpm_registry_user | default(lookup('vars', 'zpm_registry_user', default=''), true) }}"
-  password: "{{ hostvars[current_ocphost].zpm_registry_password | default(lookup('vars', 'zpm_registry_password', default=''), true) }}"
+  host: "{{ hostvars[current_ocphost].zpm_registry_host | default(lookup('vars', 'zpm_registry_host', default=''), true) | default('', true) }}"
+  user: "{{ hostvars[current_ocphost].zpm_registry_user | default(lookup('vars', 'zpm_registry_user', default=''), true) | default('', true) }}"
+  password: "{{ hostvars[current_ocphost].zpm_registry_password | default(lookup('vars', 'zpm_registry_password', default=''), true) | default('', true) }}"
 
 # SUB-OPERATOR (Operator Collection) - TODO:DOC -  Inventory > Ansible Var Defaults, Constants
 oc_product:
@@ -68,17 +68,11 @@ zos_package_manager:
   zpmRegistryLocation: "{{ zpm_registry.host }}"
   zpmRegistryPassword: "{{ zpm_registry.password }}"
   zpmRegistryUser: "{{ zpm_registry.user }}"
-  zpmRegistryProxyHost: "{{ lookup('vars', 'zpm_registry_proxy_host', default='') }}"
-  zpmRegistryProxyPort: "{{ lookup('vars', 'zpm_registry_proxy_port', default='') }}"
-  zpmRegistryProxyPassword: "{{ lookup('vars', 'zpm_registry_proxy_password', default='') }}"
-  zpmRegistryProxyUser: "{{ lookup('vars', 'zpm_registry_proxy_user', default='') }}"
+  zpmRegistryProxyHost: "{{ lookup('vars', 'zpm_registry_proxy_host', default='') | default('', true) }}"
+  zpmRegistryProxyPort: "{{ lookup('vars', 'zpm_registry_proxy_port', default='') | default('', true) }}"
+  zpmRegistryProxyPassword: "{{ lookup('vars', 'zpm_registry_proxy_password', default='') | default('', true) }}"
+  zpmRegistryProxyUser: "{{ lookup('vars', 'zpm_registry_proxy_user', default='') | default('', true) }}"
   licenseAccept: "{{ lookup('vars', 'zpm_instance_license_accept') | bool }}"
-  zpmRegistryProxyName: "{{ seaa_registry_secrets_prefix if lookup('vars', 'zpm_registry_proxy_host', default='') != '' and \
-    lookup('vars', 'zpm_registry_proxy_host', default='') is not none else '' }}\
-    {{ lookup('vars', 'zpm_registry_proxy_user', default='', default='') }}\
-    {{ '-' if lookup('vars', 'zpm_registry_proxy_host', default='') != '' and \
-     lookup('vars', 'zpm_registry_proxy_host', default='') is not none else '' }}\
-    {{ lookup('vars', 'zpm_registry_proxy_host', default='', default='') | regex_replace('[./:?]', '-') }}"
   registries: "{{ hostvars[current_zosendpoint].zpm_registries | default(lookup('vars', 'zpm_registries', default=[]), true) }}"
 
 # TODO:DOC -  Inventory > Ansible Var Defaults, Constants
