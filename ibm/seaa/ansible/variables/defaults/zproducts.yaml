@@ -57,7 +57,7 @@ java_code_name: "{{ sub_operators.java.code_name }}"
 java_name: "{{ sub_operators.java.name }}" #zos-java
 java_oc_version: "{{ oc_product_oc_version }}"
 java_oci_version: 8.0.8.10 # 2023.4.1 GA
-java_product_version: 8.0.8
+java_product_version: 8.0.8.10
 
 # *************************************
 # Secure Operator Collection
@@ -95,8 +95,8 @@ nodejs_short_name: "{{ sub_operators.nodejs.short_name }}" #nodejs
 nodejs_code_name: "{{ sub_operators.nodejs.code_name }}"
 nodejs_name: "{{ sub_operators.nodejs.name }}" #zos-nodejs
 nodejs_oc_version: "{{ oc_product_oc_version }}"
-nodejs_oci_version: 18.0.0.4 # 2023.4.1 GA
-nodejs_product_version: 18.17.1
+nodejs_oci_version: 18.0.0.5 # 2023.4.1 GA
+nodejs_product_version: 18.18.2 # 2023.4.1 GA
 
 # *************************************
 # Secure Operator Collection
