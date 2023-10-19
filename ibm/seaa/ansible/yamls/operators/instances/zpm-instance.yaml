@@ -37,6 +37,6 @@ spec:
 {% if zos_package_manager.zpmRegistryProxyPort is defined and zos_package_manager.zpmRegistryProxyPort != "" %}
   zpm_registry_proxy_port: "{{ zos_package_manager.zpmRegistryProxyPort }}"
 {% endif %}
-{% if zos_package_manager.zpmRegistryProxyName is defined and zos_package_manager.zpmRegistryProxyName != "" %}
-  zpm_registry_proxy_user_credential: "{{ zos_package_manager.zpmRegistryProxyName }}"
+{% if zos_package_manager.zpmRegistryProxyPassword is defined and zos_package_manager.zpmRegistryProxyPassword != "" %}
+  zpm_registry_proxy_user_credential: "{{ seaa_registry_secrets_prefix | replace('_', '-') }}{{ zos_package_manager.zpmRegistryProxyUser | replace('_', '-') }}-{{ zos_package_manager.zpmRegistryProxyHost | regex_replace('[./:?]', '-') }}"
 {% endif %}
