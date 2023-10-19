@@ -151,7 +151,7 @@
       when:
         - seaa_deploy_strategy == "deploy"
         - (zoscb_csv_deploy_verified is undefined) or
-          (not zoscb_csv_deploy_verified)
+          (zoscb_csv_deploy_verified is defined and not zoscb_csv_deploy_verified)
 
     # UnDeploy z/OS Cloud Broker verified deployed
     - name: UnDeploy z/OS Cloud Broker verified deployed

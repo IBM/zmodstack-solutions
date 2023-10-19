@@ -49,7 +49,7 @@
       when:
         - seaa_automation.prompt_during_automation | bool
 
-- name: Block to Map sub-operator for new csv deplyment - with yaml
+- name: Block to Map sub-operator for non exisiting (new) csv deployment - with yaml
   when: (not csv_exist and seaa_automation_strategy == "generate_deploy_yaml") or
         seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:
@@ -75,15 +75,19 @@
        {{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
       when:
         - seaa_automation_strategy != "generate_yaml"
-        - not csv_exist
       kubernetes.core.k8s:
         state: present
         namespace: "{{ project_namespace.name }}"
         definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/sub-operator-config.yaml') | from_yaml }}"
       register: mapped_suboperator
-      until: "mapped_suboperator.failed == false"
-      failed_when: mapped_suboperator.failed == true
-      retries: "{{ seaa_deploy_yaml_retries | int }}" # 5
+      until:
+        - "mapped_suboperator.failed == false"
+        - mapped_suboperator.result is defined
+        - mapped_suboperator.result.status is defined
+        - mapped_suboperator.result.status.phase is defined
+        - mapped_suboperator.result.status.phase == 'Successful' or mapped_suboperator.result.status.phase == 'Failed'
+      failed_when: mapped_suboperator.result.status.phase != 'Successful'
+      retries: "{{ seaa_deploy_retries / 4 | int }}" # 120/4
       delay: "{{ seaa_deploy_yaml_delay | int }}" # 30
 
 - name: Block to handle existing CSV
@@ -92,7 +96,7 @@
     - csv_exist
     - zoscb_csv_deploy_verified is defined and not zoscb_csv_deploy_verified
   block:
-    - name: "Map suboperator with Native YAML API '{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}-suboperatorconfig' to '\
+    - name: "Map existing suboperator with Native YAML API '{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}-suboperatorconfig' to '\
         {{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
       kubernetes.core.k8s:
         state: present
@@ -100,10 +104,12 @@
         definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/sub-operator-config.yaml') | from_yaml }}"
       register: mapped_suboperator
       until:
-        - "mapped_suboperator.failed == false"
-        - "mapped_suboperator.changed == true"
-      failed_when: mapped_suboperator.failed == true
-      retries: "{{ seaa_deploy_yaml_retries | int }}" # 5
+        - mapped_suboperator.result is defined
+        - mapped_suboperator.result.status is defined
+        - mapped_suboperator.result.status.phase is defined
+        - mapped_suboperator.result.status.phase == 'Successful' or mapped_suboperator.result.status.phase == 'Failed'
+      failed_when: mapped_suboperator.result.status.phase != 'Successful'
+      retries: "{{ seaa_deploy_retries / 8 | int }}" # 120/4
       delay: "{{ seaa_deploy_yaml_delay | int }}" # 30
 
     - name: Set flag for updated operator CSV
@@ -124,46 +130,46 @@
         - updated_deploy_csv_subop.resources is defined and updated_deploy_csv_subop.resources | length > 0
         - "'status' in updated_deploy_csv_subop.resources[0]"
         - updated_deploy_csv_subop.resources[0].status.phase == 'Installing'
-      retries: "{{ seaa_deploy_retries / 2 | int }}" # 120/2
-      delay: "{{ seaa_deploy_delay / 2 | int }}" # 10/2
+      retries: "{{ seaa_deploy_retries / 8 | int }}" # 120/2
+      delay: "{{ seaa_deploy_delay | int }}" # 10/2
 
-    - name: "Ensure successful installation of the {{ oc_product.name }} suboperator before proceeding"
-      when: seaa_automation_strategy != "generate_yaml"
-      kubernetes.core.k8s_info:
-        api_key: "{{ ocp_cluster.auth_token }}"
-        kind: ClusterServiceVersion
-        namespace: "{{ project_namespace.name }}"
-        api_version: operators.coreos.com/v1alpha1
-        label_selectors:
-          - "instance-name = {{ broker_instance.name }}"
-          - "suboperatorconfig.name = {{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
-      register: deploy_csv_subop
-      until:
-        - deploy_csv_subop.resources is defined and deploy_csv_subop.resources | length > 0
-        - "'status' in deploy_csv_subop.resources[0]"
-        - deploy_csv_subop.resources[0].status.phase == 'Succeeded' or deploy_csv_subop.resources[0].status.phase == 'Failed'
-      failed_when: "'status' in deploy_csv_subop.resources[0] and
-                    deploy_csv_subop.resources[0].status.phase != 'Succeeded'"
-      retries: "{{ seaa_deploy_retries | int }}" # 120
-      delay: "{{ seaa_deploy_delay | int }}" # 10
+- name: "Ensure successful installation of the {{ oc_product.name }} suboperator before proceeding"
+  when: seaa_automation_strategy != "generate_yaml"
+  kubernetes.core.k8s_info:
+    api_key: "{{ ocp_cluster.auth_token }}"
+    kind: ClusterServiceVersion
+    namespace: "{{ project_namespace.name }}"
+    api_version: operators.coreos.com/v1alpha1
+    label_selectors:
+      - "instance-name = {{ broker_instance.name }}"
+      - "suboperatorconfig.name = {{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
+  register: deploy_csv_subop
+  until:
+    - deploy_csv_subop.resources is defined and deploy_csv_subop.resources | length > 0
+    - "'status' in deploy_csv_subop.resources[0]"
+    - deploy_csv_subop.resources[0].status.phase == 'Succeeded' or deploy_csv_subop.resources[0].status.phase == 'Failed'
+  failed_when: "'status' in deploy_csv_subop.resources[0] and
+                deploy_csv_subop.resources[0].status.phase != 'Succeeded'"
+  retries: "{{ seaa_deploy_retries - (seaa_deploy_retries / 4) | int }}" # 120
+  delay: "{{ seaa_deploy_delay | int }}" # 10
 
-    # Block to capture wait time to add to deploy script
-    - name: Capture Deploy Wait time
-      when:
-        - seaa_automation_strategy != "deploy_yaml"
-        - seaa_capture_deployment_wait_time | bool and start_tstamp_ns is defined
-      block:
-        - name: Capture wait time and add to deploy script
-          ansible.builtin.include_role:
-            name: zos_dev_envs
-            tasks_from: capture_deploy_time
-          vars:
-            resource_kind: SubOperatorConfig
-            _script_command_comment: "Wait for '{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}' \
-              'SubOperatorConfig' {{ deploy_type }}ment "
-            _deployment_file: "{{ seaa_yaml_single_deployment_file }}"
-            _deploy_name: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
-            _deploy_file: "{{ oc_product.short_name }}-{{ oc_product.oc_version }}_soc.yaml"
+# Block to capture wait time to add to deploy script
+- name: Capture Deploy Wait time
+  when:
+    - seaa_automation_strategy != "deploy_yaml"
+    - seaa_capture_deployment_wait_time | bool and start_tstamp_ns is defined
+  block:
+    - name: Capture wait time and add to deploy script
+      ansible.builtin.include_role:
+        name: zos_dev_envs
+        tasks_from: capture_deploy_time
+      vars:
+        resource_kind: SubOperatorConfig
+        _script_command_comment: "Wait for '{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}' \
+          'SubOperatorConfig' {{ deploy_type }}ment "
+        _deployment_file: "{{ seaa_yaml_single_deployment_file }}"
+        _deploy_name: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
+        _deploy_file: "{{ oc_product.short_name }}-{{ oc_product.oc_version }}_soc.yaml"
 
 - name: Prompt to manually check sub-operator
   when:

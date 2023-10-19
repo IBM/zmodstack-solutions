@@ -99,7 +99,7 @@
       when:
         - seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
         - seaa_deploy_suboperator | bool
-        - (zoscb_csv_deploy_verified is defined and not zoscb_csv_deploy_verified)
+        - zoscb_csv_deploy_verified is undefined or (zoscb_csv_deploy_verified is defined and not zoscb_csv_deploy_verified)
         - seaa_deploy_role == "admin" # ONLY ALLOW ADMIN TO DEPLOY OC
 
 # Add Registry Credential for ZPM INSTANCE

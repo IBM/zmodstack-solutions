@@ -41,6 +41,7 @@
         - subop_config_info_only.api_found is defined and subop_config_info_only.api_found
         - subop_config_info_only.resources is defined and subop_config_info_only.resources | length > 0
         - subop_config_info_only.resources[0].status is defined
+        - subop_config_info_only.resources[0].status.phase == "Successful"
         - subop_config_info_only.resources[0].status.zosEndpoints is defined
 
     # Verify ZPM Sub-Operator collection is deployed and installed successfully
