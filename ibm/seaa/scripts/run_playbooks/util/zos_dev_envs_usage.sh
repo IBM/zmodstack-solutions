@@ -48,7 +48,7 @@ function printUsage {
 function printEnvVarUsage {
     echo -e "Display SEAA environment variables ***********************************************************"
 
-    # Check to see if SEAA_AUTOMATION_STRATEGY ENV provided
+    # Check to see if SEAA_CONFIG_PATH_TO_SE_VARIABLES ENV provided
     if [[ -n "${SEAA_CONFIG_PATH_TO_SE_VARIABLES+1}" ]]; then
         echo -e "\t${green}Using environment variable${reset} '${cyan}SEAA_CONFIG_PATH_TO_SE_VARIABLES${reset}': $SEAA_CONFIG_PATH_TO_SE_VARIABLES"
 
@@ -57,6 +57,12 @@ function printEnvVarUsage {
     # Check to see if SEAA_AUTOMATION_STRATEGY ENV provided
     if [[ -n "${SEAA_AUTOMATION_STRATEGY+1}" ]]; then
         echo -e "\t${green}Using environment variable${reset} '${cyan}SEAA_AUTOMATION_STRATEGY${reset}': $SEAA_AUTOMATION_STRATEGY"
+
+    fi
+
+    # Check to see if SEAA_YAML_OUTPUT_DIR ENV provided
+    if [[ -n "${SEAA_YAML_OUTPUT_DIR+1}" ]]; then
+        echo -e "\t${green}Using environment variable${reset} '${cyan}SEAA_YAML_OUTPUT_DIR${reset}': $SEAA_YAML_OUTPUT_DIR"
 
     fi
 
@@ -434,10 +440,17 @@ function setRunOptions {
       RUNOPTIONS+=" --skip-tags ''"
     fi
 
-    # Add vault automation strategy to playbook run options
+    # Add automation strategy to playbook extra-vars
     if [[ -n "${SEAA_AUTOMATION_STRATEGY}" ]]; then
       # shellcheck disable=SC2034  # ev_automation_strategy is used as an extra var in deployment scripts
       ev_automation_strategy='{"seaa_automation_strategy": '${SEAA_AUTOMATION_STRATEGY}' }'
+    fi
+
+
+    # Add yaml output to playbook extra-varss
+    if [[ -n "${SEAA_YAML_OUTPUT_DIR}" ]]; then
+      # shellcheck disable=SC2034  # ev_yaml_output_dir is used as an extra var in deployment scripts
+      ev_yaml_output_dir='{"seaa_yaml_output_dir": '${SEAA_YAML_OUTPUT_DIR}' }'
     fi
 
     # Add vault passwords file to playbook run options

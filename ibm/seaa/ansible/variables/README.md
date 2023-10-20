@@ -65,7 +65,8 @@ Extra-vars have the highest-level of precedence and can be used to override ANY 
 - `SEAA_EXTRA_VARS` - Ansible extra-vars
 - `SEAA_INVENTORY` - Ansible inventory file name
 - `SEAA_INVENTORY_LOCATION` - Ansible inventory directory location
-
+- `SEAA_YAML_OUTPUT_DIR` - Output directory for generated resources
+- 
 ### SEAA Output variables
 - `SEAA_TAGS` - Ansible tags use to run playbook
 - `SEAA_SKIPTAGS` - Ansible skiptags use to run playbook
