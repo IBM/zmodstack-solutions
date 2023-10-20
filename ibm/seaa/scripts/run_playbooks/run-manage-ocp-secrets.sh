@@ -140,7 +140,7 @@ function main() {
 
     # Run playbook
     ansible-playbook "${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/playbooks/ocp/manage-ocp-secrets.yml" ${RUNOPTIONS} \
-     -e "${SEAA_EXTRA_VARS}" -e "${ev_automation_strategy:=}" 
+     -e "${SEAA_EXTRA_VARS}" -e "${ev_automation_strategy:=}" -e "${ev_yaml_output_dir:=}" 
 
     # Return Playbook exit code
     return $?
