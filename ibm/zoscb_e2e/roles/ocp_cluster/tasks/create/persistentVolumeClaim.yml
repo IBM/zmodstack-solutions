@@ -3,7 +3,8 @@
 # SPDX-License-Identifier: Apache2.0
 #
 
-- ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/debug_resource.yml"
+- name: Debug resource
+  ansible.builtin.include_tasks: "{{ zoscb_e2e_roles_directory }}/common/tasks/debug_resource.yml"
   vars:
     resource_variable: "{{ persistent_volume_claim }}"
     resource_variable_kind: PersistentVolumeClaim
@@ -29,6 +30,12 @@
         state: present
         namespace: "{{ project_namespace.name }}"
         definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/ocp/persistent-volume-claim.yaml') | from_yaml }}"
+      register: bound_pvc
+      until:
+        - bound_pvc.resources[0].status.phase == "Bound"
+        - "'kubernetes.io/pvc-protection' in bound_pvc.resources[0].metadata.finalizers"
+      delay: 10
+      retries: 20
 
     - name: "Check for creation of PVC '{{ persistent_volume_claim.name }}' in '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
       ansible.builtin.pause:

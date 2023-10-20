@@ -10,10 +10,12 @@ apiVersion: "{{ persistent_volume_claim.apiVersion }}"
 metadata:
   name: "{{ persistent_volume_claim.name }}"
 spec:
+  {% if persistent_volume_claim.accessModes | length > 0 %}
   accessModes:
   {% for accessMode in persistent_volume_claim.accessModes %}
     - "{{ accessMode }}"
   {% endfor %}
+  {% endif%}
   resources:
     requests:
       storage: "{{ persistent_volume_claim.storage }}"
