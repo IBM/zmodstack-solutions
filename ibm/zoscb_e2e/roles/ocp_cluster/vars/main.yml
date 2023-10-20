@@ -29,11 +29,14 @@ persistent_volume_claim:
   name: "{{ lookup('vars', 'pvc_name') }}"
   apiVersion: "{{ lookup('vars', 'pvc_api_version') }}"
   accessModes:
-    - "{{ lookup('vars', 'pvc_access_mode') }}"
+    - "{{ hostvars[current_ocphost].pvc_access_mode |
+       default(lookup('vars', 'pvc_access_mode', default=[]), true) }}"
   storage: "{{ lookup('vars', 'pvc_storage') }}"
   volumeMode: "{{ lookup('vars', 'pvc_volume_mode') }}"
   storageClassName: "{{ hostvars[current_ocphost].pvc_storage_class_name |
    default(lookup('vars', 'pvc_storage_class_name'), true) }}"  # "{{ lookup('vars', 'pvc_storage_class_name') }}"
+
+# seaa_registry_secrets_prefix if broker_instance.storage.enabled == true else ''
 
 # OPERATOR GROUP (OperatorGroup) TODO:DOC -  Defaults and Constants
 operator_group:
@@ -77,14 +80,18 @@ broker_instance:
       memory: "{{ lookup('vars', 'broker_instance_resource_memory_request', default='32Mi') }}"
       ephemeralStorage: "{{ lookup('vars', 'broker_instance_resource_ephemeral_stg_request', default='500Mi') }}"
   storage:
-    configure: "{{ lookup('vars', 'broker_instance_storage_configure') | bool }}"
-    enabled: "{{ lookup('vars', 'broker_instance_storage_enabled') | bool }}"
+    configure: "{{ hostvars[current_ocphost].broker_instance_storage_configure |
+     default(lookup('vars', 'broker_instance_storage_configure', default=true), true) | bool }}"
+    enabled: "{{ hostvars[current_ocphost].broker_instance_storage_enabled |
+     default(lookup('vars', 'broker_instance_storage_enabled', default=false), true) | bool }}"
     size: "{{ lookup('vars', 'pvc_storage') }}"
     storageClassName: "{{ hostvars[current_ocphost].pvc_storage_class_name |
      default(lookup('vars', 'pvc_storage_class_name'), true) }}" # "{{ lookup('vars', 'pvc_storage_class_name') }}"
     volumeMode: "{{ lookup('vars', 'pvc_volume_mode') }}"
-    accessModes: "{{ lookup('vars', 'pvc_access_mode') }}"
-    accessMode: "{{ lookup('vars', 'pvc_access_mode') }}"
+    accessModes: "{{ hostvars[current_ocphost].pvc_access_mode |
+     default(lookup('vars', 'pvc_access_mode'), true) }}"
+    accessMode: "{{ hostvars[current_ocphost].pvc_access_mode |
+     default(lookup('vars', 'pvc_access_mode'), true) }}"
     pvc: "{{ lookup('vars', 'pvc_name') }}"
   catalogResources:
     limits:
@@ -104,8 +111,9 @@ broker_instance:
       ephemeralStorage: "{{ lookup('vars', 'broker_ui_resources_ephemeral_stg_request', default='500Mi') }}"
   galaxyConfig:
     import_mode: "{{ lookup('vars', 'oc_product_import_mode', default='galaxy') }}"
-    galaxyURL: "{{ lookup('vars', 'oc_product_import_url', default='https://galaxy.ansible.com') }}"
-
+    # galaxyURL: "{{ lookup('vars', 'oc_product_import_url', default='https://galaxy.ansible.com') }}"
+    galaxyURL: "{{ hostvars[current_ocphost].oc_product_import_url |
+     default(lookup('vars', 'oc_product_import_url', default='https://galaxy.ansible.com'), true) }}"
 catalog_source:
   name: "{{ hostvars[current_ocphost].broker_catalog_name |
     default(lookup('vars', 'broker_catalog_name'), true) }}"
