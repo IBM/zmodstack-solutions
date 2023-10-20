@@ -12,3 +12,5 @@
     host: "{{ openshift_host }}"
     validate_certs: "{{ validate_openshift_certs }}"
     ca_cert: "{{ openshift_cert }}"
+  ignore_errors: true
+  register: ignore_errors_register # <- Stores errors and failures for evaluation.
