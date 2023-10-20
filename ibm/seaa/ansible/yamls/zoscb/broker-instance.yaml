@@ -32,7 +32,7 @@ spec:
         memory: "{{ broker_instance.catalogResources.requests.memory }}" #"32Mi"
         ephemeral-storage: "{{ broker_instance.catalogResources.requests.ephemeralStorage }}"
   {% else %}
-  catalogResources: {} # {{ broker_instance.catalogResources | default({}) }}
+  catalogResources: {}
   {% endif %}
   {% if set_broker_ui_resources is defined and set_broker_ui_resources == true %}
   uiResources:
@@ -44,7 +44,7 @@ spec:
         memory: "{{ broker_instance.uiResources.requests.memory }}" #"32Mi"
         ephemeral-storage: "{{ broker_instance.uiResources.requests.ephemeralStorage }}"
   {% else %}
-  uiResources: {} # {{ broker_instance.uiResources | default({}) }}
+  uiResources: {} 
   {% endif %}
   {% if set_broker_manager_resources is defined and set_broker_manager_resources == true %}
   managerResources:
@@ -59,25 +59,28 @@ spec:
   managerResources: {}
   {% endif %}
   storage:
-{% if broker_instance.storage.configure == true %}
+{% if broker_instance.storage.configure == true and broker_instance.storage.enabled != true %}
     configure: true
-{% else %}
-    configure: false
-{% endif %}
-{% if broker_instance.storage.enabled == true %}
-    enabled: true
-{% else %}
-    enabled: false
-{% endif %}
     pvc: "{{ broker_instance.storage.pvc }}"
     size: "{{ broker_instance.storage.size }}"
     storageClassName: "{{ broker_instance.storage.storageClassName }}"
     volumeMode: "{{ broker_instance.storage.volumeMode }}"
     accessModes: "{{ broker_instance.storage.accessMode }}"
+{% else %}
+    configure: false
+{% endif %}
+{% if broker_instance.storage.enabled == true %}
+    enabled: true
+    pvc: "{{ broker_instance.storage.pvc }}"
+    size: "{{ broker_instance.storage.size }}"
+    volumeMode: "{{ broker_instance.storage.volumeMode }}"
+{% else %}
+    enabled: false
+{% endif %}
   galaxyConfig:
   {% if broker_instance.galaxyConfig.import_mode == 'airgap' %}
     enabled: false
   {% else %}
     enabled: true
   {% endif %}
-    galaxyURL: "{{ broker_instance.galaxyConfig.galaxyURL }}" #'https://galaxy.ansible.com'
+    galaxyURL: "{{ broker_instance.galaxyConfig.galaxyURL }}" 
