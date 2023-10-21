@@ -171,20 +171,20 @@ main() {
     # Check if product list is NOT being sorted in reverse order from ZPM List
     if [ "$source_in_reverse_order" != true ]; then
       # Source product list from top to bottom of zpm list
-      source_product_envs "$(zpm list > ~/zpm.list  && chtag -r ~/zpm.list && cat ~/zpm.list | tail +3 | awk -v srcf="/.env" '{ print $3"" srcf ""}')"
+      source_product_envs "$(zpm list > ~/zpm.list  && chtag -r ~/zpm.list && cat ~/zpm.list | tail +3 | awk -v srcf="/.env" '{ print $4"" srcf ""}')"
     fi
 
     # Check if product list being sourced in reverse order or both top and bottom
     if [ "$source_in_reverse_order" = true ] || [ "$source_top_and_bottom" = true ]; then
 
       # Source product list from bottom to top of ZPM list
-      source_product_envs "$(zpm list > ~/zpm.list  && chtag -r ~/zpm.list && cat ~/zpm.list | tail +3  |  awk -v srcf="/.env" '{a[i++]=$3} END {for (j=i-1; j>=0;) print a[j--]"" srcf ""}')"
+      source_product_envs "$(zpm list > ~/zpm.list  && chtag -r ~/zpm.list && cat ~/zpm.list | tail +3  |  awk -v srcf="/.env" '{a[i++]=$4} END {for (j=i-1; j>=0;) print a[j--]"" srcf ""}')"
 
       # Check if also if need to source from top of list
       if [ "$source_top_and_bottom" = true ]; then
         
         # Source product list from top to bottom of zpm list
-        source_product_envs "$(zpm list > ~/zpm.list  && chtag -r ~/zpm.list && cat ~/zpm.list | tail +3 | awk -v srcf="/.env" '{ print $3"" srcf ""}')"
+        source_product_envs "$(zpm list > ~/zpm.list  && chtag -r ~/zpm.list && cat ~/zpm.list | tail +3 | awk -v srcf="/.env" '{ print $4"" srcf ""}')"
       fi
     fi
   else
