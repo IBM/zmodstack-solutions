@@ -145,7 +145,7 @@ doclean() {
     echo "ZPM installed in '$install_dir' ..."
 
     # Iterate and clean up installed zpm products
-    clean_installed_products "$(zpm list > /tmp/zpm.list  && chtag -r /tmp/zpm.list && cat /tmp/zpm.list | tail +3 | awk '{installed=$1":"$2; print installed }')"
+    clean_installed_products "$(zpm list > ~/zpm.list  && chtag -r ~/zpm.list && cat ~/zpm.list | tail +3 | awk '{installed=$2":"$3; print installed }')"
     
     #Remove ZPM state and installation directories
     # Prompt the user for confirmation
