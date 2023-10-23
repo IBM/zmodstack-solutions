@@ -116,8 +116,8 @@ broker_instance:
      default(lookup('vars', 'oc_product_import_url', default='https://galaxy.ansible.com'), true) }}"
 catalog_source:
   name: "{{ hostvars[current_ocphost].broker_catalog_name |
-    default(lookup('vars', 'broker_catalog_name'), true) | default('ibm-operator-catalog', true) }}"
+    default(lookup('vars', 'broker_catalog_name', default=''), true) | default('ibm-operator-catalog', true) }}"
   display_name: "{{ hostvars[current_ocphost].broker_catalog_display_name |
-    default(lookup('vars', 'broker_catalog_display_name'), true) | default('IBM z/OS Cloud Broker Catalog', true) }}"
+    default(lookup('vars', 'broker_catalog_display_name', default=''), true) | default('IBM z/OS Cloud Broker Catalog', true) }}"
   image: "{{ hostvars[current_ocphost].broker_catalog_image |
-    default(lookup('vars', 'broker_catalog_image'), true) | default('', true) }}"
+    default(lookup('vars', 'broker_catalog_image', default=''), true) | default('', true) }}"
