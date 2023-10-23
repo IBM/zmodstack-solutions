@@ -62,7 +62,7 @@ zpm_registry_proxy_host:
 zpm_registry_proxy_port: 
 zpm_registry_proxy_password: 
 zpm_registry_proxy_user: 
-zpm_install_dir: /usr/lpp/IBM/zpm
+zpm_install_dir: /usr/lpp/zpm
 zpm_state_dir: /var/zpm
 zpm_product_hlq: ZPM
 zpm_java_home_directory: /usr/lpp/java/J8.0_64
