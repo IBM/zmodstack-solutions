@@ -8,6 +8,13 @@
 # z/OS Cloud Broker Variables
 # *************************************
 # *************************************
+# Broker Catalog Source
+# *************************************
+broker_catalog_image: #
+broker_catalog_display_name: IBM z/OS Cloud Broker Catalog # 2023.4.1 GA
+broker_catalog_name: ibm-operator-catalog # 2023.4.1 GA
+
+# *************************************
 # Broker Subscription
 # *************************************
 broker_subscription_name: ibm-zoscb
@@ -91,7 +98,7 @@ multi_namespaces: [] # Multi-Namespace array
 # TODO implemented to not deleting OC and POSTING new versions it already exist and IfPresent automation config flag is true
 oc_delete_collections: true
 
-#Install Modes - "galaxy | url | upload "
+#Install Modes - "galaxy | url | upload | airgap * "
 oc_product_import_mode: galaxy
 oc_product_import_url: https://galaxy.ansible.com
 oc_product_git_token:
