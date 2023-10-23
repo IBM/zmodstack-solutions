@@ -92,6 +92,8 @@ seaa_ansible_vault_key_file: "{{ lookup('env', 'SEAA_ANSIBLE_VAULT_KEY_FILE') }}
 # Flag to use TLS with OCP login
 cluster_validate_certs: false  # Can be set in inventory per ocphost group
 
+host_cluster_auth_token": "{{ inventory_hostname | replace('-', '_') | upper }}_AUTHTOKEN" 
+          
 # OCP cert to use for host when 'cluster_validate_certs' is true
 cluster_cacert: # "{{ lookup('env', 'KUBE_LB_SIGNER') }}"  # Can be set in inventory per ocphost group
 
