@@ -466,7 +466,7 @@ ssh_passphrase: # <ADD_PASSPHRASE_FOR_SSH_KEY_TO_CONNECT_TO_ZOS_ENDPOINT_IF_SET>
   description: SSH passphrase
 #
 # ZPM install directory not used if zpm_install_dir_prefix is provided
-# (Optional) default '/usr/lpp/IBM/zpm' located in <se-ansible-dir>/variables/defaults/zpm.yaml
+# (Optional) default '/usr/lpp/zpm' located in <se-ansible-dir>/variables/defaults/zpm.yaml
 zpm_install_dir: # <Fully qualified location to ZPM install directory>
   data_type: str
   host_group:

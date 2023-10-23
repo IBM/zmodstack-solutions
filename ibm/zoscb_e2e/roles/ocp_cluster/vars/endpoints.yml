@@ -23,7 +23,7 @@ endpoint:
   # Install directory has the following logic
   # if hostvar 'zpm_install_dir' is provided use it
   # Or use hostvar 'install_dir' prefix if it exist and append namepace and host information
-  # Or default to 'zpm_install_dir' and default to '/usr/lpp/IBM/zpm'
+  # Or default to 'zpm_install_dir' and default to '/usr/lpp/zpm'
   zpm_installation_dir: "{{ hostvars[current_zosendpoint].zpm_install_dir | default(None, true) |
                              ternary(hostvars[current_zosendpoint].zpm_install_dir,
                               hostvars[current_zosendpoint].zpm_install_dir_prefix | default(None, true) |
