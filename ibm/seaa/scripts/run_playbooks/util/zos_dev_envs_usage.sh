@@ -18,7 +18,7 @@ yellow="\033[0;33m"
 # export SEAA_TAGS=
 # export SEAA_SKIPTAGS=
 
-export SEAA_EXTRA_VARS="${SEAA_EXTRA_VARS:-{}}"
+export SEAA_EXTRA_VARS="${SEAA_EXTRA_VARS:-$(jq -n '{}')}"
 export SEAA_INVENTORY="${SEAA_INVENTORY:-inventory.yaml}"
 export SEAA_INVENTORY_LOCATION="${SEAA_INVENTORY_LOCATION:-${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/playbooks/inventory}"
 
@@ -287,17 +287,23 @@ function overrideAndMaskExtraVars {
   # echo $overrideValues
 
   # Check if input file with ExtraVARS is provided
-  if [[ -n "${1}" && -n "$overrideValues" ]]; then
-    # Set input file and trimmed '@' char from front
-    input_file=${1:1}
-
-    # Use Stream editor to pre-process and remove and comments in JSON file
-    new_input=$(sed 's/\/\*.*\*\///' "$input_file"| jq '.' )
- 
-    if [ "$ANSIBLE_VERBOSITY" -gt 0 ]; then
-        # Print message for processing extra-vars file
-        echo -e "${green}Override extra-vars file:${reset} '${input_file}' ...\n\t With: '$overrideValues' "    
-    fi 
+  if [[ -n "${1}" || "${SEAA_EXTRA_VARS}" == '{}' && -n "$overrideValues" ]]; then
+    if [[ -n "${1}" ]]; then
+        # Set input file and trimmed '@' char from front
+        input_file=${1:1}
+    
+        # Use Stream editor to pre-process and remove and comments in JSON file
+        new_input=$(sed 's/\/\*.*\*\///' "$input_file"| jq '.' )
+    
+        if [ "$ANSIBLE_VERBOSITY" -gt 0 ]; then
+            # Print message for processing extra-vars file
+            echo -e "${green}Override extra-vars file:${reset} '${input_file}' ...\n\t With: '$overrideValues' "    
+        fi 
+    else
+        # Set new input var to empty json string
+        new_input='{}'
+    
+    fi
     
     # Set output JSON file by adding and overriding from overrideValues JSON
     output_file=$(jq -nc --argjson original "$new_input" \
@@ -340,7 +346,7 @@ function overrideAndMaskExtraVars {
   fi
 
   # Check if SEAA_EXTRA_VARS env variable is provided
-  if [[ -n "${SEAA_EXTRA_VARS}" ]]; then
+  if [[ -n "${SEAA_EXTRA_VARS}" || "${SEAA_EXTRA_VARS}" != '{}' ]]; then
     # Print extravars to Terminal
     if [[ -n "$input_file" ]]; then
       echo
