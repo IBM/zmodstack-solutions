@@ -14,9 +14,6 @@
     api_version: "{{ broker_subscription.apiVersion }}"
   register: broker_subscription_info_only
 
-    # ansible.builtin.set_fact:
-    #     broker_subscription_info_only: "{{ broker_subscription_info }}"
-
 - name: "Retrieve broker subscription: '{{ broker_subscription.name }}' on '{{ ocp_cluster.hostname }}'"
   when: info_only is undefined
   kubernetes.core.k8s_info:
