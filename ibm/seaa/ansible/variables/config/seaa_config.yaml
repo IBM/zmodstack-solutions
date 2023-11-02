@@ -75,21 +75,25 @@ seaa_encrypt_secrets: true
 # Prefix for SSH Key secrets
 seaa_sshkey_secrets_prefix: ssh-key-
 
+# Prefix for Registry secrets
+seaa_registry_secrets_prefix: reg-cred-
+
 # Encrypt sensitive endpoint variables
 seaa_encrypt_sensitive_endpoint_vars: true
 
-# Ansible Vault ID
-# seaa_ansible_vault_id: "{{ lookup('env', 'SEAA_ANSIBLE_VAULT_ID') }}" #TODO and use with env var - ANSIBLE_VAULT_ID_MATCH
+# Data encryption strategy 
+# for file or file_or_test - default location is 'seaa_ansible_directory/secrets'
+# can also use 'SEAA_CONFIG_PATH_TO_SE_SECRETS' env variable for directory
+seaa_secret_data_strategy: file_or_text # text | file | file_or_text
 
 # Path to ansible-vault password file used to encrypted content used in playbook
-seaa_ansible_vault_password_file: "{{ lookup('env', 'SEAA_ANSIBLE_VAULT_PASSWORD_FILE') }}"
-
-# Path to encrypted SSH Key file
-seaa_path_to_encrypted_files: "{{ seaa_ansible_directory }}/secrets"
+seaa_ansible_vault_key_file: "{{ lookup('env', 'SEAA_ANSIBLE_VAULT_KEY_FILE') }}"
 
 # Flag to use TLS with OCP login
 cluster_validate_certs: false  # Can be set in inventory per ocphost group
 
+host_cluster_auth_token": "{{ inventory_hostname | replace('-', '_') | upper }}_AUTHTOKEN" 
+          
 # OCP cert to use for host when 'cluster_validate_certs' is true
 cluster_cacert: # "{{ lookup('env', 'KUBE_LB_SIGNER') }}"  # Can be set in inventory per ocphost group
 

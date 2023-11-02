@@ -174,7 +174,8 @@
             name: password_vault
             tasks_from: get_1password_creds
           vars:
-            item_name: "{{ seaa_security_password_vault_item }}"
+            item_name: "{{ hostvars[current_ocphost].seaa_security_password_vault_item | \
+              default(lookup('vars', 'seaa_security_password_vault_item'), true) }}"
             is_login_type_item: true
 
         # Include authentication role

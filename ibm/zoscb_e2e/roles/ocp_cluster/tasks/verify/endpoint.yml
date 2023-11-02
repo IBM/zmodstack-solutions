@@ -25,7 +25,7 @@
           endpoint_info_only.resources | length == 0
 
     # Check if endpoint Port matches deployed endpoints port
-    - name: Check por endpoint info exist
+    - name: Check port endpoint info is correct
       ansible.builtin.set_fact:
         zosendpoint_not_found: true
       when:

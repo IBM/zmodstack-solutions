@@ -9,3 +9,6 @@ __pycache__
 *.py[cod]
 *$py.class
 
+.vscode/settings.json
+ibm/seaa/scripts/admin/*purge*
+oc_file

@@ -44,8 +44,7 @@
 - name: Destroy PVC
   ansible.builtin.include_tasks: "{{ ocp_task_dir }}/destroy/persistentVolumeClaim.yml"
   when:
-    - broker_instance.storage.configure
-    - not broker_instance.storage.enabled
+    - broker_instance.storage.enabled
     - seaa_deploy_role == "admin"
 
 - name: Block to delete project and namespace

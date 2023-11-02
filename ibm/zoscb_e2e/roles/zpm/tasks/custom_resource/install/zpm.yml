@@ -13,6 +13,15 @@
   when: seaa_automation_strategy == "generate_deploy_yaml" or seaa_automation_strategy == "generate_yaml" or seaa_automation_strategy == "deploy_yaml"
   block:
 
+    - name: Make sure that atleast one registry exist in array
+      when:
+        - zpm_registries is undefined or zpm_registries is none or zpm_registries | length == 0
+      ansible.builtin.set_fact:
+        zpm_registries:
+          - host: "{{ zpm_registry.host }}"
+            user: "{{ zpm_registry.user }}"
+            password: "{{ zpm_registry.password }}"
+
     - name: Include task to generate yaml file
       when:
         - seaa_automation_strategy != "deploy_yaml"
@@ -40,6 +49,35 @@
         namespace: "{{ project_namespace.name }}"
         definition: "{{ lookup('template', seaa_ansible_directory~'/yamls/operators/instances/zpm-instance.yaml') | from_yaml }}"
       register: mapped_suboperator
+      until: "mapped_suboperator.failed == false"
+      failed_when: mapped_suboperator.failed == true
+      retries: "{{ seaa_deploy_yaml_retries | int }}" # 5
+      delay: "{{ seaa_deploy_yaml_delay | int }}" # 30
+
+    - name: Block to Handle Wait for updated CSV for ZPM instance
+      when:
+        - new_csv_deployed is defined and new_csv_deployed
+        - seaa_automation_strategy != "generate_yaml"
+      block:
+        - name: "Wait for ZPM instance to start reconcile due to CSV update sub-operator CR {{ zos_package_manager.kind }}: '{{ zos_package_manager.name }}\
+            ' from '{{ project_namespace.name }}' on '{{ ocp_cluster.hostname }}'"
+          kubernetes.core.k8s_info:
+            api_key: "{{ ocp_cluster.auth_token }}"
+            kind: "{{ zos_package_manager.kind }}"
+            namespace: "{{ project_namespace.name }}"
+            name: "{{ zos_package_manager.name }}"
+            api_version: "{{ zos_package_manager.apiVersion }}"
+          register: zos_package_manager_updated
+          until:
+            - zos_package_manager_updated.resources is defined and zos_package_manager_updated.resources | length > 0
+            - "'status' in zos_package_manager_updated.resources[0]"
+            - zos_package_manager_updated.resources[0].status.phase == 'Running'
+          retries: "{{ seaa_deploy_yaml_retries / 2 | int }}" # 5
+          delay: "{{ seaa_deploy_yaml_delay / 2 | int }}" # 30
+      always:
+        - name: Reset new csv fact
+          ansible.builtin.set_fact:
+            new_csv_deployed: false
 
 - name: Pause for ZPM instance '{{ zos_package_manager.name }}' to be available.
   when: seaa_automation.prompt_during_automation | bool

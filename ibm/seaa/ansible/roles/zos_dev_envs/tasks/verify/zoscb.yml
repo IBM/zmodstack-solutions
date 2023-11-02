@@ -9,19 +9,19 @@
   ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/project.yml"
 
 # Verify PERSISTENT VOLUME CLAIM
-- name: Verify project
+- name: Verify PVC
   ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/persistentVolumeClaim.yml"
 
 # Verify OPERATOR GROUP
-- name: Verify project
+- name: Verify OG
   ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/operatorGroup.yml"
 
 # Verify Z CLOUD BROKER SUBSCRIPTION
-- name: Verify project
+- name: Verify Subscription
   ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/brokerSubscription.yml"
 
 # Verify Z CLOUD BROKER INSTANCE
-- name: Verify project
+- name: Verify Broker instance
   ansible.builtin.include_tasks: "{{ ocp_task_dir }}/verify/brokerInstance.yml"
 
 # Verify ENDPOINT info_only is used with smart deploy to deterning if ALL endpoints are deployed

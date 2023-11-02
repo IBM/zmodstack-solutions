@@ -11,7 +11,7 @@
 # Broker Subscription
 # *************************************
 broker_subscription_name: ibm-zoscb
-broker_subscription_version: 2.2.1 # 2023.2.1 GA
+broker_subscription_version: 2.2.2 # 2023.2.1 GA - updated
 broker_subscription_source: ibm-operator-catalog
 broker_subscription_channel: v2.2
 broker_subscription_install_plan_approval: Automatic

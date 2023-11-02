@@ -73,11 +73,13 @@
                 zpm_subop_deployed: true
                 subop_endpoints_deployed: "{{ subop_config_info_only.resources[0].status.zosEndpoints | join(',') }}"
               when:
+                - zosendpoint_not_found is defined and zosendpoint_not_found
                 - zpm_oc_deploy_verified is defined and zpm_oc_deploy_verified
                 - subop_config_info_only.api_found is defined and subop_config_info_only.api_found
                 - subop_config_info_only.resources is defined and subop_config_info_only.resources | length > 0
                 - subop_config_info_only.resources[0].status is defined
                 - subop_config_info_only.resources[0].status.phase == "Successful"
+                - subop_config_info_only.resources[0].status.zosEndpoints is defined
 
             # Verify ZPM Sub-Operator collection is deployed and installed successfully
             - name: Set zpm_subop_deploy_verified fact
@@ -88,10 +90,10 @@
                 # sub-op is
                 # TODO RESET zpm_subop_deployed and check zpm_subop_deployed == false for multiple iterations
                 # - subop_config_info_only.resources is defined and subop_config_info_only.resources | length > 0
-                - oc_product.name~'.'~oc_product.domain~'.'~oc_version == subop_config_info_only.resources[0].metadata.name
+                - oc_product.name~'.'~oc_product.domain~'.'~oc_product.oc_version == subop_config_info_only.resources[0].metadata.name
                 - subop_config.finalizers[0] in subop_config_info_only.resources[0].metadata.finalizers
                 - this_project_name == subop_config_info_only.resources[0].metadata.namespace
-                - subop_config_info_only.resources[0].spec.operatorCollection == oc_product.name~'.'~oc_product.domain~'.'~oc_version
+                - subop_config_info_only.resources[0].spec.operatorCollection == oc_product.name~'.'~oc_product.domain~'.'~oc_product.oc_version
 
             # Verify ZPM Sub-Operator collection is deployed and installed successfully
             - name: Set zpm_zosendpoints_deploy_verified fact
@@ -176,7 +178,6 @@
           (zpm_zosendpoints_deploy_verified is undefined or not zpm_zosendpoints_deploy_verified) or
           (seaa_deploy_validate_crs | bool and zpm_create_diagnostics_cr | bool and
           (zpm_diag_deploy_verified is not defined or not zpm_diag_deploy_verified))
-
     # UnDeploy ZPM if it is verified deployed
     # or deploy validate CR or diag CR if they are not deployed
     - name: UnDeploy ZPM if it is verified deployed
@@ -208,6 +209,11 @@
             prompt: Namespace '{{ this_project_name }}' added to zpm deployed list on '{{ current_ocphost }}, press enter to continue ...'
           when: seaa_automation.prompt_during_automation | bool
   always:
+    # Set flag for ZPM being deployed to namespace
+    - name: Set flag for ZPM being deployed to namespace
+      ansible.builtin.set_fact:
+        zpm_deployed: "{{ zpm_deploy_verified | default(false) }}"
+
     - name: Clear ZPM deploy facts
       ansible.builtin.set_fact:
         zpm_deploy_verified: false
@@ -215,17 +221,3 @@
         zpm_oc_deploy_verified: false
         zpm_subop_deploy_verified: false
         zpm_zosendpoints_deploy_verified: false
-
-    # Set flag for ZPM being deployed to namespace
-    - name: Set flag for ZPM being deployed to namespace
-      when:
-        - seaa_deploy_strategy == "deploy"
-      ansible.builtin.set_fact:
-        zpm_deployed: "{{ seaa_zpm_smart_deploy | bool }}"
-
-    # Set flag for ZPM being deployed to namespace
-    - name: Set flag for ZPM being deployed to namespace
-      when:
-        - seaa_deploy_strategy == "undeploy"
-      ansible.builtin.set_fact:
-        zpm_deployed: "{{ not seaa_zpm_smart_deploy | bool }}"

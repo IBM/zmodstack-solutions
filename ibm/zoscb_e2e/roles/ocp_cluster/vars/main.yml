@@ -14,12 +14,6 @@ ocp_cluster:
                   default(lookup('vars', 'openshift_auth_token', default=''), true) |
                   default(lookup('vars', 'cluster_auth_token', default=''), true) }}" # "{{ lookup('vars', 'OCP_CLUSTER_AUTH_TOKEN') }}"
 
-# ZPM_REGISTRY
-zpm_registry:
-  host: "{{ lookup('vars', 'zpm_registry_host') | default('', true) }}"
-  user: "{{ lookup('vars', 'zpm_registry_user') | default('', true) }}"
-  password: "{{ lookup('vars', 'zpm_registry_password') | default('', true) }}"
-
 # NAMESPACE (Project) - TODO:DOC -  Defaults if Null -> Inventory Vars -> Constants?
 project_namespace:
   apiVersion: "{{ lookup('vars', 'project_api_version') }}"
@@ -28,18 +22,21 @@ project_namespace:
   requester: "{{ lookup('vars', 'project_requesting_user') |
                  default(hostvars[current_ocphost].ansible_user, true) |
                  default(ansible_user, true) }}"
-  name: "{{ this_project_name }}"
+  name: "{{ this_project_name | default('', true) }}"
 
 # PVC (PersistentVolumeClaim) - TODO:DOC -  Defaults if Null -> Inventory Vars -> Constants?
 persistent_volume_claim:
   name: "{{ lookup('vars', 'pvc_name') }}"
   apiVersion: "{{ lookup('vars', 'pvc_api_version') }}"
   accessModes:
-    - "{{ lookup('vars', 'pvc_access_mode') }}"
+    - "{{ hostvars[current_ocphost].pvc_access_mode |
+       default(lookup('vars', 'pvc_access_mode', default=[]), true) }}"
   storage: "{{ lookup('vars', 'pvc_storage') }}"
   volumeMode: "{{ lookup('vars', 'pvc_volume_mode') }}"
   storageClassName: "{{ hostvars[current_ocphost].pvc_storage_class_name |
    default(lookup('vars', 'pvc_storage_class_name'), true) }}"  # "{{ lookup('vars', 'pvc_storage_class_name') }}"
+
+# seaa_registry_secrets_prefix if broker_instance.storage.enabled == true else ''
 
 # OPERATOR GROUP (OperatorGroup) TODO:DOC -  Defaults and Constants
 operator_group:
@@ -65,6 +62,7 @@ broker_subscription:
 
 # Z CLOUD BROKER INSTANCE (ZosCloudBroker) Default (with local defaults and storageClassName - Inventory Vars -> override Defaults
 broker_instance:
+  managed: "ibm-zos-cloud-broker"
   name: "{{ lookup('vars', 'broker_instance_name') }}"
   kind: "{{ lookup('vars', 'broker_instance_kind') }}"
   apiVersion: "{{ lookup('vars', 'broker_instance_api_version') }}"
@@ -74,20 +72,52 @@ broker_instance:
   multiNamespace: "{{ lookup('vars', 'broker_instance_multi_namespace', default=false) | bool }}"
   resources:
     limits:
-      cpu: "{{ lookup('vars', 'broker_instance_resources_cpu_limit') | default('200m') }}"
-      memory: "{{ lookup('vars', 'broker_instance_resources_memory_limit') | default('256Mi') }}"
-      ephemeralStorage: "{{ lookup('vars', 'broker_instance_resources_ephemeral_stg_limit') | default('500Mi') }}"
+      # cpu: "{{ lookup('vars', 'broker_instance_resources_cpu_limit', default='200m') }}"
+      memory: "{{ lookup('vars', 'broker_instance_resources_memory_limit', default='32Mi') }}"
+      ephemeralStorage: "{{ lookup('vars', 'broker_instance_resources_ephemeral_stg_limit', default='500Mi') }}"
     requests:
-      cpu: "{{ lookup('vars', 'broker_instance_requests_cpu_limit') | default('200m') }}"
-      memory: "{{ lookup('vars', 'broker_instance_requests_memory_limit') | default('256i') }}"
-      ephemeralStorage: "{{ lookup('vars', 'broker_instance_requests_ephemeral_stg_limit') | default('500Mi') }}"
+      cpu: "{{ lookup('vars', 'broker_instance_resource_cpu_request', default='10m') }}"
+      memory: "{{ lookup('vars', 'broker_instance_resource_memory_request', default='32Mi') }}"
+      ephemeralStorage: "{{ lookup('vars', 'broker_instance_resource_ephemeral_stg_request', default='500Mi') }}"
   storage:
-    configure: "{{ lookup('vars', 'broker_instance_storage_configure') | bool }}"
-    enabled: "{{ lookup('vars', 'broker_instance_storage_enabled') | bool }}"
+    configure: "{{ hostvars[current_ocphost].broker_instance_storage_configure |
+     default(lookup('vars', 'broker_instance_storage_configure', default=true), true) | bool }}"
+    enabled: "{{ hostvars[current_ocphost].broker_instance_storage_enabled |
+     default(lookup('vars', 'broker_instance_storage_enabled', default=false), true) | bool }}"
     size: "{{ lookup('vars', 'pvc_storage') }}"
     storageClassName: "{{ hostvars[current_ocphost].pvc_storage_class_name |
      default(lookup('vars', 'pvc_storage_class_name'), true) }}" # "{{ lookup('vars', 'pvc_storage_class_name') }}"
     volumeMode: "{{ lookup('vars', 'pvc_volume_mode') }}"
-    accessModes: "{{ lookup('vars', 'pvc_access_mode') }}"
-    accessMode: "{{ lookup('vars', 'pvc_access_mode') }}"
+    accessModes: "{{ hostvars[current_ocphost].pvc_access_mode |
+     default(lookup('vars', 'pvc_access_mode'), true) }}"
+    accessMode: "{{ hostvars[current_ocphost].pvc_access_mode |
+     default(lookup('vars', 'pvc_access_mode'), true) }}"
     pvc: "{{ lookup('vars', 'pvc_name') }}"
+  catalogResources:
+    limits:
+      memory: "{{ lookup('vars', 'broker_catalog_resources_memory_limit', default='32Mi') }}"
+      ephemeralStorage: "{{ lookup('vars', 'broker_catalog_resources_ephemeral_stg_limit', default='500Mi') }}"
+    requests:
+      cpu: "{{ lookup('vars', 'broker_catalog_resources_cpu_request', default='10m') }}"
+      memory: "{{ lookup('vars', 'broker_catalog_resources_memory_request', default='32Mi') }}"
+      ephemeralStorage: "{{ lookup('vars', 'broker_catalog_resources_ephemeral_stg_request', default='500Mi') }}"
+  uiResources:
+    limits:
+      memory: "{{ lookup('vars', 'broker_ui_resources_memory_limit', default='32Mi') }}"
+      ephemeralStorage: "{{ lookup('vars', 'broker_ui_resources_ephemeral_stg_limit', default='500Mi') }}"
+    requests:
+      cpu: "{{ lookup('vars', 'broker_ui_resources_cpu_request', default='10m') }}"
+      memory: "{{ lookup('vars', 'broker_ui_resources_memory_request', default='32Mi') }}"
+      ephemeralStorage: "{{ lookup('vars', 'broker_ui_resources_ephemeral_stg_request', default='500Mi') }}"
+  galaxyConfig:
+    import_mode: "{{ lookup('vars', 'oc_product_import_mode', default='galaxy') }}"
+    # galaxyURL: "{{ lookup('vars', 'oc_product_import_url', default='https://galaxy.ansible.com') }}"
+    galaxyURL: "{{ hostvars[current_ocphost].oc_product_import_url |
+     default(lookup('vars', 'oc_product_import_url', default='https://galaxy.ansible.com'), true) }}"
+catalog_source:
+  name: "{{ hostvars[current_ocphost].broker_catalog_name |
+    default(lookup('vars', 'broker_catalog_name', default=''), true) | default('ibm-operator-catalog', true) }}"
+  display_name: "{{ hostvars[current_ocphost].broker_catalog_display_name |
+    default(lookup('vars', 'broker_catalog_display_name', default=''), true) | default('IBM z/OS Cloud Broker Catalog', true) }}"
+  image: "{{ hostvars[current_ocphost].broker_catalog_image |
+    default(lookup('vars', 'broker_catalog_image', default=''), true) | default('', true) }}"
