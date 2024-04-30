@@ -16,11 +16,12 @@
     - name: Set fact with encrypted endpoint variable
       when:
         - seaa_encrypt_sensitive_endpoint_vars | bool
-        - zpm_registry.password is defined and zpm_registry.password | length > 0
+        - zpm_registry.password is defined and (zpm_registry.password is not none and zpm_registry.password != "")
+        - zpm_sets_registry_config is undefined or not zpm_sets_registry_config
       block:
         - name: Set path to sensitive file
           ansible.builtin.set_fact:
-            encrypted_file: "{{ seaa_path_to_encrypted_files }}/{{ zpm_registry.password }}"
+            encrypted_file: "{{ seaa_path_to_secret_files }}/{{ zpm_registry.password }}"
 
         - name: Set stats of file with sensitive data
           ansible.builtin.stat:
@@ -52,7 +53,7 @@
     - name: Set unencrypted registry password variable
       when:
         - not seaa_encrypt_sensitive_endpoint_vars | bool
-        - zpm_registry.password is defined and zpm_registry.password | length > 0
+        - zpm_registry.password is defined and (zpm_registry.password is not none and zpm_registry.password != "")
       ansible.builtin.set_fact:
         registry_password: "{{ zpm_registry.password }}"
       no_log: "{{ seaa_security_secure_log | default(true) | bool }}"

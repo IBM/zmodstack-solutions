@@ -4,18 +4,54 @@
 #
 
 ---
-- name: "Info Only Retrieve sub-operator config: '{{ oc_product.name }}.zpm.{{ oc_version }}-suboperatorconfig-...'"
+- name: "Info Only Block to Retrieve sub-operator config"
   when: info_only is defined and info_only
-  kubernetes.core.k8s_info:
-    api_key: "{{ ocp_cluster.auth_token }}"
-    kind: SubOperatorConfig
-    namespace: "{{ project_namespace.name }}"
-    name: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_version }}"
-    api_version: "{{ subop_config.apiVersion }}"
-    label_selectors:
-      - "instance-name = {{ broker_instance.name }}"
-    field_selectors: "metadata.name={{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_version }}"
-  register: subop_config_info_only
+  block:
+
+    - name: "Info Only Retrieve sub-operator config: '{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}-suboperatorconfig-...'"
+      kubernetes.core.k8s_info:
+        api_key: "{{ ocp_cluster.auth_token }}"
+        kind: SubOperatorConfig
+        namespace: "{{ project_namespace.name }}"
+        name: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
+        api_version: "{{ subop_config.apiVersion }}"
+        label_selectors:
+          - "instance-name={{ broker_instance.name }}"
+          - "operator-domain={{ oc_product.domain }}"
+          - "operator-name={{ oc_product.name }}"
+          - "operator-version={{ oc_product.oc_version }}"
+        field_selectors: "metadata.name={{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
+      register: subop_config_info_only
+
+    # Check if endpoint is mapped
+    - name: Check if endpoint is mapped
+      ansible.builtin.set_fact:
+        subop_config_has_resources: true
+      when:
+        - subop_config_info_only | json_query('resources') is not none or
+          subop_config_info_only.resources | length > 0
+
+    # Verify ZPM Sub-Operator is deployed
+    - name: Set zpm_subop_deployed fact
+      ansible.builtin.set_fact:
+        zpm_subop_deploy_exist: true
+        subop_endpoints_deployed: "{{ subop_config_info_only.resources[0].status.zosEndpoints | join(',') }}"
+      when:
+        - subop_config_has_resources is defined and subop_config_has_resources
+        - subop_config_info_only.api_found is defined and subop_config_info_only.api_found
+        - subop_config_info_only.resources is defined and subop_config_info_only.resources | length > 0
+        - subop_config_info_only.resources[0].status is defined
+        - subop_config_info_only.resources[0].status.phase == "Successful"
+        - subop_config_info_only.resources[0].status.zosEndpoints is defined
+
+    # Verify ZPM Sub-Operator collection is deployed and installed successfully
+    - name: Set zpm_zosendpoints_mapped_verified fact
+      ansible.builtin.set_fact:
+        zpm_subop_zosendpoints_mapped_not_verified: true
+      when:
+        - (zpm_subop_deploy_exist is undefined or not zpm_subop_deploy_exist) or
+          (subop_config.endpointNames | length != subop_endpoints_deployed | length) or
+          subop_config.endpointNames not in subop_endpoints_deployed
 
 - name: Debug resource
   when: info_only is defined and seaa_automation.debug | bool
@@ -29,7 +65,7 @@
 
     - name: Block for verifying Sub Operator deployments
       block:
-        - name: "Retrieve sub-operator config: '{{ oc_product.name }}.zpm.{{ oc_version }}-suboperatorconfig-...'"
+        - name: "Retrieve sub-operator config: '{{ oc_product.name }}.zpm.{{ oc_product.oc_version }}-suboperatorconfig-...'"
           # when: info_only is undefined
           kubernetes.core.k8s_info:
             api_key: "{{ ocp_cluster.auth_token }}"
@@ -38,7 +74,7 @@
             api_version: "{{ subop_config.apiVersion }}"
             label_selectors:
               - "instance-name = {{ broker_instance.name }}"
-            field_selectors: "metadata.name={{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_version }}"
+            field_selectors: "metadata.name={{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
           register: subop_config_info
           until:
             - subop_config_info.resources is defined and subop_config_info.resources | length > 0
@@ -53,10 +89,10 @@
             that:
               - subop_config_info.resources is defined
               - subop_config_info.resources[0] and subop_config_info.resources | length > 0
-              - "'{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_version }}' in subop_config_info.resources[0].metadata.name"
+              - "'{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}' in subop_config_info.resources[0].metadata.name"
               - "'{{ subop_config.finalizers[0] }}' in subop_config_info.resources[0].metadata.finalizers"
               # - "'{{ project_namespace.name }}' in subop_config_info.resources[0].status.namespaces"
               - "'{{ project_namespace.name }}' in subop_config_info.resources[0].status.namespaces|map(attribute='name')|list"
-              - subop_config_info.resources[0].spec.operatorCollection == "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_version }}"
+              - subop_config_info.resources[0].spec.operatorCollection == "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
               - subop_config_info.resources[0].status.namespaces[0].installStatus == "Operator installed successfully"
               - "'{{ subop_config.endpointNames }}' in subop_config_info.resources[0].status.zosEndpoints"

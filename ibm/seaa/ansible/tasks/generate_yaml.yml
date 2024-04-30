@@ -108,6 +108,7 @@
         dest: "{{ yaml_dir }}/{{ yaml_file }}"
         force: true
         mode: '0655'
+      register: template_output
 
     - name: Include task to generate script file
       ansible.builtin.include_tasks: "{{ seaa_ansible_directory }}/tasks/_generate_script.yml"

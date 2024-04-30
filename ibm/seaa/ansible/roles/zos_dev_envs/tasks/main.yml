@@ -25,6 +25,7 @@
         - not seaa_automation_strategy == "deploy_yaml"
         - not seaa_automation_strategy == "generate_yaml"
         - not seaa_automation_strategy == "generate_deploy_yaml"
+        - seaa_deploy_objective != "secrets" and seaa_automation_strategy != ""
 
     - name: Fail seaa_deploy_strategy '{{ seaa_deploy_strategy }}' is not a supported value
       ansible.builtin.fail:
@@ -125,10 +126,10 @@
             - "{{ hostvars[current_ocphost].project_names }}"
           loop_control:
             loop_var: current_namespace
-      rescue:
-        - name: Debug rescued error
-          ansible.builtin.debug:
-            msg: "Caught an error while deploying on {{ current_ocphost }}"
+      # rescue:
+      #   - name: Debug rescued error
+      #     ansible.builtin.debug:
+      #       msg: "Caught an error while deploying on {{ current_ocphost }}"
 
     # Verify Deployed Resources when running testing strategy
     - name: Verifying z/OS Cloud and Modernization Stack Components
@@ -142,10 +143,10 @@
             - "{{ hostvars[current_ocphost].project_names }}"
           loop_control:
             loop_var: current_namespace
-      rescue:
-        - name: Debug rescued error
-          ansible.builtin.debug:
-            msg: "Caught an error while verifying on {{ current_ocphost }}"
+      # rescue:
+      #   - name: Debug rescued error
+      #     ansible.builtin.debug:
+      #       msg: "Caught an error while verifying on {{ current_ocphost }}"
 
     # Set flag to determin if component should be undeployed
     - name: Set fact to allow undeployment of non broker or zpm component when using "testing" strategy
@@ -166,13 +167,13 @@
             - "{{ hostvars[current_ocphost].project_names }}"
           loop_control:
             loop_var: current_namespace
-      rescue:
-        - name: Debug rescued error
-          ansible.builtin.debug:
-            msg: "Caught an error while undeploying on {{ current_ocphost }}"
+      # rescue:
+      #   - name: Debug rescued error
+      #     ansible.builtin.debug:
+      #       msg: "Caught an error while undeploying on {{ current_ocphost }}"
 
 - name: Block to manage secrets for OCP projects
-  tags: sshkey
+  tags: always
   when:
     - seaa_deploy_objective == "secrets"
   block:

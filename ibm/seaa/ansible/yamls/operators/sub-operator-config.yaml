@@ -8,10 +8,10 @@
 apiVersion: "{{ oc_product.apiVersion }}"
 kind: SubOperatorConfig
 metadata:
-  name: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_version }}"
+  name: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
 spec:
   credentialType: "{{ oc_product.credential_type }}"
-  operatorCollection: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_version }}"
+  operatorCollection: "{{ oc_product.name }}.{{ oc_product.domain }}.{{ oc_product.oc_version }}"
   mapping:
     {% if seaa_deploy_suboc_to_admin_namespaces == true %}
     - namespace: "{{ project_namespace.name }}"

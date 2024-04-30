@@ -1,0 +1,142 @@
+################################################################################
+# Copyright (c) IBM Corporation 2023
+################################################################################
+---
+################################################################################
+# Summary of host targeted by this inventory
+#
+# Open Shift Container Platform Hosts (ocphosts):
+# - https://console-openshift-console.apps.ocp4-lp90.pok.stglabs.ibm.com
+#
+# z/OS Endpoints (zosendpoints):
+# - ***HOST_REMOVED***
+#
+################################################################################
+# Change Log
+# acrand@us.ibm.com -  Inital version created 1/21/2023
+#
+################################################################################
+# Think ABout how I present ZPM INSTALL DIR and STATE DIR - one instance of ZPM...
+all:
+  #**************************************************************************
+  # DEFAULT - Variables for ALL Inventory HOST
+  #**************************************************************************
+  vars:
+
+    #**************************************************************************
+    # 'Ansible' connection variables
+    #**************************************************************************
+    #Ansible Connection From controler host
+    ansible_connection: local
+
+    # Python directory on controller host
+    ansible_python_interpreter: /usr/local/bin/python3.10 # <CHANGE_IF_PYTHON_IS_NOT_INSTALLED_AT_THIS_PATH>
+
+    # # Default OCP Cluster Web Server port
+    # ansible_port: 6443 # <CHANGE_IF_REQUIRED>
+
+    # # Default OCP Cluster user id
+    # ansible_user: zstack-svt@ibm.com
+
+    # Flag to set ocphost or zosendpoint as active
+    _is_active: false
+
+    # OPTIONAL: Use if local machine connects via IP address to cluster or add Host/IP to host file
+    cluster_ip_address:
+
+    # OPTIONAL: Used if 1Password is not configured to authenticate to OCP host and retrieve auth_token
+    cluster_auth_token:
+
+    #**************************************************************************
+    # NAMESPACE - OCP project namespace variables
+    #**************************************************************************
+
+    # Array of ocp project namespaces to deploy/undeploy zstack
+    namespace_names:
+
+    #**************************************************************************
+    # ZPM - z/OS Package Manager variables
+    #**************************************************************************
+    # If the 'ZPM_INSTALL_DIR' and/or 'ZPM_STATE_DIR' are defined they take precedent over 'zpm_install_dir_prefix'
+    ZPM_INSTALL_DIR: #/etc/zstack/{{NAMESPACE_NAME}}
+
+    # ZPM state directory
+    ZPM_STATE_DIR: #'{{ZPM_INSTALL_DIR}}/state'
+
+    # Writable prefix on USS directory z/OS Endpoint for ZPM to install zproducts
+    zpm_install_dir_prefix: /etc/zstack  # /usr/lpp
+
+  #**************************************************************************
+  # OCP HOST and z/OS ENDPOINTS to target for automation
+  #**************************************************************************
+  children:
+    ocphosts:
+      vars: 
+        # OpenShift host port
+        ansible_port: 6443 # <Port for OCP api server >
+
+        # OpenShift host user id
+        ansible_user: zstack-svt@ibm.com # <Default OCP user id>
+
+        # OpenShift auth token
+        cluster_auth_token:
+
+        # Array of ocp project(s) to deploy/undeploy to ocp host
+        project_names: 
+
+      children:
+        #**************************************************************************
+        # Openshift Clusters to deploy/undeploy zCM Stack
+        #**************************************************************************
+        ocp_s390x_hosts:
+          hosts:
+            zcm-stk-dev:
+              _is_active: true
+              ansible_host: ***HOST_REMOVED***
+              PVC_STORAGE_CLASS_NAME: managed-nfs-storage
+            # ocp4-lp91: #https://console-openshift-console.apps.ocp4-lp90.pok.stglabs.ibm.com/
+            #   ansible_host: api.ocp4-lp91.pok.stglabs.ibm.com
+          vars:
+            PVC_STORAGE_CLASS_NAME: nfs
+        # x86 Openshift Clusters to deploy/undeploy zCM Stack
+        # ocp_x86_host:
+        #   hosts:
+        #     z-stack-int:
+        #       ansible_host: ***HOST_REMOVED***
+        #     zoscb-test:
+        #       ansible_host: ***HOST_REMOVED***
+        #       BROKER_SUBSCRIPTION_SOURCE: ibm-zoscb-internal-test-catalog
+        #   vars:
+        #     PVC_STORAGE_CLASS_NAME: rook-cephfs
+    zosendpoints:
+      vars:
+        # Defaul Ansible Connection used for a/OS Endpoint points host
+        ansible_connection: ssh
+
+        # LE HLQ
+        zpm_le_install_hlq: CEE
+
+        # CBC HLQ
+        zpm_cbc_install_hlq: CBC
+      children:
+        # **************************************************************************
+        # Wazi z/OS Endpoint to deploy/undeploy zCM Stack z products
+        # **************************************************************************
+        wazi_zosendpoints:
+          hosts:
+            # wazi-sandbox-basic:
+            #   _is_active: true
+            #   ansible_host: ***HOST_REMOVED***
+            #   ansible_port: 32281
+            wazi-sandbox-nc:
+              _is_active: true
+              ansible_host: ***HOST_REMOVED***
+              ansible_port: 30762
+              ZPM_PRODUCT_HLQ: ZPMNC
+          vars:
+            ansible_port: 22
+            ansible_user: ibmuser
+            ansible_ssh_private_key_file: "{{ lookup('env', 'HOME') }}/.ssh/id_zstack"
+            ssh_passphrase: zstack
+            # Bash directory on z/OS endpoint
+            zpm_bash_dir: /usr/lpp/Rocket/rsusr/ported/bin

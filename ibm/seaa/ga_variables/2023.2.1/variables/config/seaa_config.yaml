@@ -85,7 +85,7 @@ seaa_encrypt_sensitive_endpoint_vars: true
 seaa_ansible_vault_password_file: "{{ lookup('env', 'SEAA_ANSIBLE_VAULT_PASSWORD_FILE') }}"
 
 # Path to encrypted SSH Key file
-seaa_path_to_encrypted_files: "{{ seaa_ansible_directory }}/secrets"
+seaa_path_to_secret_files: "{{ seaa_ansible_directory }}/secrets"
 
 # Flag to use TLS with OCP login
 cluster_validate_certs: false  # Can be set in inventory per ocphost group

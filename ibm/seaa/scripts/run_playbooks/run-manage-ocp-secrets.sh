@@ -10,10 +10,12 @@
 #
 # To run script:
 # ./run-manage-ocp-secrets.sh --tags=sshkey
+# ./run-manage-ocp-secrets.sh --tags=registry -e=@</path-to-extra-vars-file>
 # **************************************************************************************************#
 # Print parameter usage
 function _printUsage() {
   echo "Usage: $(basename "$0"): "
+  echo "    --tags=(sshkey | registry) (short '-t=(sshkey | registry)') used to select the type of secrets to manage"
   echo "    --extra_vars=* (short '-e=*') used to overide ansible variables in seaa framework"
   echo "    --inventory=* (short '-i=*') inventory file to use for playbook run, default (inventory.yaml)"
   echo "    --inventory_loc=* (short '-i_loc=*') directory location of inventory file, default (ansible/playbooks/inventory)"
@@ -40,6 +42,9 @@ function _validateTags {
              sshkey)
                 continue;
               ;;     
+             registry)
+                continue;
+              ;;                  
             # "") # Match an empty value NOP
             #     ;;
             *)
@@ -135,7 +140,7 @@ function main() {
 
     # Run playbook
     ansible-playbook "${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/playbooks/ocp/manage-ocp-secrets.yml" ${RUNOPTIONS} \
-     -e "${SEAA_EXTRA_VARS}" -e "${ev_automation_strategy:=}" 
+     -e "${SEAA_EXTRA_VARS}" -e "${ev_automation_strategy:=}" -e "${ev_yaml_output_dir:=}" 
 
     # Return Playbook exit code
     return $?

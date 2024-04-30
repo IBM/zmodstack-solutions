@@ -47,8 +47,7 @@
 - name: Create PVC
   ansible.builtin.include_tasks: "{{ ocp_task_dir }}/create/persistentVolumeClaim.yml"
   when:
-    - broker_instance.storage.configure
-    - not broker_instance.storage.enabled
+    - broker_instance.storage.enabled
     - seaa_deploy_role == "admin"
 
 # CREATE OPERATOR GROUP

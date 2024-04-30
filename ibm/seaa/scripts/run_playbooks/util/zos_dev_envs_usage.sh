@@ -15,9 +15,10 @@ reset="\033[0m"
 yellow="\033[0;33m"
 
 # Set defaults
-export SEAA_TAGS=
-export SEAA_SKIPTAGS=
-export SEAA_EXTRA_VARS=
+# export SEAA_TAGS=
+# export SEAA_SKIPTAGS=
+
+export SEAA_EXTRA_VARS="${SEAA_EXTRA_VARS:-$(jq -n '{}')}"
 export SEAA_INVENTORY="${SEAA_INVENTORY:-inventory.yaml}"
 export SEAA_INVENTORY_LOCATION="${SEAA_INVENTORY_LOCATION:-${SEAA_CONFIG_PATH_TO_SE_ANSIBLE_ARTIFACTS}/playbooks/inventory}"
 
@@ -47,7 +48,7 @@ function printUsage {
 function printEnvVarUsage {
     echo -e "Display SEAA environment variables ***********************************************************"
 
-    # Check to see if SEAA_AUTOMATION_STRATEGY ENV provided
+    # Check to see if SEAA_CONFIG_PATH_TO_SE_VARIABLES ENV provided
     if [[ -n "${SEAA_CONFIG_PATH_TO_SE_VARIABLES+1}" ]]; then
         echo -e "\t${green}Using environment variable${reset} '${cyan}SEAA_CONFIG_PATH_TO_SE_VARIABLES${reset}': $SEAA_CONFIG_PATH_TO_SE_VARIABLES"
 
@@ -56,6 +57,12 @@ function printEnvVarUsage {
     # Check to see if SEAA_AUTOMATION_STRATEGY ENV provided
     if [[ -n "${SEAA_AUTOMATION_STRATEGY+1}" ]]; then
         echo -e "\t${green}Using environment variable${reset} '${cyan}SEAA_AUTOMATION_STRATEGY${reset}': $SEAA_AUTOMATION_STRATEGY"
+
+    fi
+
+    # Check to see if SEAA_YAML_OUTPUT_DIR ENV provided
+    if [[ -n "${SEAA_YAML_OUTPUT_DIR+1}" ]]; then
+        echo -e "\t${green}Using environment variable${reset} '${cyan}SEAA_YAML_OUTPUT_DIR${reset}': $SEAA_YAML_OUTPUT_DIR"
 
     fi
 
@@ -71,8 +78,8 @@ function printEnvVarUsage {
 
     fi
 
-    if [[ -n "${SEAA_ANSIBLE_VAULT_PASSWORD_FILE+1}" ]]; then
-        echo -e "\t${green}Using Environment variable${reset} '${cyan}SEAA_ANSIBLE_VAULT_PASSWORD_FILE${reset}': $SEAA_ANSIBLE_VAULT_PASSWORD_FILE"
+    if [[ -n "${SEAA_ANSIBLE_VAULT_KEY_FILE+1}" ]]; then
+        echo -e "\t${green}Using Environment variable${reset} '${cyan}SEAA_ANSIBLE_VAULT_KEY_FILE${reset}': $SEAA_ANSIBLE_VAULT_KEY_FILE"
 
     fi
    
@@ -280,17 +287,23 @@ function overrideAndMaskExtraVars {
   # echo $overrideValues
 
   # Check if input file with ExtraVARS is provided
-  if [[ -n "${1}" && -n "$overrideValues" ]]; then
-    # Set input file and trimmed '@' char from front
-    input_file=${1:1}
-
-    # Use Stream editor to pre-process and remove and comments in JSON file
-    new_input=$(sed 's/\/\*.*\*\///' "$input_file"| jq '.' )
- 
-    if [ "$ANSIBLE_VERBOSITY" -gt 0 ]; then
-        # Print message for processing extra-vars file
-        echo -e "${green}Override extra-vars file:${reset} '${input_file}' ...\n\t With: '$overrideValues' "    
-    fi 
+  if [[ -n "${1}" || "${SEAA_EXTRA_VARS}" == '{}' && -n "$overrideValues" ]]; then
+    if [[ -n "${1}" ]]; then
+        # Set input file and trimmed '@' char from front
+        input_file=${1:1}
+    
+        # Use Stream editor to pre-process and remove and comments in JSON file
+        new_input=$(sed 's/\/\*.*\*\///' "$input_file"| jq '.' )
+    
+        if [ "$ANSIBLE_VERBOSITY" -gt 0 ]; then
+            # Print message for processing extra-vars file
+            echo -e "${green}Override extra-vars file:${reset} '${input_file}' ...\n\t With: '$overrideValues' "    
+        fi 
+    else
+        # Set new input var to empty json string
+        new_input='{}'
+    
+    fi
     
     # Set output JSON file by adding and overriding from overrideValues JSON
     output_file=$(jq -nc --argjson original "$new_input" \
@@ -333,7 +346,7 @@ function overrideAndMaskExtraVars {
   fi
 
   # Check if SEAA_EXTRA_VARS env variable is provided
-  if [[ -n "${SEAA_EXTRA_VARS}" ]]; then
+  if [[ -n "${SEAA_EXTRA_VARS}" || "${SEAA_EXTRA_VARS}" != '{}' ]]; then
     # Print extravars to Terminal
     if [[ -n "$input_file" ]]; then
       echo
@@ -433,19 +446,26 @@ function setRunOptions {
       RUNOPTIONS+=" --skip-tags ''"
     fi
 
-    # Add vault automation strategy to playbook run options
+    # Add automation strategy to playbook extra-vars
     if [[ -n "${SEAA_AUTOMATION_STRATEGY}" ]]; then
       # shellcheck disable=SC2034  # ev_automation_strategy is used as an extra var in deployment scripts
       ev_automation_strategy='{"seaa_automation_strategy": '${SEAA_AUTOMATION_STRATEGY}' }'
     fi
 
+
+    # Add yaml output to playbook extra-varss
+    if [[ -n "${SEAA_YAML_OUTPUT_DIR}" ]]; then
+      # shellcheck disable=SC2034  # ev_yaml_output_dir is used as an extra var in deployment scripts
+      ev_yaml_output_dir='{"seaa_yaml_output_dir": '${SEAA_YAML_OUTPUT_DIR}' }'
+    fi
+
     # Add vault passwords file to playbook run options
-    if [[ -n "${SEAA_ANSIBLE_VAULT_PASSWORD_FILE}" ]]; then
-      RUNOPTIONS+=" --vault-password-file ${SEAA_ANSIBLE_VAULT_PASSWORD_FILE}"
+    if [[ -n "${SEAA_ANSIBLE_VAULT_KEY_FILE}" ]]; then
+      RUNOPTIONS+=" --vault-password-file ${SEAA_ANSIBLE_VAULT_KEY_FILE}"
     fi
     
     # Add vault-id to playbook run options
-    if [[ -n "${SEAA_ANSIBLE_VAULT_PASSWORD_FILE}" && -n "${SEAA_ANSIBLE_VAULT_ID}" ]]; then
+    if [[ -n "${SEAA_ANSIBLE_VAULT_KEY_FILE}" && -n "${SEAA_ANSIBLE_VAULT_ID}" ]]; then
       RUNOPTIONS+=" --vault-id ${SEAA_ANSIBLE_VAULT_ID}"
     fi
 

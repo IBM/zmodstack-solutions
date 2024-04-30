@@ -14,7 +14,7 @@
 #  5 - target directory to copy ZPM logs to
 #
 #  Example SFTP script file from local machine
-# ./getzpm_logs.sh ibmuser <zos-endpoint> <path-to-log-on-zosendpoint> <path-to-save-logs-on-workstation>
+# ./getzpm_logs.sh <ssh-user> <endpoint-url> <ssh-port> <path-to-log-on-zosendpoint> <path-to-save-logs-on-workstation>
 # **************************************************************************************************#
 
 if [ "$#" -ne 5 ]; then

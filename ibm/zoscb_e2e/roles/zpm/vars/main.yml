@@ -8,26 +8,25 @@
 
 # ZPM_REGISTRY CREDENTIALS  TODO:DOC -  Inventory > Ansible Var Defaults
 zpm_registry:
-  host: "{{ hostvars[current_ocphost].zpm_registry_host | default(lookup('vars', 'zpm_registry_host'), true) }}"
-  username: "{{ hostvars[current_ocphost].zpm_registry_user | default(lookup('vars', 'zpm_registry_user'), true) }}"
-  apiToken: "{{ hostvars[current_ocphost].zpm_registry_password | default(lookup('vars', 'zpm_registry_password'), true) }}"
-
+  host: "{{ hostvars[current_ocphost].zpm_registry_host | default(lookup('vars', 'zpm_registry_host', default=''), true) | default('', true) }}"
+  user: "{{ hostvars[current_ocphost].zpm_registry_user | default(lookup('vars', 'zpm_registry_user', default=''), true) | default('', true) }}"
+  password: "{{ hostvars[current_ocphost].zpm_registry_password | default(lookup('vars', 'zpm_registry_password', default=''), true) | default('', true) }}"
 
 # SUB-OPERATOR (Operator Collection) - TODO:DOC -  Inventory > Ansible Var Defaults, Constants
 oc_product:
   short_name: "{{ hostvars[current_ocphost].zpm_product_short_name | default(lookup('vars', 'zpm_product_short_name'), true) }}"
-  code_name: "{{ hostvars[current_ocphost].zpm_product_code_name | default(lookup('vars', 'zpm_product_code_name'), true) | default('', true) }}"
+  code_name: "{{ hostvars[current_ocphost].zpm_product_code_name | default(lookup('vars', 'zpm_product_code_name', default=''), true) }}"
   name: "{{ hostvars[current_ocphost].zpm_product_name | default(lookup('vars', 'zpm_product_name'), true) }}"
   oc_version: "{{ hostvars[current_ocphost].zpm_oc_version | default(lookup('vars', 'zpm_oc_version'), true) }}"
   oci_version: "{{ hostvars[current_ocphost].zpm_oci_version | default(lookup('vars', 'zpm_oci_version'), true) }}"
   apiVersion: "{{ lookup('vars', 'oc_product_api_version') }}"
   finalizers:
     - "{{ lookup('vars', 'oc_product_finalizer') }}"
-  import_mode: "{{ hostvars[current_ocphost].zpm_import_mode | default(lookup('vars', 'zpm_import_mode'), true) | default('galaxy', true) }}"
-  import_url: "{{ hostvars[current_ocphost].zpm_import_url | default(lookup('vars', 'zpm_import_url'), true) | default('https://galaxy.ansible.com', true) }}"
-  git_token: "{{ hostvars[current_ocphost].zpm_git_token | default(lookup('vars', 'zpm_git_token'), true) | default('', true) }}"
+  import_mode: "{{ hostvars[current_ocphost].zpm_import_mode | default(lookup('vars', 'zpm_import_mode', default='galaxy'), true) }}"
+  import_url: "{{ hostvars[current_ocphost].zpm_import_url | default(lookup('vars', 'zpm_import_url', default='https://galaxy.ansible.com'), true) }}"
+  git_token: "{{ hostvars[current_ocphost].zpm_git_token | default(lookup('vars', 'zpm_git_token', default=''), true) }}"
   delete_collections: "{{ hostvars[current_ocphost].oc_product_delete_collections |
-    default(lookup('vars', 'oc_product_delete_collections', errors='ignore'), true) | default(true) }}"
+    default(lookup('vars', 'oc_product_delete_collections', errors='ignore', default=true), true) }}"
   signatureFile: "{{ lookup('vars', 'zpm_signature_file') if lookup('vars', 'zpm_signature_upload_mode', default='url') == 'url' else
                       seaa_ansible_directory~'/roles/openshift_cluster/secrets/ibm-'~hostvars[current_ocphost].zpm_product_name |
                        default(lookup('vars', 'zpm_product_name'), true) | replace('-', '_')~'-'~hostvars[current_ocphost].zpm_oc_version |
@@ -67,14 +66,19 @@ zos_package_manager:
    default(lookup('vars', 'zpm_java_home_directory'), true) }}" # "{{ lookup('vars', 'zpm_java_home_directory') }}"
   productsHLQ: "{{ endpoint.zpm_product_hlq }}" # "{{ lookup('vars', 'zpm_product_hlq') }}"
   zpmRegistryLocation: "{{ zpm_registry.host }}"
-  zpmRegistryProxyHost: "{{ lookup('vars', 'zpm_registry_proxy_host') | default('', true) }}"
-  zpmRegistryProxyPort: "{{ lookup('vars', 'zpm_registry_proxy_port') | default('', true) }}"
+  zpmRegistryPassword: "{{ zpm_registry.password }}"
+  zpmRegistryUser: "{{ zpm_registry.user }}"
+  zpmRegistryProxyHost: "{{ lookup('vars', 'zpm_registry_proxy_host', default='') | default('', true) }}"
+  zpmRegistryProxyPort: "{{ lookup('vars', 'zpm_registry_proxy_port', default='') | default('', true) }}"
+  zpmRegistryProxyPassword: "{{ lookup('vars', 'zpm_registry_proxy_password', default='') | default('', true) }}"
+  zpmRegistryProxyUser: "{{ lookup('vars', 'zpm_registry_proxy_user', default='') | default('', true) }}"
   licenseAccept: "{{ lookup('vars', 'zpm_instance_license_accept') | bool }}"
+  registries: "{{ hostvars[current_zosendpoint].zpm_registries | default(lookup('vars', 'zpm_registries', default=[]), true) }}"
 
 # TODO:DOC -  Inventory > Ansible Var Defaults, Constants
 zos_package_manager_diagnostics:
   name: "{{ hostvars[current_ocphost].zpm_diagnostics_name |
-            default(zpm_diagnostics_prefix | append_str_if_not_null('-'~current_zosendpoint), true)  |
+            default(zpm_diagnostics_prefix | append_str_if_not_null('-'~current_zosendpoint), true) |
             default(lookup('vars', 'zpm_diagnostics_name'), true) }}"
   kind: "{{ lookup('vars', 'zpm_diagnostics_kind') }}"
   apiVersion: "{{ lookup('vars', 'zpm_diagnostics_api_version') }}"
